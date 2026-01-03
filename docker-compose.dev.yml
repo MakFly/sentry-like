@@ -1,0 +1,38 @@
+# ErrorWatch - Development Services
+# Usage: docker compose -f docker-compose.dev.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: errorwatch-postgres-dev
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: errorwatch
+      POSTGRES_PASSWORD: errorwatch_dev_password
+      POSTGRES_DB: errorwatch
+    volumes:
+      - errorwatch_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U errorwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: errorwatch-redis-dev
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - errorwatch_redis_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  errorwatch_postgres_dev:
+  errorwatch_redis_dev:

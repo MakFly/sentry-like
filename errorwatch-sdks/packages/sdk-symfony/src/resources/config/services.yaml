@@ -1,0 +1,41 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Makfly\ErrorMonitoringBundle\Http\MonitoringClient:
+        arguments:
+            $endpoint: '%error_monitoring.endpoint%'
+            $apiKey: '%error_monitoring.api_key%'
+
+    Makfly\ErrorMonitoringBundle\Http\MonitoringClientInterface:
+        alias: Makfly\ErrorMonitoringBundle\Http\MonitoringClient
+
+    Makfly\ErrorMonitoringBundle\Service\FingerprintGenerator: ~
+
+    Makfly\ErrorMonitoringBundle\Service\LevelMapper: ~
+
+    Makfly\ErrorMonitoringBundle\Service\SessionReplayManager:
+        arguments:
+            $endpoint: '%error_monitoring.endpoint%'
+            $apiKey: '%error_monitoring.api_key%'
+            $enabled: '%error_monitoring.replay.enabled%'
+            $sampleRate: '%error_monitoring.replay.sample_rate%'
+            $release: '%error_monitoring.release%'
+
+    Makfly\ErrorMonitoringBundle\Service\ErrorSender:
+        arguments:
+            $enabled: '%error_monitoring.enabled%'
+            $environment: '%error_monitoring.environment%'
+            $release: '%error_monitoring.release%'
+            $client: '@Makfly\ErrorMonitoringBundle\Http\MonitoringClientInterface'
+            $levelMapper: '@Makfly\ErrorMonitoringBundle\Service\LevelMapper'
+
+    Makfly\ErrorMonitoringBundle\Service\ErrorSenderInterface:
+        alias: Makfly\ErrorMonitoringBundle\Service\ErrorSender
+
+    Makfly\ErrorMonitoringBundle\EventSubscriber\ExceptionSubscriber:
+        arguments:
+            $errorSender: '@Makfly\ErrorMonitoringBundle\Service\ErrorSenderInterface'
+        tags:
+            - { name: kernel.event_subscriber }

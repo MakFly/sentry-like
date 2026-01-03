@@ -1,0 +1,290 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**ErrorWatch** - Self-hosted error monitoring SaaS for modern applications (Sentry alternative).
+
+### Architecture
+
+```
+┌─────────────────┐     ┌───────────────────┐     ┌─────────────┐
+│  Client Apps    │────▶│ Monitoring Server │◀────│  Dashboard  │
+│  (SDKs)         │     │ (Hono + PostgreSQL)│     │  (Next.js)  │
+└─────────────────┘     └───────────────────┘     └─────────────┘
+       POST /event              ▲                    tRPC + REST
+                                │
+```
+
+### Components
+
+| Component | Location | Port | Stack |
+|-----------|----------|------|-------|
+| Monitoring Server | `apps/monitoring-server/` | 3333 | Hono.js 4, Drizzle ORM, PostgreSQL, BetterAuth |
+| Dashboard | `apps/dashboard/` | 3001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
+| SDK Universal | `packages/errorwatch-sdk/` | - | TypeScript |
+| Symfony Bundle | `packages/errorwatch-sdk-symfony/` | - | PHP 8.1+, Symfony 6.0+ |
+
+### Local URLs
+
+| Mode | Dashboard | API |
+|------|-----------|-----|
+| **Development** | http://localhost:3001 | http://localhost:3333 |
+| **Production** | https://errorwatch.io | https://api.errorwatch.io |
+
+---
+
+## Project Structure
+
+```
+sentry-like/
+├── apps/
+│   ├── dashboard/                 # Next.js 16 frontend
+│   └── monitoring-server/         # Hono.js API server
+├── packages/
+│   ├── errorwatch-sdk/            # Universal SDK (Browser + React + Vue)
+│   └── errorwatch-sdk-symfony/    # PHP Symfony Bundle
+├── examples/                      # Integration examples
+│   ├── react-vite/
+│   └── vue-vite/
+├── example-client/                # Symfony example client
+├── docs/                          # Documentation
+├── docker-compose.yml             # Production (PostgreSQL + Redis)
+├── docker-compose.dev.yml         # Development services
+├── package.json                   # Workspaces root (apps only)
+├── Makefile                       # Dev commands
+└── CLAUDE.md
+```
+
+---
+
+## Monitoring Server (`apps/monitoring-server/`)
+
+### Database Schema
+
+| Table | Purpose |
+|-------|---------|
+| `user` | User accounts (BetterAuth managed) |
+| `session` | Session tokens (BetterAuth managed) |
+| `account` | OAuth provider accounts |
+| `organizations` | Multi-tenant organizations |
+| `organization_members` | User roles (owner/admin/member) |
+| `projects` | Projects within organizations |
+| `invitations` | Pending invite tokens (7-day expiry) |
+| `error_groups` | Grouped errors by fingerprint |
+| `error_events` | Individual error occurrences |
+
+### API Versioning
+
+- URL path versioning: `/api/v1/*`
+- Current version: **v1**
+- Router: `src/api/v1/index.ts`
+
+### Database
+
+- **PostgreSQL** 16 (production) via Docker
+- **Redis** 7 (queues & caching)
+- Drizzle ORM with migrations
+
+### Authentication
+
+Uses **BetterAuth** (`src/auth.ts`):
+- Email/password authentication
+- PostgreSQL session storage
+- Trusted origins configured in CORS
+
+### Commands
+
+```bash
+cd apps/monitoring-server
+bun install
+make docker-up       # Start PostgreSQL & Redis first (from root)
+bun run db:push      # Push schema to PostgreSQL
+bun run dev:standalone  # Port 3333
+```
+
+---
+
+## Dashboard (`apps/dashboard/`)
+
+### Route Structure
+
+```
+src/app/
+├── (marketing)/           # Public pages
+│   ├── layout.tsx         # Navbar + Footer
+│   └── page.tsx           # Landing page
+├── (dashboard)/           # Protected pages
+│   ├── layout.tsx         # Sidebar + MobileHeader
+│   ├── page.tsx           # Dashboard overview
+│   ├── issues/            # Error issues list
+│   ├── stats/             # Statistics & charts
+│   └── settings/          # Settings (orgs, alerts, API keys)
+├── (auth)/                # Auth pages
+│   ├── login/page.tsx
+│   └── signup/page.tsx
+├── (onboarding)/          # Onboarding flow
+│   ├── layout.tsx         # Minimal layout (logo only)
+│   ├── onboarding/page.tsx # Wizard (create org + project)
+│   └── invite/[token]/page.tsx # Accept invitation
+└── api/trpc/[trpc]/       # tRPC API route
+```
+
+### tRPC Architecture
+
+```
+Client Component → trpc.xxx.useQuery() → /api/trpc → router.ts → api.ts → Monitoring Server
+Server Component → getServerCaller()   ─────────────────────────────────┘
+```
+
+**Routers** (`src/server/trpc/router.ts`):
+- `auth` - getSession
+- `groups` - getAll, getById, getEvents, getTimeline
+- `stats` - getGlobal, getTimeline, getEnvBreakdown, getDashboardStats
+- `organizations` - getAll, create, delete
+- `projects` - getAll, getCurrent, setCurrent, create, delete
+- `members` - getByOrganization, invite, checkInvite, acceptInvite, remove
+- `onboarding` - getStatus, setup
+
+### Commands
+
+```bash
+cd apps/dashboard
+bun install
+bun run dev:standalone  # Port 3001
+```
+
+---
+
+## Universal SDK (`packages/errorwatch-sdk/`)
+
+### Package
+
+**`@errorwatch/sdk`** - Universal error monitoring SDK
+
+| Export | Framework |
+|--------|-----------|
+| `@errorwatch/sdk` | Browser (vanilla JS) |
+| `@errorwatch/sdk/react` | React 18+ / 19+ |
+| `@errorwatch/sdk/vue` | Vue 3+ |
+
+### Features
+- Browser SDK with rrweb session replay
+- React ErrorBoundary component + hooks
+- Vue plugin + composables
+- TypeScript support
+- Zod schema validation
+
+### Installation
+
+```bash
+# Browser / Vanilla
+npm install @errorwatch/sdk
+
+# React
+npm install @errorwatch/sdk
+
+# Vue
+npm install @errorwatch/sdk
+```
+
+---
+
+## Symfony Bundle (`packages/errorwatch-sdk-symfony/`)
+
+- Namespace: `Makfly\ErrorMonitoringBundle\`
+- Listens to `KernelEvents::EXCEPTION`
+- Non-blocking async error sending (1s timeout)
+
+---
+
+## Documentation
+
+**IMPORTANT:** Before modifying code, read:
+
+```
+docs/
+├── README.md                    # Documentation index
+├── ARCHITECTURE.md              # Architecture générale
+├── DEVELOPMENT/
+│   ├── README.md                # Dev docs index
+│   └── LOGGER.md                # Logger system (monitoring-server)
+├── SECURITY/
+│   ├── README.md                # Security docs index
+│   ├── AUDIT_INDEX.md           # General security audit
+│   └── PHP_SDKS_AUDIT_INDEX.md  # PHP SDKs security audit
+└── INTEGRATIONS.md              # Third-party integrations
+
+AI-DD/
+├── README.md              # Overview
+└── trpc/
+    ├── ARCHITECTURE.md    # tRPC architecture (dashboard)
+    └── CONVENTIONS.md     # Coding conventions & patterns
+
+resolve-bugs/
+└── replay-player-progress-sync.md  # Bug fixes documentation
+```
+
+---
+
+## Development Notes
+
+- **Dev servers are always running** (hot-reload active)
+- **Never run** `bun dev`, `npm run dev` or similar - servers already started
+- Test API with `curl` or browser
+
+### Next.js 16 Specifics
+
+- **NO `middleware.ts`** - Next.js 16 utilise `src/proxy.ts` à la place
+- Le proxy gère : authentification, redirection, validation de session
+- Voir `apps/dashboard/src/proxy.ts` pour la logique de routing
+
+---
+
+## Quick Commands (from project root)
+
+```bash
+# Development (standalone)
+make dev             # Start dev servers (http://localhost:3001)
+make stop            # Stop all servers
+make restart         # Restart all servers
+make status          # Check server status
+
+# Setup & Database
+make install         # Install all dependencies
+make db-push         # Push database schema
+make db-migrate      # Run migrations
+
+# Testing & Build
+make test-api        # Test API endpoints
+make build           # Build for production
+make clean           # Clean build artifacts
+```
+
+---
+
+## Multi-tenant Architecture
+
+### Organizations
+- **1 user = 1 organization** (constraint enforced in backend)
+- Users can be invited to other organizations as members
+- Each org has members with roles: `owner`, `admin`, `member`
+
+### Projects
+- Projects belong to organizations
+- Errors are scoped to projects
+- Users select active project in dashboard
+
+### Onboarding Flow
+1. User signs up → lands on `/onboarding`
+2. Creates organization + first project in one step
+3. Receives API key automatically
+4. Redirected to `/dashboard`
+
+### Invitation Flow
+1. Owner/Admin sends invite → creates token with 7-day expiry
+2. Invitee receives email with `/invite/{token}` link
+3. Invitee signs up/logs in → lands on `/invite/{token}`
+4. Accepts invite → joins organization as `member`
+5. Redirected to `/dashboard` (bypasses onboarding)

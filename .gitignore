@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Dev PID files
+.dev-pids
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Environment files - NEVER commit secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.key
+*.pem
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build artifacts
+dist/
+.next/
+.turbo/
+
+# Test coverage
+coverage/

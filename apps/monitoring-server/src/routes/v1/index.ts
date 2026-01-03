@@ -1,0 +1,43 @@
+import { Hono } from "hono";
+import billing from "./billing";
+import projects from "./projects";
+import organizations from "./organizations";
+import members from "./members";
+import apiKeys from "./api-keys";
+import stats from "./stats";
+import groups from "./groups";
+import onboarding from "./onboarding";
+import event from "./event";
+import admin from "./admin";
+import alerts from "./alerts";
+import projectSettings from "./project-settings";
+import releases from "./releases";
+import sourcemaps from "./sourcemaps";
+import performance from "./performance";
+import replay from "./replay";
+import user from "./user";
+import dev from "./dev";
+
+const v1 = new Hono();
+ 
+v1.route("/billing", billing);
+v1.route("/projects", projects);
+v1.route("/organizations", organizations);
+v1.route("/members", members);
+v1.route("/api-keys", apiKeys);
+v1.route("/stats", stats);
+v1.route("/groups", groups);
+v1.route("/onboarding", onboarding);
+v1.route("/event", event);
+v1.route("/admin", admin);
+v1.route("/alerts", alerts);
+v1.route("/project-settings", projectSettings);
+v1.route("/releases", releases);
+v1.route("/sourcemaps", sourcemaps);
+v1.route("/performance", performance);
+v1.route("/replay", replay);
+v1.route("/user", user);
+v1.route("/dev", dev);
+
+export default v1;
+

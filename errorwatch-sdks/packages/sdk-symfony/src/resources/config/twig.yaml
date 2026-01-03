@@ -1,0 +1,6 @@
+services:
+    Makfly\ErrorMonitoringBundle\Twig\ReplayExtension:
+        arguments:
+            $replayManager: '@Makfly\ErrorMonitoringBundle\Service\SessionReplayManager'
+        tags:
+            - { name: twig.extension }

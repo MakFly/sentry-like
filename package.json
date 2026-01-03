@@ -1,0 +1,20 @@
+{
+  "name": "errorwatch",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "docker compose -f docker-compose.dev.yml up -d && turbo run dev",
+    "dev:no-docker": "turbo run dev",
+    "docker:up": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:flush": "docker exec errorwatch-redis-dev redis-cli FLUSHALL",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "db:push": "turbo run db:push --filter=@apps/monitoring-server"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "packageManager": "bun@1.1.0"
+}

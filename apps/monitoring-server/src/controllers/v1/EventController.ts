@@ -1,0 +1,190 @@
+/**
+ * Event Controller
+ * @description Handles error event submission from SDKs
+ * Events are queued for async processing via BullMQ
+ */
+import type { Context } from "hono";
+import { z } from "zod";
+import logger from "../../logger";
+import { canAcceptEvent } from "../../services/quotas";
+import { getProjectPlan } from "../../services/subscriptions";
+import { eventQueue } from "../../queue/queues";
+import { isRedisAvailable } from "../../queue/connection";
+import { ProjectSettingsRepository } from "../../repositories/ProjectSettingsRepository";
+
+// === Configuration ===
+const isProduction = process.env.NODE_ENV === "production";
+
+// === Validation Schema ===
+
+// Breadcrumb schema for user action trail
+const breadcrumbSchema = z.object({
+  timestamp: z.number(),
+  category: z.enum(['ui', 'navigation', 'console', 'http', 'user']),
+  type: z.string().max(50).optional(),
+  level: z.enum(['debug', 'info', 'warning', 'error']).optional(),
+  message: z.string().max(1000).optional(),
+  data: z.record(z.any()).optional(),
+});
+
+const eventSchema = z.object({
+  message: z.string().min(1).max(10000),
+  file: z.string().min(1).max(1000),
+  line: z.number().int().positive(),
+  stack: z.string().min(1).max(100000),
+  env: z.string().max(50).default("unknown"),
+  url: z.string().url().max(2000).optional().nullable(),
+  status_code: z.number().int().min(100).max(599).optional().nullable(),
+  level: z.enum(["fatal", "error", "warning", "info", "debug"]).default("error"),
+  created_at: z.number().default(() => Date.now()),
+  // Breadcrumbs: array of user actions before the error
+  breadcrumbs: z.array(breadcrumbSchema).max(100).optional(),
+  // Session ID for session replay linking
+  session_id: z.string().max(100).optional(),
+  // Release version (e.g. "v1.2.3", "abc123")
+  release: z.string().max(200).optional().nullable(),
+});
+
+/**
+ * Submit error event from SDK
+ * Events are validated and queued for async processing
+ */
+export const submit = async (c: Context) => {
+  try {
+    // Parse and validate input (fast, sync)
+    const rawInput = await c.req.json();
+    const input = eventSchema.parse(rawInput);
+
+    // Get API key context
+    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const projectId = apiKeyData?.projectId || null;
+
+    if (!projectId) {
+      return c.json({ error: "Invalid API key", code: "INVALID_API_KEY" }, 401);
+    }
+
+    // Check if event ingestion is enabled for this project
+    const projectSettings = await ProjectSettingsRepository.findByProjectId(projectId);
+    if (projectSettings && projectSettings.eventsEnabled === false) {
+      logger.info("Event rejected - ingestion disabled", { projectId });
+      return c.json(
+        {
+          error: "Event ingestion disabled",
+          code: "INGESTION_DISABLED",
+          message: "Event ingestion has been disabled for this project",
+        },
+        403
+      );
+    }
+
+    // Check quotas (sync - needed before accepting)
+    const plan = await getProjectPlan(projectId);
+    const quotaCheck = await canAcceptEvent(projectId, plan);
+    if (!quotaCheck.allowed) {
+      logger.warn("Event rejected due to quota", {
+        projectId,
+        reason: quotaCheck.reason,
+      });
+      return c.json(
+        {
+          error: "Quota exceeded",
+          code: "QUOTA_EXCEEDED",
+          message: quotaCheck.reason,
+          quota: {
+            used: quotaCheck.status.used,
+            limit: quotaCheck.status.limit,
+            percentage: quotaCheck.status.percentage,
+          },
+        },
+        429
+      );
+    }
+
+    // Check Redis availability
+    const redisUp = await isRedisAvailable();
+    if (!redisUp) {
+      logger.error("Redis unavailable, cannot queue event");
+      return c.json(
+        { error: "Service temporarily unavailable", code: "SERVICE_UNAVAILABLE" },
+        503
+      );
+    }
+
+    // Normalize timestamp
+    const createdAt =
+      input.created_at < 1e12
+        ? new Date(input.created_at * 1000)
+        : new Date(input.created_at);
+
+    // Only link replay for critical errors
+    const shouldLinkReplay = ['fatal', 'error'].includes(input.level);
+
+    // Queue event for async processing (< 5ms)
+    await eventQueue.add("process-event", {
+      projectId,
+      message: input.message,
+      file: input.file,
+      line: input.line,
+      stack: input.stack,
+      env: input.env,
+      url: input.url || null,
+      level: input.level,
+      statusCode: input.status_code || null,
+      breadcrumbs: input.breadcrumbs ? JSON.stringify(input.breadcrumbs) : null,
+      sessionId: shouldLinkReplay ? (input.session_id || null) : null,
+      createdAt: createdAt.toISOString(),
+      release: input.release || null,
+    });
+
+    logger.debug("Event queued", {
+      projectId,
+      level: input.level,
+    });
+
+    // Respond immediately with 202 Accepted
+    return c.json({ success: true, queued: true }, 202);
+
+  } catch (e) {
+    // Handle validation errors
+    if (e instanceof z.ZodError) {
+      if (isProduction) {
+        logger.warn("Invalid error event input", {
+          fieldCount: e.issues.length,
+        });
+        return c.json(
+          { error: "Invalid input", code: "VALIDATION_ERROR" },
+          400
+        );
+      }
+
+      logger.warn("Invalid error event input", {
+        issues: e.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
+      });
+      return c.json(
+        {
+          error: "Invalid input",
+          code: "VALIDATION_ERROR",
+          details: e.issues.map((i) => ({
+            path: i.path.join("."),
+            message: i.message,
+          })),
+        },
+        400
+      );
+    }
+
+    // Handle other errors
+    logger.error("Failed to queue error event", {
+      error: e instanceof Error ? e.message : "Unknown error",
+      ...(isProduction ? {} : { stack: e instanceof Error ? e.stack : undefined }),
+    });
+
+    return c.json(
+      {
+        error: isProduction ? "Internal server error" : (e instanceof Error ? e.message : "Unknown error"),
+        code: "INTERNAL_ERROR",
+      },
+      500
+    );
+  }
+};

@@ -1,0 +1,224 @@
+/**
+ * Event Worker
+ * @description Processes error events from the queue
+ */
+import { Worker, Job } from "bullmq";
+import { createHash } from "crypto";
+import { eq, sql } from "drizzle-orm";
+import { redisConnection } from "../connection";
+import { alertQueue, type EventJobData } from "../queues";
+import { db } from "../../db/connection";
+import { errorGroups, errorEvents } from "../../db/schema";
+import logger from "../../logger";
+
+const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "10", 10);
+
+/**
+ * Extract error type from message
+ * e.g., "TypeError: Cannot read property 'x'" -> "TypeError"
+ */
+function extractErrorType(message: string): string {
+  const match = message.match(/^([A-Z][a-zA-Z]*Error):/);
+  return match ? match[1] : "Error";
+}
+
+/**
+ * Parse stack trace and extract meaningful frames
+ */
+function parseStackFrames(stack: string, maxFrames = 5): string[] {
+  const lines = stack.split("\n");
+  const frames: string[] = [];
+
+  for (const line of lines) {
+    if (frames.length >= maxFrames) break;
+
+    // Match common stack trace formats:
+    // - Chrome/V8: "    at functionName (file:line:col)"
+    // - Firefox: "functionName@file:line:col"
+    // - Node.js: "    at Module._compile (file:line:col)"
+    const chromeMatch = line.match(/at\s+(?:(.+?)\s+\()?\s*(.+?):(\d+):(\d+)\)?/);
+    const firefoxMatch = line.match(/^(.+?)@(.+?):(\d+):(\d+)/);
+
+    if (chromeMatch) {
+      const [, funcName, , lineNum, colNum] = chromeMatch;
+      frames.push(`${funcName || "anonymous"}:${lineNum}:${colNum}`);
+    } else if (firefoxMatch) {
+      const [, funcName, , lineNum, colNum] = firefoxMatch;
+      frames.push(`${funcName || "anonymous"}:${lineNum}:${colNum}`);
+    }
+  }
+
+  return frames;
+}
+
+/**
+ * Generate robust fingerprint for error deduplication
+ * Includes: error type, file, line, column, stack depth, and top frames
+ */
+function generateFingerprint(data: {
+  message: string;
+  file: string;
+  line: number;
+  stack: string;
+  column?: number;
+}): string {
+  const { message, file, line, stack, column } = data;
+
+  // Extract error type from message
+  const errorType = extractErrorType(message);
+
+  // Parse stack frames for context
+  const frames = parseStackFrames(stack);
+  const stackDepth = frames.length;
+  const topFrames = frames.slice(0, 3).join("|");
+
+  // Normalize file path (remove query strings, hashes)
+  const normalizedFile = file.split("?")[0].split("#")[0];
+
+  // Build fingerprint components
+  const components = [
+    errorType,
+    normalizedFile,
+    String(line),
+    column !== undefined ? String(column) : "",
+    String(stackDepth),
+    topFrames,
+  ];
+
+  // Generate SHA1 hash
+  return createHash("sha1")
+    .update(components.join("|"))
+    .digest("hex");
+}
+
+/**
+ * Process a single event job
+ */
+async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: string; isNewGroup: boolean }> {
+  const {
+    projectId,
+    message,
+    file,
+    line,
+    column,
+    stack,
+    env,
+    url,
+    level,
+    statusCode,
+    breadcrumbs,
+    sessionId,
+    release,
+    createdAt,
+  } = job.data;
+
+  // Generate robust fingerprint for deduplication
+  const fingerprint = generateFingerprint({ message, file, line, stack, column });
+
+  const eventCreatedAt = new Date(createdAt);
+  const now = new Date();
+
+  // Convert to ISO strings for SQL template compatibility
+  const eventCreatedAtISO = eventCreatedAt.toISOString();
+  const nowISO = now.toISOString();
+
+  // Upsert error group (atomic operation) - PostgreSQL syntax
+  const result = await db
+    .insert(errorGroups)
+    .values({
+      fingerprint,
+      projectId,
+      message,
+      file,
+      line,
+      statusCode,
+      level,
+      count: 1,
+      firstSeen: eventCreatedAt,
+      lastSeen: now,
+    })
+    .onConflictDoUpdate({
+      target: errorGroups.fingerprint,
+      set: {
+        count: sql`${errorGroups.count} + 1`,
+        lastSeen: now,
+        // PostgreSQL uses LEAST/GREATEST for timestamp comparison
+        firstSeen: sql`LEAST(${errorGroups.firstSeen}, ${eventCreatedAtISO}::timestamp)`,
+        // Reopen resolved issues on new occurrence
+        status: sql`CASE WHEN ${errorGroups.status} = 'resolved' THEN 'open' ELSE ${errorGroups.status} END`,
+        resolvedAt: sql`CASE WHEN ${errorGroups.status} = 'resolved' THEN NULL ELSE ${errorGroups.resolvedAt} END`,
+        resolvedBy: sql`CASE WHEN ${errorGroups.status} = 'resolved' THEN NULL ELSE ${errorGroups.resolvedBy} END`,
+      },
+    })
+    .returning({ count: errorGroups.count });
+
+  const isNewGroup = result[0]?.count === 1;
+
+  // Insert event record
+  await db.insert(errorEvents).values({
+    id: crypto.randomUUID(),
+    fingerprint,
+    projectId,
+    stack,
+    url,
+    env,
+    statusCode,
+    level,
+    breadcrumbs,
+    sessionId,
+    release,
+    createdAt: eventCreatedAt,
+  });
+
+  // Queue alert job for notification processing
+  if (projectId) {
+    await alertQueue.add("check-alerts", {
+      projectId,
+      fingerprint,
+      isNewGroup,
+      level,
+      message,
+    });
+  }
+
+  logger.debug("Processed event", {
+    jobId: job.id,
+    fingerprint,
+    isNewGroup,
+    projectId,
+    errorType: extractErrorType(message),
+  });
+
+  return { fingerprint, isNewGroup };
+}
+
+/**
+ * Event worker instance
+ */
+export const eventWorker = new Worker<EventJobData>(
+  "events",
+  processEvent,
+  {
+    ...redisConnection,
+    concurrency: WORKER_CONCURRENCY,
+  }
+);
+
+// Worker event handlers
+eventWorker.on("completed", (job) => {
+  logger.debug("Event job completed", { jobId: job.id });
+});
+
+eventWorker.on("failed", (job, err) => {
+  logger.error("Event job failed", {
+    jobId: job?.id,
+    error: err.message,
+    attempts: job?.attemptsMade,
+  });
+});
+
+eventWorker.on("error", (err) => {
+  logger.error("Event worker error", { error: err.message });
+});
+
+export default eventWorker;

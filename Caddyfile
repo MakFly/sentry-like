@@ -1,0 +1,50 @@
+# ===========================================
+# ErrorWatch Production Caddyfile
+# ===========================================
+
+# Dashboard
+{$DOMAIN:errorwatch.io} {
+    reverse_proxy dashboard:3000
+
+    tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+
+    encode gzip zstd
+}
+
+# www redirect
+www.{$DOMAIN:errorwatch.io} {
+    tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+    redir https://{$DOMAIN:errorwatch.io}{uri} permanent
+}
+
+# API
+api.{$DOMAIN:errorwatch.io} {
+    reverse_proxy monitoring-server:3333
+
+    tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    encode gzip zstd
+}

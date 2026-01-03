@@ -1,0 +1,35 @@
+{
+  "name": "errorwatch-sdks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ErrorWatch SDKs Monorepo - Client libraries for error monitoring",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "turbo": "^2.3.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
+  },
+  "packageManager": "bun@1.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/errorwatch-sdks"
+  },
+  "author": "ErrorWatch",
+  "license": "MIT"
+}
