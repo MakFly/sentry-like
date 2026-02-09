@@ -20,6 +20,7 @@ services:
             $endpoint: '%error_monitoring.endpoint%'
             $apiKey: '%error_monitoring.api_key%'
             $enabled: '%error_monitoring.replay.enabled%'
+            $debug: '%error_monitoring.replay.debug%'
             $sampleRate: '%error_monitoring.replay.sample_rate%'
             $release: '%error_monitoring.release%'
 

@@ -16,6 +16,7 @@ class SessionReplayManager
     private string $endpoint;
     private string $apiKey;
     private bool $enabled;
+    private bool $debug;
     private float $sampleRate;
     private ?string $release;
 
@@ -24,6 +25,7 @@ class SessionReplayManager
         string $endpoint,
         string $apiKey,
         bool $enabled = false,
+        bool $debug = false,
         float $sampleRate = 0.1,
         ?string $release = null
     ) {
@@ -31,6 +33,7 @@ class SessionReplayManager
         $this->endpoint = $endpoint;
         $this->apiKey = $apiKey;
         $this->enabled = $enabled;
+        $this->debug = $debug;
         $this->sampleRate = max(0.0, min(1.0, $sampleRate)); // Clamp between 0 and 1
         $this->release = $release;
     }
@@ -111,6 +114,7 @@ class SessionReplayManager
     {
         return [
             'enabled' => $this->enabled,
+            'debug' => $this->debug,
             'endpoint' => rtrim($this->endpoint, '/'),
             'apiKey' => $this->apiKey,
             'sessionId' => $this->getSessionId(),

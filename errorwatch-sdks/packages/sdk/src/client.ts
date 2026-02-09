@@ -61,6 +61,7 @@ function extractRequestContext(): RequestContext | undefined {
 
 export class Client implements ErrorWatchClient {
   private config: SDKConfig & { endpoint: string }
+  private debug: boolean
   private queue: EventQueue
   private currentUser: User | null = null
   private breadcrumbManager: BreadcrumbManager
@@ -72,9 +73,18 @@ export class Client implements ErrorWatchClient {
   private isWaitingForPostErrorBuffer = false
   private pendingErrors: Array<{ error: Error | unknown; event: ErrorEvent }> = []
 
+  // Dedup: throttle by fingerprint (LRU cache)
+  private dedupCache = new Map<string, number>()
+  private dedupCleanupInterval: ReturnType<typeof setInterval> | null = null
+  private static readonly DEDUP_WINDOW_MS = 5000
+  private static readonly DEDUP_MAX_ENTRIES = 1000
+  private static readonly DEDUP_CLEANUP_INTERVAL_MS = 30000
+
   constructor(config: SDKConfig) {
     // Support both dsn and endpoint
     const endpoint = config.endpoint || config.dsn || 'http://localhost:3333'
+
+    this.debug = config.debug ?? false
 
     this.config = {
       endpoint,
@@ -106,11 +116,22 @@ export class Client implements ErrorWatchClient {
       }
       window.addEventListener('beforeunload', this.beforeUnloadHandler)
     }
+
+    // Setup dedup cache cleanup
+    this.dedupCleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, timestamp] of this.dedupCache) {
+        if (now - timestamp > 60000) {
+          this.dedupCache.delete(key)
+        }
+      }
+    }, Client.DEDUP_CLEANUP_INTERVAL_MS)
   }
 
   private initReplay(replayConfig?: SDKConfig['replay']): void {
     this.replayCapture = new ReplayCapture({
       ...replayConfig,
+      debug: this.debug,
       replaysSessionSampleRate: replayConfig?.replaysSessionSampleRate ?? 0,
       replaysOnErrorSampleRate: replayConfig?.replaysOnErrorSampleRate ?? 1.0,
     })
@@ -140,6 +161,28 @@ export class Client implements ErrorWatchClient {
   }
 
   captureException(error: Error | unknown, options?: CaptureOptions): void {
+    // Dedup: throttle identical errors within 5s window
+    const dedupKey = generateFingerprint(error)
+    const now = Date.now()
+    const lastSeen = this.dedupCache.get(dedupKey)
+    if (lastSeen !== undefined && now - lastSeen < Client.DEDUP_WINDOW_MS) {
+      if (this.debug) console.debug('ErrorWatch: Duplicate error throttled', dedupKey)
+      return
+    }
+    this.dedupCache.set(dedupKey, now)
+    // Evict oldest entries if cache exceeds max size
+    if (this.dedupCache.size > Client.DEDUP_MAX_ENTRIES) {
+      const firstKey = this.dedupCache.keys().next().value
+      if (firstKey !== undefined) this.dedupCache.delete(firstKey)
+    }
+
+    // Apply sample rate
+    const sampleRate = this.config.sampleRate ?? 1.0
+    if (sampleRate < 1.0 && Math.random() >= sampleRate) {
+      if (this.debug) console.debug('ErrorWatch: Event dropped by sampleRate')
+      return
+    }
+
     const event = this.buildEvent(error, options)
 
     if (this.config.beforeSend) {
@@ -264,7 +307,7 @@ export class Client implements ErrorWatchClient {
         }
       }
     } catch (e) {
-      console.warn('ErrorWatch: Failed to send error with replay, falling back', e)
+      if (this.debug) console.warn('ErrorWatch: Failed to send error with replay, falling back', e)
       this.queue.add(event, (evt) =>
         sendEvent(this.config.endpoint, this.config.apiKey, evt, this.config.transport)
       )
@@ -280,6 +323,13 @@ export class Client implements ErrorWatchClient {
   }
 
   captureMessage(message: string, options?: CaptureOptions): void {
+    // Apply sample rate
+    const sampleRate = this.config.sampleRate ?? 1.0
+    if (sampleRate < 1.0 && Math.random() >= sampleRate) {
+      if (this.debug) console.debug('ErrorWatch: Message dropped by sampleRate')
+      return
+    }
+
     const event: ErrorEvent = {
       fingerprint: generateFingerprint(new Error(message)),
       message,
@@ -334,6 +384,11 @@ export class Client implements ErrorWatchClient {
       window.removeEventListener('beforeunload', this.beforeUnloadHandler)
       this.beforeUnloadHandler = null
     }
+    if (this.dedupCleanupInterval) {
+      clearInterval(this.dedupCleanupInterval)
+      this.dedupCleanupInterval = null
+    }
+    this.dedupCache.clear()
   }
 
   private buildEvent(error: Error | unknown, options?: CaptureOptions): ErrorEvent {

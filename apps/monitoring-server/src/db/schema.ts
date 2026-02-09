@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, unique, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, unique, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 
 // ============================================
 // Error Tracking Tables
@@ -23,9 +23,15 @@ export const errorGroups = pgTable("error_groups", {
   // Assignment
   assignedTo: text("assigned_to"),
   assignedAt: timestamp("assigned_at", { withTimezone: true }),
+  // Merge support
+  mergedInto: text("merged_into"),
+  // Snooze support
+  snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+  snoozedBy: text("snoozed_by"),
 }, (table) => ({
   projectLastSeenIdx: index("idx_error_groups_project_last_seen").on(table.projectId, table.lastSeen),
   statusIdx: index("idx_error_groups_status").on(table.status),
+  mergedIntoIdx: index("idx_error_groups_merged_into").on(table.mergedInto),
 }));
 
 export const errorEvents = pgTable("error_events", {
@@ -57,6 +63,8 @@ export const errorEvents = pgTable("error_events", {
   envIdx: index("idx_error_events_env").on(table.env),
   sessionIdx: index("idx_error_events_session").on(table.sessionId),
   releaseIdx: index("idx_error_events_release").on(table.release),
+  // Dedup: prevent exact duplicate events (same fingerprint + project + timestamp)
+  dedupIdx: uniqueIndex("idx_error_events_dedup").on(table.fingerprint, table.projectId, table.createdAt),
 }));
 
 // ============================================
@@ -379,4 +387,24 @@ export const sessionEvents = pgTable("session_events", {
 }, (table) => ({
   sessionTimestampIdx: index("idx_session_events_session").on(table.sessionId, table.timestamp),
   errorEventIdx: index("idx_session_events_error").on(table.errorEventId),
+  // Dedup: prevent duplicate session events (same session + timestamp)
+  sessionDedupIdx: uniqueIndex("idx_session_events_dedup").on(table.sessionId, table.timestamp),
+}));
+
+// ============================================
+// Custom Fingerprint Rules
+// ============================================
+
+export const fingerprintRules = pgTable("fingerprint_rules", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  pattern: text("pattern").notNull(),     // regex pattern to match on error message
+  groupKey: text("group_key").notNull(),   // custom fingerprint key when pattern matches
+  description: text("description"),
+  priority: integer("priority").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (table) => ({
+  projectPriorityIdx: index("idx_fingerprint_rules_project").on(table.projectId, table.priority),
 }));

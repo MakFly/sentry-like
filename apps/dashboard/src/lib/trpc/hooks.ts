@@ -11,6 +11,12 @@ const REFETCH_INTERVAL = 30_000;
 interface GroupsFilter {
   env?: string;
   dateRange?: "24h" | "7d" | "30d" | "90d" | "all";
+  search?: string;
+  status?: "open" | "resolved" | "ignored" | "snoozed";
+  level?: "fatal" | "error" | "warning" | "info" | "debug";
+  sort?: "lastSeen" | "firstSeen" | "count";
+  page?: number;
+  limit?: number;
 }
 
 export const useGroups = (filters?: GroupsFilter) => {
@@ -29,12 +35,11 @@ export const useGroups = (filters?: GroupsFilter) => {
   useEffect(() => {
     if (!query.data) return;
 
-    const currentCount = query.data.length;
+    const total = 'total' in query.data ? (query.data as any).total : (query.data as any[]).length;
     const previousCount = previousCountRef.current;
 
-    // Only show toast if we had previous data and count increased
-    if (previousCount !== null && currentCount > previousCount) {
-      const newCount = currentCount - previousCount;
+    if (previousCount !== null && total > previousCount) {
+      const newCount = total - previousCount;
       toast.info(`${newCount} new error${newCount > 1 ? "s" : ""} detected`, {
         description: "Click to refresh the view",
         action: {
@@ -44,14 +49,29 @@ export const useGroups = (filters?: GroupsFilter) => {
       });
     }
 
-    previousCountRef.current = currentCount;
+    previousCountRef.current = total;
   }, [query.data, query.refetch]);
 
   return {
     ...query,
-    // Combine project context loading + query loading
     isLoading: isProjectLoading || query.isLoading,
   };
+};
+
+export const useBatchUpdateStatus = () => {
+  return trpc.groups.batchUpdateStatus.useMutation();
+};
+
+export const useMergeGroups = () => {
+  return trpc.groups.merge.useMutation();
+};
+
+export const useUnmergeGroup = () => {
+  return trpc.groups.unmerge.useMutation();
+};
+
+export const useSnoozeGroup = () => {
+  return trpc.groups.snooze.useMutation();
 };
 
 export const useGroup = (fingerprint: string) => {

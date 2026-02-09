@@ -1,13 +1,26 @@
 import { fetchAPI } from './client';
 import type { ErrorGroup, EventsResponse, IssueStatus, ReleaseDistribution, GroupsFilter } from './types';
 
-export const getAll = async (filters?: GroupsFilter): Promise<ErrorGroup[]> => {
+export type GroupsResponse = {
+  groups: ErrorGroup[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
+export const getAll = async (filters?: GroupsFilter): Promise<GroupsResponse> => {
   const params = new URLSearchParams();
   if (filters?.env) params.set("env", filters.env);
   if (filters?.dateRange) params.set("dateRange", filters.dateRange);
   if (filters?.projectId) params.set("projectId", filters.projectId);
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.status) params.set("status", filters.status);
+  if (filters?.level) params.set("level", filters.level);
+  if (filters?.sort) params.set("sort", filters.sort);
+  if (filters?.page) params.set("page", String(filters.page));
+  if (filters?.limit) params.set("limit", String(filters.limit));
   const query = params.toString();
-  return fetchAPI<ErrorGroup[]>(`/groups${query ? `?${query}` : ""}`);
+  return fetchAPI<GroupsResponse>(`/groups${query ? `?${query}` : ""}`);
 };
 
 export const getById = async (fingerprint: string): Promise<ErrorGroup | null> => {
@@ -43,3 +56,29 @@ export const getReleases = async (fingerprint: string): Promise<ReleaseDistribut
   return fetchAPI<ReleaseDistribution>(`/groups/${fingerprint}/releases`);
 };
 
+export const batchUpdateStatus = async (fingerprints: string[], status: IssueStatus): Promise<{ updated: number }> => {
+  return fetchAPI<{ updated: number }>(`/groups/batch/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ fingerprints, status }),
+  });
+};
+
+export const merge = async (parentFingerprint: string, childFingerprints: string[]): Promise<{ merged: number }> => {
+  return fetchAPI<{ merged: number }>(`/groups/${parentFingerprint}/merge`, {
+    method: "POST",
+    body: JSON.stringify({ fingerprints: childFingerprints }),
+  });
+};
+
+export const unmerge = async (fingerprint: string): Promise<{ success: boolean }> => {
+  return fetchAPI<{ success: boolean }>(`/groups/${fingerprint}/unmerge`, {
+    method: "POST",
+  });
+};
+
+export const snooze = async (fingerprint: string, until: string): Promise<ErrorGroup> => {
+  return fetchAPI<ErrorGroup>(`/groups/${fingerprint}/snooze`, {
+    method: "PATCH",
+    body: JSON.stringify({ until }),
+  });
+};

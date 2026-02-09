@@ -88,6 +88,8 @@ export interface DataTableProps<TData, TValue> {
   enableRowDragging?: boolean
   onRowDragEnd?: (data: TData[]) => void
   toolbar?: React.ReactNode
+  rowSelection?: Record<string, boolean>
+  onRowSelectionChange?: (selection: Record<string, boolean>) => void
 }
 
 const PAGE_SIZE_OPTIONS = [15, 25, 35, 45, 50] as const
@@ -162,9 +164,21 @@ export function DataTable<TData, TValue>({
   enableRowDragging = false,
   onRowDragEnd,
   toolbar,
+  rowSelection: controlledRowSelection,
+  onRowSelectionChange: controlledOnRowSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [data, setData] = React.useState(() => initialData)
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({})
+  const rowSelection = controlledRowSelection ?? internalRowSelection
+  const setRowSelection = React.useCallback((updaterOrValue: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {
+    const setter = controlledOnRowSelectionChange ?? setInternalRowSelection
+    if (typeof updaterOrValue === 'function') {
+      const currentSelection = controlledRowSelection ?? internalRowSelection
+      setter(updaterOrValue(currentSelection))
+    } else {
+      setter(updaterOrValue)
+    }
+  }, [controlledOnRowSelectionChange, controlledRowSelection, internalRowSelection])
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(

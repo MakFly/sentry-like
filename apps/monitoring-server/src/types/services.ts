@@ -51,7 +51,7 @@ export type InvitationEmailData = {
   expiresIn: string;
 };
 
-export type IssueStatus = "open" | "resolved" | "ignored";
+export type IssueStatus = "open" | "resolved" | "ignored" | "snoozed";
 
 export type PlanType = "free" | "pro" | "team" | "enterprise";
 

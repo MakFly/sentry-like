@@ -26,6 +26,7 @@ final class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultFalse()->end()
+                        ->booleanNode('debug')->defaultFalse()->info('Enable verbose console logging for replay debugging')->end()
                         ->floatNode('sample_rate')
                             ->defaultValue(0.1)
                             ->min(0.0)

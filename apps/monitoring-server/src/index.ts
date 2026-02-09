@@ -40,7 +40,16 @@ const corsOrigin = isProduction
 // 1. Security Headers (first - applies to all responses)
 app.use("*", securityHeaders());
 
-// 2. CORS - SDK endpoints allow all origins (protected by API key)
+// 2. Body size limits for SDK endpoints
+app.use("/api/v1/event", async (c, next) => {
+  const contentLength = parseInt(c.req.header('content-length') || '0', 10);
+  if (contentLength > 5 * 1024 * 1024) {
+    return c.json({ error: 'Payload too large', code: 'PAYLOAD_TOO_LARGE' }, 413);
+  }
+  await next();
+});
+
+// 3. CORS - SDK endpoints allow all origins (protected by API key)
 // Event and replay ingestion endpoints can receive requests from any client domain
 app.use("/api/v1/event", cors({
   origin: "*",

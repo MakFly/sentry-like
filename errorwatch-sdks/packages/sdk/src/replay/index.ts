@@ -25,6 +25,7 @@ export interface SessionInfo {
 
 interface InternalConfig {
   enabled: boolean
+  debug: boolean
   replaysSessionSampleRate: number
   replaysOnErrorSampleRate: number
   maskAllInputs: boolean
@@ -37,6 +38,7 @@ interface InternalConfig {
 
 const DEFAULT_CONFIG: InternalConfig = {
   enabled: true,
+  debug: false,
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1.0,
   maskAllInputs: true,
@@ -189,7 +191,7 @@ export class ReplayCapture {
     })
     this.stopRecording = stopFn || null
 
-    console.log('%c rrweb recording started ', 'background: purple; color: white', this.mode)
+    if (this.config.debug) console.log('%c rrweb recording started ', 'background: purple; color: white', this.mode)
 
     // Setup flush timer ONLY for session mode
     if (withFlushTimer && this.config.flushInterval > 0) {
@@ -245,7 +247,7 @@ export class ReplayCapture {
       this.flush()
     }
 
-    console.log('%c rrweb recording stopped ', 'background: gray; color: white')
+    if (this.config.debug) console.log('%c rrweb recording stopped ', 'background: gray; color: white')
   }
 
   getSessionId(): string {
@@ -313,7 +315,7 @@ export class ReplayCapture {
         await this.onFlushCallback(compressed, this.sessionId)
       } catch (e) {
         this.events = [...eventsToSend, ...this.events]
-        console.warn('ErrorWatch: Failed to flush replay events', e)
+        if (this.config.debug) console.warn('ErrorWatch: Failed to flush replay events', e)
       }
     }
   }

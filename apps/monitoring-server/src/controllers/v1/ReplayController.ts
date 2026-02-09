@@ -5,12 +5,12 @@
 import type { Context } from "hono";
 import type { AuthContext } from "../../types/context";
 import { z } from "zod";
+import { createHash } from "crypto";
 import { db } from "../../db/connection";
 import { replaySessions, sessionEvents, errorGroups, errorEvents } from "../../db/schema";
 import { verifyProjectAccess } from "../../services/project-access";
 import { triggerAlertsForNewError } from "../../services/alerts";
 import { eq, desc, sql, and } from "drizzle-orm";
-import { createHash } from "crypto";
 import logger from "../../logger";
 import { gunzipSync } from "zlib";
 
@@ -901,7 +901,7 @@ export const handleErrorReplay = async (c: Context) => {
 
     // Import queue dynamically to avoid circular dependencies
     const { replayQueue } = await import("../../queue/queues");
-    const { isRedisAvailable } = await import("../../queue/connection");
+    const { isRedisAvailable, redis } = await import("../../queue/connection");
 
     // Check Redis availability
     const redisUp = await isRedisAvailable();
@@ -912,6 +912,21 @@ export const handleErrorReplay = async (c: Context) => {
         503
       );
     }
+
+    // Dedup: check Redis for recent identical replay (10s window)
+    const dedupFingerprint = createHash("sha1")
+      .update(`${projectId}|${input.error.message}|${input.error.file || ""}|${input.error.line || 0}`)
+      .digest("hex");
+    const dedupKey = `dedup:replay:${projectId}:${input.sessionId}:${dedupFingerprint}`;
+    const isDuplicate = await redis.get(dedupKey);
+    if (isDuplicate) {
+      logger.debug("Replay deduplicated", { projectId, sessionId: input.sessionId });
+      return c.json({ success: true, deduplicated: true, sessionId: input.sessionId }, 202);
+    }
+    await redis.setex(dedupKey, 10, "1");
+
+    // Deterministic jobId for BullMQ dedup (10s window)
+    const jobId = `replay:${projectId}:${dedupFingerprint}:${Math.floor(Date.now() / 10000)}`;
 
     // Queue replay for async processing
     await replayQueue.add("process-replay", {
@@ -929,7 +944,7 @@ export const handleErrorReplay = async (c: Context) => {
       userAgent: input.userAgent || null,
       timestamp: input.timestamp,
       release: input.release || null,
-    });
+    }, { jobId });
 
     logger.debug("Replay queued", {
       sessionId: input.sessionId,

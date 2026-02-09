@@ -33,6 +33,7 @@ final class ErrorMonitoringExtension extends Extension
 
         // Replay parameters
         $container->setParameter('error_monitoring.replay.enabled', $config['replay']['enabled']);
+        $container->setParameter('error_monitoring.replay.debug', $config['replay']['debug']);
         $container->setParameter('error_monitoring.replay.sample_rate', $config['replay']['sample_rate']);
     }
 

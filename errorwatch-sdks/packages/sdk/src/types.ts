@@ -18,10 +18,12 @@ export interface SDKConfig {
   apiKey: string
   environment?: string
   release?: string
+  debug?: boolean           // Enable verbose console logging (default: false)
   userId?: string | (() => string)
   beforeSend?: (event: ErrorEvent) => ErrorEvent | null
   maxQueueSize?: number
   flushInterval?: number
+  sampleRate?: number          // 0.0 to 1.0, percentage of events to send (default: 1.0)
 
   // Replay configuration
   replay?: ReplayConfig & { enabled?: boolean }
@@ -35,6 +37,7 @@ export interface SDKConfig {
 
 export interface ReplayConfig {
   enabled?: boolean                   // Enable/disable replay (default: true)
+  debug?: boolean                     // Enable verbose console logging (default: false)
   replaysSessionSampleRate?: number   // Session mode sampling (default: 0)
   replaysOnErrorSampleRate?: number   // Buffer mode sampling (default: 1.0)
   sampleRate?: number                 // Deprecated: use replaysSessionSampleRate

@@ -1,7 +1,7 @@
 import type { Pagination } from './common';
 
 export type ErrorLevel = "fatal" | "error" | "warning" | "info" | "debug";
-export type IssueStatus = "open" | "resolved" | "ignored";
+export type IssueStatus = "open" | "resolved" | "ignored" | "snoozed";
 
 export type ErrorGroup = {
   fingerprint: string;
@@ -58,5 +58,11 @@ export type GroupsFilter = {
   env?: string;
   dateRange?: "24h" | "7d" | "30d" | "90d" | "all";
   projectId?: string;
+  search?: string;
+  status?: "open" | "resolved" | "ignored" | "snoozed";
+  level?: "fatal" | "error" | "warning" | "info" | "debug";
+  sort?: "lastSeen" | "firstSeen" | "count";
+  page?: number;
+  limit?: number;
 };
 

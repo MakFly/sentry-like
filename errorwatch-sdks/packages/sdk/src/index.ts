@@ -41,8 +41,16 @@ let globalClient: Client | null = null
  */
 export function init(config: SDKConfig): Client {
   if (globalClient) {
-    console.warn('ErrorWatch: SDK already initialized. Call close() first to reinitialize.')
+    if (config.debug) console.warn('ErrorWatch: SDK already initialized. Call close() first to reinitialize.')
     return globalClient
+  }
+
+  if (!config.apiKey) {
+    console.error('ErrorWatch: apiKey is required. SDK will not capture events.')
+    return null as any
+  }
+  if (!config.dsn && !config.endpoint) {
+    console.warn('ErrorWatch: No dsn or endpoint configured. Using default: http://localhost:3333')
   }
 
   globalClient = new Client(config)

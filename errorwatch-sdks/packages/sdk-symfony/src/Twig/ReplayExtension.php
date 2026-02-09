@@ -64,6 +64,12 @@ class ReplayExtension extends AbstractExtension
   var config = {$configJson};
   if (!config.enabled || !config.sessionId) return;
 
+  // === Debug logging (silent by default) ===
+  var DEBUG = config.debug === true;
+  function _log() { if (DEBUG) console.log.apply(console, ['[ErrorWatch]'].concat(Array.prototype.slice.call(arguments))); }
+  function _warn() { if (DEBUG) console.warn.apply(console, ['[ErrorWatch]'].concat(Array.prototype.slice.call(arguments))); }
+  function _error() { console.error.apply(console, ['[ErrorWatch]'].concat(Array.prototype.slice.call(arguments))); }
+
   // === Circular Buffer Configuration ===
   var events = [];
   var maxBufferTime = 60000; // Keep last 60 seconds
@@ -83,7 +89,7 @@ class ReplayExtension extends AbstractExtension
       }
       return btoa(binary);
     } catch (e) {
-      console.error('[ErrorWatch] Compression failed:', e);
+      _error('Compression failed:', e);
       return btoa(JSON.stringify(eventsArray));
     }
   }
@@ -96,23 +102,23 @@ class ReplayExtension extends AbstractExtension
 
   // === Flush on Error ONLY (with post-error delay) ===
   function flushOnError(errorContext) {
-    console.log('[ErrorWatch] flushOnError called:', errorContext.message, '| Buffer size:', events.length);
+    _log('flushOnError called:', errorContext.message, '| Buffer size:', events.length);
 
     // If a flush is already pending, skip (we'll capture this error in the delayed flush)
     if (pendingFlush) {
-      console.log('[ErrorWatch] Flush already scheduled, skipping');
+      _log('Flush already scheduled, skipping');
       return;
     }
 
     // Debounce: prevent rapid repeated flushes (min 5 seconds apart)
     var now = Date.now();
     if (now - lastFlushTime < 5000) {
-      console.log('[ErrorWatch] Flush debounced (too soon after last flush, wait', (5000 - (now - lastFlushTime)), 'ms)');
+      _log('Flush debounced (too soon after last flush, wait', (5000 - (now - lastFlushTime)), 'ms)');
       return;
     }
 
     // Schedule flush after delay to capture post-error events
-    console.log('[ErrorWatch] Scheduling flush in', POST_ERROR_DELAY, 'ms to capture post-error events');
+    _log('Scheduling flush in', POST_ERROR_DELAY, 'ms to capture post-error events');
 
     pendingFlush = setTimeout(function() {
       pendingFlush = null;
@@ -120,12 +126,12 @@ class ReplayExtension extends AbstractExtension
 
       pruneBuffer();
       if (events.length === 0) {
-        console.log('[ErrorWatch] No events to flush (buffer empty after prune)');
+        _log('No events to flush (buffer empty after prune)');
         return;
       }
 
       var compressed = compressEvents(events);
-      console.log('[ErrorWatch] Flushing', events.length, 'events on error:', errorContext.message);
+      _log('Flushing', events.length, 'events on error:', errorContext.message);
 
       // Build error object without null values (Zod rejects null for optional fields)
       var errorObj = { message: errorContext.message || 'Unknown error' };
@@ -152,11 +158,11 @@ class ReplayExtension extends AbstractExtension
       })
       .then(function(r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        console.log('[ErrorWatch] Error + replay sent successfully');
+        _log('Error + replay sent successfully');
         return r.json();
       })
       .catch(function(e) {
-        console.error('[ErrorWatch] Failed to send error replay:', e);
+        _error('Failed to send error replay:', e);
         lastFlushTime = 0; // Allow immediate retry on failure
       });
 
@@ -166,20 +172,20 @@ class ReplayExtension extends AbstractExtension
 
   // === Initialize Recording ===
   function initRecording() {
-    console.log('[ErrorWatch] initRecording called, rrweb:', typeof rrweb, 'rrweb.record:', typeof rrweb?.record);
+    _log('initRecording called, rrweb:', typeof rrweb, 'rrweb.record:', typeof rrweb?.record);
 
     if (typeof rrweb === 'undefined' || typeof rrweb.record !== 'function') {
-      console.error('[ErrorWatch] rrweb not loaded');
+      _error('rrweb not loaded');
       return;
     }
 
-    console.log('[ErrorWatch] Recording initialized (error-triggered mode), sessionId:', config.sessionId);
+    _log('Recording initialized (error-triggered mode), sessionId:', config.sessionId);
 
     stopFn = rrweb.record({
       emit: function(event) {
         events.push(event);
         if (events.length <= 3) {
-          console.log('[ErrorWatch] Event recorded, type:', event.type, '| Total:', events.length);
+          _log('Event recorded, type:', event.type, '| Total:', events.length);
         }
 
         // Periodic prune to keep memory bounded
@@ -287,7 +293,7 @@ class ReplayExtension extends AbstractExtension
       } else if (attempts < maxAttempts) {
         setTimeout(check, 100);
       } else {
-        console.error('[ErrorWatch] rrweb failed to load after', attempts, 'attempts');
+        _error('rrweb failed to load after', attempts, 'attempts');
       }
     };
     check();

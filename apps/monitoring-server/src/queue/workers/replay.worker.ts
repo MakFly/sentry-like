@@ -11,6 +11,7 @@ import { alertQueue, type ReplayJobData } from "../queues";
 import { db } from "../../db/connection";
 import { errorGroups, errorEvents, replaySessions, sessionEvents } from "../../db/schema";
 import logger from "../../logger";
+import { scrubPII } from "../../services/scrubber";
 
 const WORKER_CONCURRENCY = parseInt(process.env.REPLAY_WORKER_CONCURRENCY || "5", 10);
 
@@ -106,8 +107,12 @@ async function processReplay(job: Job<ReplayJobData>): Promise<{ fingerprint: st
     const file = error.file || url || "unknown";
     const line = error.line || 0;
 
+    // Scrub PII from error data
+    const scrubbedMessage = scrubPII(error.message);
+    const scrubbedStack = error.stack ? scrubPII(error.stack) : scrubbedMessage;
+
     fingerprint = createHash("sha1")
-      .update(`${error.message}|${file}|${line}`)
+      .update(`${projectId}|${error.message}|${file}|${line}`)
       .digest("hex");
 
     // Upsert error group
@@ -116,7 +121,7 @@ async function processReplay(job: Job<ReplayJobData>): Promise<{ fingerprint: st
       .values({
         fingerprint,
         projectId,
-        message: error.message,
+        message: scrubbedMessage,
         file,
         line,
         level: error.level,
@@ -136,20 +141,28 @@ async function processReplay(job: Job<ReplayJobData>): Promise<{ fingerprint: st
 
     const isNewGroup = result[0]?.count === 1;
 
-    // Create error event (generate ID first)
+    // Create error event (generate ID first, catch unique constraint violation)
     errorEventId = crypto.randomUUID();
-    await db.insert(errorEvents).values({
-      id: errorEventId,
-      fingerprint,
-      projectId,
-      stack: error.stack || error.message,
-      url: url || null,
-      env: "production",
-      level: error.level,
-      sessionId: shouldCaptureReplay && (existingSession || events) ? sessionId : null,
-      release: release || null,
-      createdAt: now,
-    });
+    try {
+      await db.insert(errorEvents).values({
+        id: errorEventId,
+        fingerprint,
+        projectId,
+        stack: scrubbedStack,
+        url: url || null,
+        env: "production",
+        level: error.level,
+        sessionId: shouldCaptureReplay && (existingSession || events) ? sessionId : null,
+        release: release || null,
+        createdAt: now,
+      });
+    } catch (e: any) {
+      if (e?.code === "23505") {
+        logger.debug("Duplicate error event ignored", { fingerprint, projectId });
+        return { fingerprint, sessionCreated: false };
+      }
+      throw e;
+    }
 
     // Queue alert job
     await alertQueue.add("check-alerts", {
@@ -198,16 +211,24 @@ async function processReplay(job: Job<ReplayJobData>): Promise<{ fingerprint: st
       // Continue with defaults
     }
 
-    await db.insert(sessionEvents).values({
-      id: crypto.randomUUID(),
-      sessionId,
-      errorEventId, // Link replay events to specific error (may be null)
-      type: eventType,
-      data: events,
-      timestamp: new Date(timestamp),
-    });
+    try {
+      await db.insert(sessionEvents).values({
+        id: crypto.randomUUID(),
+        sessionId,
+        errorEventId, // Link replay events to specific error (may be null)
+        type: eventType,
+        data: events,
+        timestamp: new Date(timestamp),
+      });
 
-    logger.info("Stored replay events", { sessionId, errorEventId, eventCount, hasErrorEventId: !!errorEventId });
+      logger.info("Stored replay events", { sessionId, errorEventId, eventCount, hasErrorEventId: !!errorEventId });
+    } catch (e: any) {
+      if (e?.code === "23505") {
+        logger.debug("Duplicate session event ignored", { sessionId, errorEventId });
+      } else {
+        throw e;
+      }
+    }
   }
 
   logger.debug("Processed replay", { jobId: job.id, fingerprint, sessionCreated });

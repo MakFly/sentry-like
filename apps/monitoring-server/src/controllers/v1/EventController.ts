@@ -5,11 +5,12 @@
  */
 import type { Context } from "hono";
 import { z } from "zod";
+import { createHash } from "crypto";
 import logger from "../../logger";
 import { canAcceptEvent } from "../../services/quotas";
 import { getProjectPlan } from "../../services/subscriptions";
 import { eventQueue } from "../../queue/queues";
-import { isRedisAvailable } from "../../queue/connection";
+import { isRedisAvailable, redis } from "../../queue/connection";
 import { ProjectSettingsRepository } from "../../repositories/ProjectSettingsRepository";
 
 // === Configuration ===
@@ -77,6 +78,15 @@ export const submit = async (c: Context) => {
       );
     }
 
+    // Apply server-side sample rate
+    if (projectSettings?.sampleRate) {
+      const rate = parseFloat(projectSettings.sampleRate);
+      if (rate < 1.0 && Math.random() >= rate) {
+        logger.debug("Event dropped by sample rate", { projectId, sampleRate: rate });
+        return c.json({ success: true, sampled: false }, 202);
+      }
+    }
+
     // Check quotas (sync - needed before accepting)
     const plan = await getProjectPlan(projectId);
     const quotaCheck = await canAcceptEvent(projectId, plan);
@@ -110,6 +120,18 @@ export const submit = async (c: Context) => {
       );
     }
 
+    // Dedup: check Redis for recent identical event (10s window)
+    const dedupFingerprint = createHash("sha1")
+      .update(`${projectId}|${input.message}|${input.file}|${input.line}`)
+      .digest("hex");
+    const dedupKey = `dedup:evt:${projectId}:${dedupFingerprint}`;
+    const isDuplicate = await redis.get(dedupKey);
+    if (isDuplicate) {
+      logger.debug("Event deduplicated", { projectId, fingerprint: dedupFingerprint });
+      return c.json({ success: true, deduplicated: true }, 202);
+    }
+    await redis.setex(dedupKey, 10, "1");
+
     // Normalize timestamp
     const createdAt =
       input.created_at < 1e12
@@ -118,6 +140,9 @@ export const submit = async (c: Context) => {
 
     // Only link replay for critical errors
     const shouldLinkReplay = ['fatal', 'error'].includes(input.level);
+
+    // Deterministic jobId for BullMQ dedup (10s window)
+    const jobId = `evt:${projectId}:${dedupFingerprint}:${Math.floor(Date.now() / 10000)}`;
 
     // Queue event for async processing (< 5ms)
     await eventQueue.add("process-event", {
@@ -134,7 +159,7 @@ export const submit = async (c: Context) => {
       sessionId: shouldLinkReplay ? (input.session_id || null) : null,
       createdAt: createdAt.toISOString(),
       release: input.release || null,
-    });
+    }, { jobId });
 
     logger.debug("Event queued", {
       projectId,

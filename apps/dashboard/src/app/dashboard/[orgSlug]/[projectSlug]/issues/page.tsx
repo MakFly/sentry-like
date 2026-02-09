@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
-import { useGroups } from "@/lib/trpc/hooks";
+import { useGroups, useBatchUpdateStatus, useMergeGroups, useSnoozeGroup } from "@/lib/trpc/hooks";
 import {
   IssuesHeader,
   SeverityDistributionBar,
@@ -13,6 +13,8 @@ import {
 import { DataTable } from "@/components/ui/data-table";
 import { createIssuesColumns } from "@/components/issues/issues-data-table-columns";
 import type { ErrorLevel } from "@/server/api";
+import type { RowSelectionState } from "@tanstack/react-table";
+import { toast } from "sonner";
 
 type DateRange = "24h" | "7d" | "30d" | "90d" | "all";
 
@@ -21,6 +23,19 @@ interface FiltersState {
   dateRange: DateRange;
   search: string;
   status: string;
+}
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  const timeoutRef = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  if (value !== debouncedValue) {
+    if (timeoutRef[0]) clearTimeout(timeoutRef[0]);
+    timeoutRef[1](setTimeout(() => setDebouncedValue(value), delay));
+  }
+
+  return debouncedValue;
 }
 
 export default function IssuesPage() {
@@ -34,12 +49,36 @@ export default function IssuesPage() {
     status: "all",
   });
   const [levelFilter, setLevelFilter] = useState<ErrorLevel | "all">("all");
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-  const { data: groups, isLoading, error, refetch } = useGroups({
+  const debouncedSearch = useDebounce(filters.search, 300);
+
+  const batchUpdate = useBatchUpdateStatus();
+  const mergeGroups = useMergeGroups();
+  const snoozeGroup = useSnoozeGroup();
+
+  // Pass filters to server
+  const { data: groupsData, isLoading, error, refetch } = useGroups({
     env: filters.env === "all" ? undefined : filters.env,
     dateRange: filters.dateRange === "all" ? undefined : filters.dateRange,
     projectId: currentProjectId || undefined,
+    search: debouncedSearch || undefined,
+    status: filters.status === "all" ? undefined : filters.status as any,
+    level: levelFilter === "all" ? undefined : levelFilter,
   });
+
+  // Handle both old format (array) and new format ({ groups, total, ... })
+  const groups = useMemo(() => {
+    if (!groupsData) return [];
+    if (Array.isArray(groupsData)) return groupsData;
+    return (groupsData as any).groups || [];
+  }, [groupsData]);
+
+  const totalSignals = useMemo(() => {
+    if (!groupsData) return 0;
+    if (Array.isArray(groupsData)) return groupsData.length;
+    return (groupsData as any).total || 0;
+  }, [groupsData]);
 
   const hasActiveFilters =
     filters.env !== "all" ||
@@ -48,54 +87,17 @@ export default function IssuesPage() {
     filters.status !== "all" ||
     levelFilter !== "all";
 
-  const filteredGroups = useMemo(() => {
-    if (!groups) return [];
-
-    let result = groups;
-
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      result = result.filter(
-        (g) =>
-          g.message.toLowerCase().includes(search) ||
-          g.file.toLowerCase().includes(search)
-      );
-    }
-
-    if (levelFilter !== "all") {
-      result = result.filter((g) => g.level === levelFilter);
-    }
-
-    if (filters.status !== "all") {
-      result = result.filter((g) => g.status === filters.status);
-    }
-
-    return result;
-  }, [groups, filters.search, levelFilter, filters.status]);
-
   const severityStats = useMemo(() => {
     if (!groups) return { fatal: 0, error: 0, warning: 0, info: 0, debug: 0 };
 
-    let filtered = groups;
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (g) =>
-          g.message.toLowerCase().includes(search) ||
-          g.file.toLowerCase().includes(search)
-      );
-    }
-
     return {
-      fatal: filtered.filter((g) => g.level === "fatal").length,
-      error: filtered.filter((g) => g.level === "error").length,
-      warning: filtered.filter((g) => g.level === "warning").length,
-      info: filtered.filter((g) => g.level === "info").length,
-      debug: filtered.filter((g) => g.level === "debug").length,
+      fatal: groups.filter((g: any) => g.level === "fatal").length,
+      error: groups.filter((g: any) => g.level === "error").length,
+      warning: groups.filter((g: any) => g.level === "warning").length,
+      info: groups.filter((g: any) => g.level === "info").length,
+      debug: groups.filter((g: any) => g.level === "debug").length,
     };
-  }, [groups, filters.search]);
-
-  const totalSignals = groups?.length || 0;
+  }, [groups]);
 
   const handleClearFilters = () => {
     setFilters({
@@ -108,9 +110,41 @@ export default function IssuesPage() {
   };
 
   const maxCount = useMemo(() => {
-    if (!filteredGroups.length) return 0
-    return Math.max(...filteredGroups.map((g) => g.count))
-  }, [filteredGroups])
+    if (!groups.length) return 0;
+    return Math.max(...groups.map((g: any) => g.count));
+  }, [groups]);
+
+  const selectedFingerprints = useMemo(() => {
+    return Object.keys(rowSelection).filter((key) => rowSelection[key]);
+  }, [rowSelection]);
+
+  const handleBulkAction = useCallback(
+    async (status: "open" | "resolved" | "ignored") => {
+      if (selectedFingerprints.length === 0) return;
+      try {
+        await batchUpdate.mutateAsync({ fingerprints: selectedFingerprints, status });
+        toast.success(`${selectedFingerprints.length} issue(s) updated to ${status}`);
+        setRowSelection({});
+        refetch();
+      } catch {
+        toast.error("Failed to update issues");
+      }
+    },
+    [selectedFingerprints, batchUpdate, refetch]
+  );
+
+  const handleMerge = useCallback(async () => {
+    if (selectedFingerprints.length < 2) return;
+    try {
+      const [parent, ...children] = selectedFingerprints;
+      await mergeGroups.mutateAsync({ parentFingerprint: parent, childFingerprints: children });
+      toast.success(`Merged ${children.length} issue(s) into 1`);
+      setRowSelection({});
+      refetch();
+    } catch {
+      toast.error("Failed to merge issues");
+    }
+  }, [selectedFingerprints, mergeGroups, refetch]);
 
   const columns = useMemo(
     () => createIssuesColumns({ orgSlug: currentOrgSlug || "", projectSlug: currentProjectSlug || "", maxCount, onStatusChange: refetch }),
@@ -154,8 +188,46 @@ export default function IssuesPage() {
         className="mb-6"
       />
 
+      {/* Bulk action toolbar */}
+      {selectedFingerprints.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-muted/50 px-4 py-2 text-sm">
+          <span className="font-medium">{selectedFingerprints.length} selected</span>
+          <span className="text-muted-foreground">|</span>
+          <button
+            onClick={() => handleBulkAction("resolved")}
+            className="text-green-600 hover:underline"
+            disabled={batchUpdate.isPending}
+          >
+            Resolve
+          </button>
+          <button
+            onClick={() => handleBulkAction("ignored")}
+            className="text-yellow-600 hover:underline"
+            disabled={batchUpdate.isPending}
+          >
+            Ignore
+          </button>
+          <button
+            onClick={() => handleBulkAction("open")}
+            className="text-blue-600 hover:underline"
+            disabled={batchUpdate.isPending}
+          >
+            Reopen
+          </button>
+          {selectedFingerprints.length >= 2 && (
+            <button
+              onClick={handleMerge}
+              className="text-purple-600 hover:underline"
+              disabled={mergeGroups.isPending}
+            >
+              Merge
+            </button>
+          )}
+        </div>
+      )}
+
       <DataTable
-        data={filteredGroups}
+        data={groups}
         columns={columns}
         isLoading={isLoading}
         showSearch={false}
@@ -163,7 +235,9 @@ export default function IssuesPage() {
         enableRowSelection
         pageSize={15}
         className="w-full"
-        getRowId={(group) => group.fingerprint}
+        getRowId={(group: any) => group.fingerprint}
+        onRowSelectionChange={setRowSelection}
+        rowSelection={rowSelection}
         emptyMessage={
           hasActiveFilters
             ? "No matching signals found. Try adjusting your filters."

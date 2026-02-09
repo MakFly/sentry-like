@@ -132,6 +132,18 @@ export async function sendEvent(
           break
         }
 
+        // Respect Retry-After header from server
+        if (response.status === 429 && attempt < maxRetries) {
+          const retryAfter = response.headers.get('Retry-After')
+          if (retryAfter) {
+            const delaySeconds = parseInt(retryAfter, 10)
+            if (!isNaN(delaySeconds)) {
+              await sleep(delaySeconds * 1000)
+              continue
+            }
+          }
+        }
+
         if (attempt < maxRetries) {
           await sleep(baseDelay * Math.pow(2, attempt))
         }

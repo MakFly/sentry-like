@@ -49,6 +49,12 @@ const groupsRouter = router({
         env: z.string().optional(),
         dateRange: z.enum(["24h", "7d", "30d", "90d", "all"]).optional(),
         projectId: z.string().uuid().optional(),
+        search: z.string().optional(),
+        status: z.enum(["open", "resolved", "ignored", "snoozed"]).optional(),
+        level: z.enum(["fatal", "error", "warning", "info", "debug"]).optional(),
+        sort: z.enum(["lastSeen", "firstSeen", "count"]).optional(),
+        page: z.number().int().positive().optional(),
+        limit: z.number().int().positive().max(100).optional(),
       }).optional()
     )
     .query(async ({ input }) => {
@@ -99,6 +105,39 @@ const groupsRouter = router({
     .input(z.object({ fingerprint: z.string() }))
     .query(async ({ input }) => {
       return api.groups.getReleases(input.fingerprint);
+    }),
+
+  batchUpdateStatus: protectedProcedure
+    .input(z.object({
+      fingerprints: z.array(z.string()).min(1).max(100),
+      status: z.enum(["open", "resolved", "ignored"]),
+    }))
+    .mutation(async ({ input }) => {
+      return api.groups.batchUpdateStatus(input.fingerprints, input.status);
+    }),
+
+  merge: protectedProcedure
+    .input(z.object({
+      parentFingerprint: z.string(),
+      childFingerprints: z.array(z.string()).min(1).max(50),
+    }))
+    .mutation(async ({ input }) => {
+      return api.groups.merge(input.parentFingerprint, input.childFingerprints);
+    }),
+
+  unmerge: protectedProcedure
+    .input(z.object({ fingerprint: z.string() }))
+    .mutation(async ({ input }) => {
+      return api.groups.unmerge(input.fingerprint);
+    }),
+
+  snooze: protectedProcedure
+    .input(z.object({
+      fingerprint: z.string(),
+      until: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      return api.groups.snooze(input.fingerprint, input.until);
     }),
 });
 

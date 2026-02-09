@@ -4,14 +4,35 @@
  */
 import { Worker, Job } from "bullmq";
 import { createHash } from "crypto";
-import { eq, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { redisConnection } from "../connection";
 import { alertQueue, type EventJobData } from "../queues";
 import { db } from "../../db/connection";
-import { errorGroups, errorEvents } from "../../db/schema";
+import { errorGroups, errorEvents, fingerprintRules } from "../../db/schema";
 import logger from "../../logger";
+import { scrubPII } from "../../services/scrubber";
 
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "10", 10);
+
+// In-memory cache for fingerprint rules (per project, TTL 60s)
+const rulesCache = new Map<string, { rules: Array<{ pattern: string; groupKey: string }>; cachedAt: number }>();
+const RULES_CACHE_TTL = 60_000;
+
+async function getProjectRules(projectId: string): Promise<Array<{ pattern: string; groupKey: string }>> {
+  const cached = rulesCache.get(projectId);
+  if (cached && Date.now() - cached.cachedAt < RULES_CACHE_TTL) {
+    return cached.rules;
+  }
+
+  const rules = await db
+    .select({ pattern: fingerprintRules.pattern, groupKey: fingerprintRules.groupKey })
+    .from(fingerprintRules)
+    .where(eq(fingerprintRules.projectId, projectId))
+    .orderBy(desc(fingerprintRules.priority));
+
+  rulesCache.set(projectId, { rules, cachedAt: Date.now() });
+  return rules;
+}
 
 /**
  * Extract error type from message
@@ -56,13 +77,14 @@ function parseStackFrames(stack: string, maxFrames = 5): string[] {
  * Includes: error type, file, line, column, stack depth, and top frames
  */
 function generateFingerprint(data: {
+  projectId: string;
   message: string;
   file: string;
   line: number;
   stack: string;
   column?: number;
 }): string {
-  const { message, file, line, stack, column } = data;
+  const { projectId, message, file, line, stack, column } = data;
 
   // Extract error type from message
   const errorType = extractErrorType(message);
@@ -75,8 +97,9 @@ function generateFingerprint(data: {
   // Normalize file path (remove query strings, hashes)
   const normalizedFile = file.split("?")[0].split("#")[0];
 
-  // Build fingerprint components
+  // Build fingerprint components (projectId included for cross-project dedup)
   const components = [
+    projectId,
     errorType,
     normalizedFile,
     String(line),
@@ -112,8 +135,29 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     createdAt,
   } = job.data;
 
-  // Generate robust fingerprint for deduplication
-  const fingerprint = generateFingerprint({ message, file, line, stack, column });
+  // Scrub PII from message and stack
+  const scrubbedMessage = scrubPII(message);
+  const scrubbedStack = scrubPII(stack);
+
+  // Check custom fingerprint rules before generating default fingerprint
+  let fingerprint: string | null = null;
+  const rules = await getProjectRules(projectId);
+  for (const rule of rules) {
+    try {
+      if (new RegExp(rule.pattern).test(message)) {
+        fingerprint = createHash("sha1").update(`${projectId}|custom|${rule.groupKey}`).digest("hex");
+        logger.debug("Custom fingerprint rule matched", { projectId, pattern: rule.pattern, groupKey: rule.groupKey });
+        break;
+      }
+    } catch {
+      // Invalid regex, skip
+    }
+  }
+
+  // Fallback to default fingerprint generation
+  if (!fingerprint) {
+    fingerprint = generateFingerprint({ projectId, message, file, line, stack, column });
+  }
 
   const eventCreatedAt = new Date(createdAt);
   const now = new Date();
@@ -128,7 +172,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     .values({
       fingerprint,
       projectId,
-      message,
+      message: scrubbedMessage,
       file,
       line,
       statusCode,
@@ -154,21 +198,29 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
 
   const isNewGroup = result[0]?.count === 1;
 
-  // Insert event record
-  await db.insert(errorEvents).values({
-    id: crypto.randomUUID(),
-    fingerprint,
-    projectId,
-    stack,
-    url,
-    env,
-    statusCode,
-    level,
-    breadcrumbs,
-    sessionId,
-    release,
-    createdAt: eventCreatedAt,
-  });
+  // Insert event record (catch unique constraint violation for dedup)
+  try {
+    await db.insert(errorEvents).values({
+      id: crypto.randomUUID(),
+      fingerprint,
+      projectId,
+      stack: scrubbedStack,
+      url,
+      env,
+      statusCode,
+      level,
+      breadcrumbs,
+      sessionId,
+      release,
+      createdAt: eventCreatedAt,
+    });
+  } catch (e: any) {
+    if (e?.code === "23505") {
+      logger.debug("Duplicate event ignored", { fingerprint, projectId });
+      return { fingerprint, isNewGroup: false };
+    }
+    throw e;
+  }
 
   // Queue alert job for notification processing
   if (projectId) {

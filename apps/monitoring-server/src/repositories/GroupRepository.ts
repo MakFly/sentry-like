@@ -1,11 +1,14 @@
-import { eq, gt, desc, inArray, and, sql } from "drizzle-orm";
+import { eq, gt, desc, asc, inArray, and, sql, ilike, or } from "drizzle-orm";
 import { db } from "../db/connection";
 import { errorGroups, errorEvents } from "../db/schema";
 
 export const GroupRepository = {
-  findAll: async (filters?: { dateRange?: string; env?: string }, projectId?: string) => {
+  findAll: async (filters?: { dateRange?: string; env?: string; search?: string; status?: string; level?: string; sort?: string; page?: number; limit?: number }, projectId?: string) => {
     const now = Date.now();
     let startDate = new Date(0);
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 50;
+    const offset = (page - 1) * limit;
 
     if (filters?.dateRange && filters.dateRange !== "all") {
       const hours =
@@ -19,8 +22,46 @@ export const GroupRepository = {
       startDate = new Date(now - hours * 60 * 60 * 1000);
     }
 
-    const projectFilter = projectId ? eq(errorGroups.projectId, projectId) : undefined;
+    // Build conditions array
+    const conditions: any[] = [];
 
+    if (projectId) {
+      conditions.push(eq(errorGroups.projectId, projectId));
+    }
+
+    conditions.push(gt(errorGroups.lastSeen, startDate));
+
+    // Exclude merged groups (they are absorbed into parent)
+    conditions.push(sql`${errorGroups.mergedInto} IS NULL`);
+
+    // Auto-reopen snoozed issues past their snooze time
+    await db.execute(sql`
+      UPDATE error_groups SET status = 'open', snoozed_until = NULL, snoozed_by = NULL
+      WHERE status = 'snoozed' AND snoozed_until IS NOT NULL AND snoozed_until < NOW()
+    `);
+
+    // Search filter
+    if (filters?.search) {
+      conditions.push(
+        or(
+          ilike(errorGroups.message, `%${filters.search}%`),
+          ilike(errorGroups.file, `%${filters.search}%`)
+        )
+      );
+    }
+
+    // Status filter
+    if (filters?.status && filters.status !== "all") {
+      conditions.push(eq(errorGroups.status, filters.status));
+    }
+
+    // Level filter
+    if (filters?.level && filters.level !== "all") {
+      conditions.push(eq(errorGroups.level, filters.level));
+    }
+
+    // Environment filter via error_events join
+    let envFingerprints: string[] | null = null;
     if (filters?.env && filters.env !== "all") {
       const eventEnvFilter = projectId
         ? and(eq(errorEvents.env, filters.env), eq(errorEvents.projectId, projectId))
@@ -32,92 +73,43 @@ export const GroupRepository = {
         .where(eventEnvFilter)
         .groupBy(errorEvents.fingerprint);
 
-      const distinctFingerprints = eventsWithEnv.map((row) => row.fingerprint);
+      envFingerprints = eventsWithEnv.map((row) => row.fingerprint);
 
-      if (distinctFingerprints.length === 0) {
-        return [];
+      if (envFingerprints.length === 0) {
+        return { groups: [], total: 0, page, totalPages: 0 };
       }
 
-      const groups = await db
-        .select()
-        .from(errorGroups)
-        .where(
-          and(
-            inArray(errorGroups.fingerprint, distinctFingerprints),
-            projectFilter,
-            gt(errorGroups.lastSeen, startDate)
-          )
-        )
-        .orderBy(desc(errorGroups.lastSeen));
-
-      const fingerprints = groups.map((g) => g.fingerprint);
-
-      const replayCounts = await db
-        .select({
-          fingerprint: errorEvents.fingerprint,
-          count: sql<number>`count(*)`.as("count"),
-        })
-        .from(errorEvents)
-        .where(
-          and(
-            inArray(errorEvents.fingerprint, fingerprints),
-            sql`${errorEvents.sessionId} IS NOT NULL`
-          )
-        )
-        .groupBy(errorEvents.fingerprint)
-        ;
-
-      // Get latest replay info for each fingerprint
-      const latestReplayEvents = await db
-        .select({
-          fingerprint: errorEvents.fingerprint,
-          sessionId: errorEvents.sessionId,
-          errorEventId: errorEvents.id,
-          createdAt: errorEvents.createdAt,
-        })
-        .from(errorEvents)
-        .where(
-          and(
-            inArray(errorEvents.fingerprint, fingerprints),
-            sql`${errorEvents.sessionId} IS NOT NULL`
-          )
-        )
-        .orderBy(desc(errorEvents.createdAt))
-        ;
-
-      const latestReplayMap = new Map<string, { sessionId: string; errorEventId: string; createdAt: Date }>();
-      for (const event of latestReplayEvents) {
-        if (!latestReplayMap.has(event.fingerprint) && event.sessionId) {
-          latestReplayMap.set(event.fingerprint, {
-            sessionId: event.sessionId,
-            errorEventId: event.errorEventId,
-            createdAt: event.createdAt,
-          });
-        }
-      }
-
-      const replayCountMap = new Map(replayCounts.map((r) => [r.fingerprint, r.count]));
-
-      return groups.map((group) => {
-        const replayInfo = latestReplayMap.get(group.fingerprint);
-        return {
-          ...group,
-          hasReplay: (replayCountMap.get(group.fingerprint) ?? 0) > 0,
-          latestReplaySessionId: replayInfo?.sessionId ?? null,
-          latestReplayEventId: replayInfo?.errorEventId ?? null,
-          latestReplayCreatedAt: replayInfo?.createdAt ?? null,
-        };
-      });
+      conditions.push(inArray(errorGroups.fingerprint, envFingerprints));
     }
 
-    const whereCondition = projectFilter
-      ? and(projectFilter, gt(errorGroups.lastSeen, startDate))
-      : gt(errorGroups.lastSeen, startDate);
+    const whereClause = and(...conditions);
 
-    const groups = await db.select().from(errorGroups).where(whereCondition).orderBy(desc(errorGroups.lastSeen));
+    // Sort
+    const sortColumn = filters?.sort === "firstSeen" ? errorGroups.firstSeen
+      : filters?.sort === "count" ? errorGroups.count
+      : errorGroups.lastSeen;
+    const orderBy = desc(sortColumn);
+
+    // Get total count
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(errorGroups)
+      .where(whereClause);
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    // Get paginated groups
+    const groups = await db
+      .select()
+      .from(errorGroups)
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
 
     const fingerprints = groups.map((g) => g.fingerprint);
 
+    // Get replay info
     const replayCounts = fingerprints.length > 0
       ? await db
         .select({
@@ -132,10 +124,8 @@ export const GroupRepository = {
           )
         )
         .groupBy(errorEvents.fingerprint)
-        
       : [];
 
-    // Get latest replay info for each fingerprint (for direct replay links)
     const latestReplayEvents = fingerprints.length > 0
       ? await db
         .select({
@@ -152,10 +142,8 @@ export const GroupRepository = {
           )
         )
         .orderBy(desc(errorEvents.createdAt))
-        
       : [];
 
-    // Keep only the latest for each fingerprint
     const latestReplayMap = new Map<string, { sessionId: string; errorEventId: string; createdAt: Date }>();
     for (const event of latestReplayEvents) {
       if (!latestReplayMap.has(event.fingerprint) && event.sessionId) {
@@ -169,7 +157,7 @@ export const GroupRepository = {
 
     const replayCountMap = new Map(replayCounts.map((r) => [r.fingerprint, r.count]));
 
-    return groups.map((group) => {
+    const enrichedGroups = groups.map((group) => {
       const replayInfo = latestReplayMap.get(group.fingerprint);
       return {
         ...group,
@@ -179,6 +167,8 @@ export const GroupRepository = {
         latestReplayCreatedAt: replayInfo?.createdAt ?? null,
       };
     });
+
+    return { groups: enrichedGroups, total, page, totalPages };
   },
 
   findByFingerprint: (fingerprint: string) =>
@@ -204,6 +194,68 @@ export const GroupRepository = {
       })
       .where(eq(errorGroups.fingerprint, fingerprint))
       .returning(),
+
+  batchUpdateStatus: async (fingerprints: string[], status: string, userId?: string) => {
+    const result = await db
+      .update(errorGroups)
+      .set({
+        status,
+        resolvedAt: status === "resolved" ? new Date() : null,
+        resolvedBy: status === "resolved" ? userId || null : null,
+      })
+      .where(inArray(errorGroups.fingerprint, fingerprints))
+      .returning();
+    return result.length;
+  },
+
+  merge: async (parentFingerprint: string, childFingerprints: string[]) => {
+    // Set mergedInto on children
+    await db
+      .update(errorGroups)
+      .set({ mergedInto: parentFingerprint })
+      .where(inArray(errorGroups.fingerprint, childFingerprints));
+
+    // Sum up child counts into parent
+    const children = await db
+      .select({ count: errorGroups.count })
+      .from(errorGroups)
+      .where(inArray(errorGroups.fingerprint, childFingerprints));
+
+    const totalChildCount = children.reduce((sum, c) => sum + c.count, 0);
+
+    await db
+      .update(errorGroups)
+      .set({ count: sql`${errorGroups.count} + ${totalChildCount}` })
+      .where(eq(errorGroups.fingerprint, parentFingerprint));
+
+    return childFingerprints.length;
+  },
+
+  unmerge: async (fingerprint: string) => {
+    await db
+      .update(errorGroups)
+      .set({ mergedInto: null })
+      .where(eq(errorGroups.fingerprint, fingerprint));
+  },
+
+  getMergedChildren: async (fingerprint: string) => {
+    return db
+      .select()
+      .from(errorGroups)
+      .where(eq(errorGroups.mergedInto, fingerprint));
+  },
+
+  snooze: async (fingerprint: string, until: Date, userId?: string) => {
+    return db
+      .update(errorGroups)
+      .set({
+        status: "snoozed",
+        snoozedUntil: until,
+        snoozedBy: userId || null,
+      })
+      .where(eq(errorGroups.fingerprint, fingerprint))
+      .returning();
+  },
 
   getReleaseDistribution: async (fingerprint: string) => {
     const releases = await db

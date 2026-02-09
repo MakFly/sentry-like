@@ -62,6 +62,10 @@ export const api = {
     updateStatus: groupsApi.updateStatus,
     updateAssignment: groupsApi.updateAssignment,
     getReleases: groupsApi.getReleases,
+    batchUpdateStatus: groupsApi.batchUpdateStatus,
+    merge: groupsApi.merge,
+    unmerge: groupsApi.unmerge,
+    snooze: groupsApi.snooze,
   },
   stats: {
     getGlobal: statsApi.getGlobal,
