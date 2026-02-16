@@ -11,6 +11,7 @@ import { db } from "../../db/connection";
 import { errorGroups, errorEvents, fingerprintRules } from "../../db/schema";
 import logger from "../../logger";
 import { scrubPII } from "../../services/scrubber";
+import { cache, CACHE_KEYS } from "../../utils/cache";
 
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "10", 10);
 
@@ -231,6 +232,14 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
       level,
       message,
     });
+
+    // Invalidate stats cache for this project
+    await cache.delete(CACHE_KEYS.stats.global(projectId));
+    await cache.delete(CACHE_KEYS.stats.dashboard(projectId));
+    await cache.deletePattern(`stats:timeline:*:${projectId}`);
+    await cache.delete(CACHE_KEYS.stats.envBreakdown(projectId));
+    // Invalidate groups list cache
+    await cache.deletePattern(`groups:list:${projectId}:*`);
   }
 
   logger.debug("Processed event", {

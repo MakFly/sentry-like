@@ -2,8 +2,14 @@ import { sql, gte, eq, count, and, desc } from "drizzle-orm";
 import { db } from "../db/connection";
 import { errorGroups, errorEvents } from "../db/schema";
 import type { Stats, DashboardStats, TimelinePoint, EnvBreakdown, TimelineRange } from "../types/services";
+import { cache, CACHE_KEYS, CACHE_TTL } from "../utils/cache";
 
 export const getGlobal = async (projectId?: string): Promise<Stats> => {
+  const cacheKey = CACHE_KEYS.stats.global(projectId);
+  
+  const cached = await cache.get<Stats>(cacheKey);
+  if (cached) return cached;
+
   const projectFilter = projectId ? eq(errorGroups.projectId, projectId) : undefined;
 
   const [groupsResult, eventsResult] = await Promise.all([
@@ -16,14 +22,22 @@ export const getGlobal = async (projectId?: string): Promise<Stats> => {
   const totalGroups = groupsResult[0]?.count || 0;
   const totalEvents = Number(eventsResult[0]?.total) || 0;
 
-  return {
+  const result: Stats = {
     totalGroups,
     totalEvents,
     avgEventsPerGroup: totalGroups > 0 ? totalEvents / totalGroups : 0,
   };
+
+  await cache.set(cacheKey, result, { ttl: CACHE_TTL.STATS_GLOBAL });
+  return result;
 };
 
 export const getDashboardStats = async (projectId?: string): Promise<DashboardStats> => {
+  const cacheKey = CACHE_KEYS.stats.dashboard(projectId);
+  
+  const cached = await cache.get<DashboardStats>(cacheKey);
+  if (cached) return cached;
+
   const groupsProjectFilter = projectId ? eq(errorGroups.projectId, projectId) : undefined;
   const eventsProjectFilter = projectId ? eq(errorEvents.projectId, projectId) : undefined;
 
@@ -52,7 +66,7 @@ export const getDashboardStats = async (projectId?: string): Promise<DashboardSt
   const totalGroups = totalGroupsResult[0]?.count || 0;
   const totalEvents = Number(totalEventsResult[0]?.total) || 0;
 
-  return {
+  const result: DashboardStats = {
     totalGroups,
     totalEvents,
     avgEventsPerGroup: totalGroups > 0 ? totalEvents / totalGroups : 0,
@@ -60,12 +74,20 @@ export const getDashboardStats = async (projectId?: string): Promise<DashboardSt
     newIssues24h: newIssues24hResult[0]?.count || 0,
     avgResponse: "—",
   };
+
+  await cache.set(cacheKey, result, { ttl: CACHE_TTL.STATS_DASHBOARD });
+  return result;
 };
 
 export const getTimeline = async (
   range: TimelineRange = "30d",
   projectId?: string
 ): Promise<TimelinePoint[]> => {
+  const cacheKey = CACHE_KEYS.stats.timeline(range, projectId);
+  
+  const cached = await cache.get<TimelinePoint[]>(cacheKey);
+  if (cached) return cached;
+
   const now = new Date();
   let daysBack: number;
   let dateFormat: string;
@@ -130,8 +152,10 @@ export const getTimeline = async (
     dateMap.set(dateKey, { date: dateKey, events: 0, groups: 0 });
   }
 
-  // Merge query results (db.execute returns rows array)
-  const eventsRows = eventsTimeline.rows || eventsTimeline;
+  // Merge query results (db.execute returns rows property)
+  // @ts-expect-error - Drizzle execute return type compatibility
+  const eventsRowsRaw = eventsTimeline.rows ? eventsTimeline.rows : eventsTimeline;
+  const eventsRows = Array.isArray(eventsRowsRaw) ? eventsRowsRaw : [];
   for (const row of eventsRows) {
     const existing = dateMap.get(row.date);
     if (existing) {
@@ -139,7 +163,9 @@ export const getTimeline = async (
     }
   }
 
-  const groupsRows = groupsTimeline.rows || groupsTimeline;
+  // @ts-expect-error - Drizzle execute return type compatibility
+  const groupsRowsRaw = groupsTimeline.rows ? groupsTimeline.rows : groupsTimeline;
+  const groupsRows = Array.isArray(groupsRowsRaw) ? groupsRowsRaw : [];
   for (const row of groupsRows) {
     const existing = dateMap.get(row.date);
     if (existing) {
@@ -147,10 +173,17 @@ export const getTimeline = async (
     }
   }
 
-  return Array.from(dateMap.values());
+  const result = Array.from(dateMap.values());
+  await cache.set(cacheKey, result, { ttl: CACHE_TTL.STATS_TIMELINE });
+  return result;
 };
 
 export const getEnvBreakdown = async (projectId?: string): Promise<EnvBreakdown[]> => {
+  const cacheKey = CACHE_KEYS.stats.envBreakdown(projectId);
+  
+  const cached = await cache.get<EnvBreakdown[]>(cacheKey);
+  if (cached) return cached;
+
   const conditions = projectId ? eq(errorEvents.projectId, projectId) : undefined;
 
   const result = await db
@@ -163,5 +196,6 @@ export const getEnvBreakdown = async (projectId?: string): Promise<EnvBreakdown[
     .groupBy(errorEvents.env)
     .orderBy(desc(count()));
 
+  await cache.set(cacheKey, result, { ttl: CACHE_TTL.STATS_ENV_BREAKDOWN });
   return result;
 };

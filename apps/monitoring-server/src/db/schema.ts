@@ -32,6 +32,10 @@ export const errorGroups = pgTable("error_groups", {
   projectLastSeenIdx: index("idx_error_groups_project_last_seen").on(table.projectId, table.lastSeen),
   statusIdx: index("idx_error_groups_status").on(table.status),
   mergedIntoIdx: index("idx_error_groups_merged_into").on(table.mergedInto),
+  // Composite indexes for list queries (status + level + lastSeen)
+  projectStatusLevelIdx: index("idx_error_groups_project_status_level").on(table.projectId, table.status, table.level, table.lastSeen),
+  // Index for searching by message/file (partial for performance)
+  messageIdx: index("idx_error_groups_message").on(table.message),
 }));
 
 export const errorEvents = pgTable("error_events", {
@@ -63,6 +67,9 @@ export const errorEvents = pgTable("error_events", {
   envIdx: index("idx_error_events_env").on(table.env),
   sessionIdx: index("idx_error_events_session").on(table.sessionId),
   releaseIdx: index("idx_error_events_release").on(table.release),
+  // Composite indexes for complex queries
+  projectFingerprintIdx: index("idx_error_events_project_fingerprint").on(table.projectId, table.fingerprint),
+  projectEnvIdx: index("idx_error_events_project_env").on(table.projectId, table.env),
   // Dedup: prevent exact duplicate events (same fingerprint + project + timestamp)
   dedupIdx: uniqueIndex("idx_error_events_dedup").on(table.fingerprint, table.projectId, table.createdAt),
 }));
