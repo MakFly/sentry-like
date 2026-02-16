@@ -1,7 +1,7 @@
 {
   "name": "errorwatch",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "docker compose -f docker-compose.dev.yml up -d && turbo run dev",
     "dev:no-docker": "turbo run dev",

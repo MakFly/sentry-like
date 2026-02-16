@@ -23,8 +23,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |-----------|----------|------|-------|
 | Monitoring Server | `apps/monitoring-server/` | 3333 | Hono.js 4, Drizzle ORM, PostgreSQL, BetterAuth |
 | Dashboard | `apps/dashboard/` | 3001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
-| SDK Universal | `packages/errorwatch-sdk/` | - | TypeScript |
-| Symfony Bundle | `packages/errorwatch-sdk-symfony/` | - | PHP 8.1+, Symfony 6.0+ |
+| Worker | `apps/worker/` | - | BullMQ, Redis, Hono.js |
+| SDK Universal | `packages/sdk/` | - | TypeScript |
+| SDK React | `packages/sdk/` (via exports) | - | React 18+ / 19+ |
+| SDK Vue | `packages/sdk/` (via exports) | - | Vue 3+ |
+| Shared Types | `packages/shared/` | - | TypeScript, Zod |
+| Symfony Bundle | `packages/sdk-symfony/` | - | PHP 8.1+, Symfony 6.0+ |
 
 ### Local URLs
 
@@ -37,6 +41,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Structure
 
+```
+sentry-like/
+├── apps/
+│   ├── dashboard/                 # Next.js 16 frontend
+│   ├── monitoring-server/         # Hono.js API server
+│   └── worker/                    # BullMQ background worker
+├── packages/
+│   ├── sdk/                       # Universal SDK (Browser + React + Vue)
+│   ├── shared/                    # Shared types & Zod schemas
+│   └── sdk-symfony/               # PHP Symfony Bundle
+├── examples/                      # Integration examples
+│   ├── react-vite/
+│   ├── vue-vite/
+│   └── example-symfony/
+├── docs/                          # Documentation
+├── docker-compose.yml             # Production (PostgreSQL + Redis)
+├── docker-compose.dev.yml         # Development services
+├── package.json                   # Workspaces root
+├── turbo.json                     # Turborepo config
+├── tsconfig.base.json             # Base TypeScript config
+├── Makefile                       # Dev commands
+└── CLAUDE.md
 ```
 sentry-like/
 ├── apps/
@@ -106,6 +132,25 @@ bun run dev:standalone  # Port 3333
 
 ---
 
+## Worker (`apps/worker/`)
+
+### Purpose
+
+Background job processing using BullMQ:
+- **Events** - Process error events from SDKs
+- **Replays** - Process session replay data
+- **Alerts** - Send notifications (email, Slack, webhooks)
+
+### Commands
+
+```bash
+cd apps/worker
+bun install
+bun run dev:standalone  # Start worker
+```
+
+---
+
 ## Dashboard (`apps/dashboard/`)
 
 ### Route Structure
@@ -157,7 +202,21 @@ bun run dev:standalone  # Port 3001
 
 ---
 
-## Universal SDK (`packages/errorwatch-sdk/`)
+## Shared Package (`packages/shared/`)
+
+### Package
+
+**`@errorwatch/shared`** - Shared types, schemas and utilities
+
+### Exports
+
+- Common TypeScript interfaces (User, ErrorEvent, Breadcrumb, etc.)
+- Zod schemas for validation
+- Queue job types
+
+---
+
+## Universal SDK (`packages/sdk/`)
 
 ### Package
 

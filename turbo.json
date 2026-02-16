@@ -23,6 +23,15 @@
     },
     "db:push": {
       "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts", "test/**/*.ts"],
+      "outputs": [],
+      "cache": true
+    },
+    "clean": {
+      "cache": false
     }
   }
 }
