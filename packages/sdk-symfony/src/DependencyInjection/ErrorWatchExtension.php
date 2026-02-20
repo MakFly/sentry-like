@@ -38,16 +38,22 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
 
     public function load(array $configs, ContainerBuilder $container): void
     {
+        $configuration = new Configuration();
+        $config = $this->processConfiguration($configuration, $configs);
+
+        $container->setParameter('error_watch.enabled', $config['enabled']);
+
+        // When disabled, register no services at all — zero overhead, zero network
+        if (!$config['enabled']) {
+            return;
+        }
+
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../resources/config'));
         $loader->load('services.yaml');
         if (class_exists(\Twig\Extension\AbstractExtension::class)) {
             $loader->load('twig.yaml');
         }
 
-        $configuration = new Configuration();
-        $config = $this->processConfiguration($configuration, $configs);
-
-        $container->setParameter('error_watch.enabled', $config['enabled']);
         $container->setParameter('error_watch.endpoint', $config['endpoint']);
         $container->setParameter('error_watch.api_key', $config['api_key']);
         // Use kernel.environment by default if not explicitly configured
