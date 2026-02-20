@@ -32,6 +32,7 @@ import {
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { trpc } from "@/lib/trpc/client";
+import { useSSEStatus } from "@/components/sse-provider";
 
 export function ErrorWatchSidebar({
   ...props
@@ -40,6 +41,7 @@ export function ErrorWatchSidebar({
   const { currentProjectSlug } = useCurrentProject();
   const { data: session, isLoading: sessionLoading } = trpc.auth.getSession.useQuery();
   const pathname = usePathname();
+  const sseStatus = useSSEStatus();
 
   // Build navigation items based on current org AND project
   const navMain = React.useMemo(() => {
@@ -184,15 +186,39 @@ export function ErrorWatchSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        {/* System Status */}
+        {/* Live Status */}
         <div className="px-2 pb-2">
-          <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2">
+          <div className={`flex items-center gap-2 rounded-lg px-3 py-2 ${
+            sseStatus === "connected"
+              ? "bg-emerald-500/10"
+              : sseStatus === "connecting"
+                ? "bg-amber-500/10"
+                : "bg-muted/50"
+          }`}>
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              {sseStatus === "connected" && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              )}
+              <span className={`relative inline-flex h-2 w-2 rounded-full ${
+                sseStatus === "connected"
+                  ? "bg-emerald-500"
+                  : sseStatus === "connecting"
+                    ? "bg-amber-500"
+                    : "bg-muted-foreground"
+              }`} />
             </span>
-            <span className="text-xs font-medium text-emerald-400">
-              All systems operational
+            <span className={`text-xs font-medium ${
+              sseStatus === "connected"
+                ? "text-emerald-400"
+                : sseStatus === "connecting"
+                  ? "text-amber-400"
+                  : "text-muted-foreground"
+            }`}>
+              {sseStatus === "connected"
+                ? "Live"
+                : sseStatus === "connecting"
+                  ? "Reconnecting..."
+                  : "Offline"}
             </span>
           </div>
         </div>

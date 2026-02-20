@@ -9,9 +9,10 @@ import { gunzipSync } from "zlib";
 import { redisConnection } from "../connection";
 import { alertQueue, type ReplayJobData } from "../queues";
 import { db } from "../../db/connection";
-import { errorGroups, errorEvents, replaySessions, sessionEvents } from "../../db/schema";
+import { errorGroups, errorEvents, replaySessions, sessionEvents, projects } from "../../db/schema";
 import logger from "../../logger";
 import { scrubPII } from "../../services/scrubber";
+import { publishEvent } from "../../sse/publisher";
 
 const WORKER_CONCURRENCY = parseInt(process.env.REPLAY_WORKER_CONCURRENCY || "5", 10);
 
@@ -124,6 +125,7 @@ async function processReplay(job: Job<ReplayJobData>): Promise<{ fingerprint: st
         message: scrubbedMessage,
         file,
         line,
+        url: url || null,
         level: error.level,
         count: 1,
         firstSeen: now,
@@ -228,6 +230,24 @@ async function processReplay(job: Job<ReplayJobData>): Promise<{ fingerprint: st
       } else {
         throw e;
       }
+    }
+  }
+
+  // Publish SSE event for replay (fire-and-forget)
+  if (sessionCreated) {
+    const project = await db
+      .select({ organizationId: projects.organizationId })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (project[0]?.organizationId) {
+      publishEvent(project[0].organizationId, {
+        type: "replay:new",
+        projectId,
+        payload: { sessionId },
+        timestamp: Date.now(),
+      });
     }
   }
 

@@ -4,6 +4,7 @@ import { ErrorWatchSidebar } from "@/components/errorwatch-sidebar";
 import { ErrorWatchHeader } from "@/components/errorwatch-header";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { SSEProvider } from "@/components/sse-provider";
 
 export default function DashboardLayout({
   children,
@@ -13,18 +14,20 @@ export default function DashboardLayout({
   return (
     <OrganizationProvider>
       <ProjectProvider>
-        <SidebarProvider>
-          <ErrorWatchSidebar variant="inset" />
-          <SidebarInset>
-            <ErrorWatchHeader />
-            <div className="flex flex-1 flex-col">
-              <div className="@container/main flex flex-1 flex-col">
-                {children}
+        <SSEProvider>
+          <SidebarProvider>
+            <ErrorWatchSidebar variant="inset" />
+            <SidebarInset>
+              <ErrorWatchHeader />
+              <div className="flex flex-1 flex-col">
+                <div className="@container/main flex flex-1 flex-col">
+                  {children}
+                </div>
               </div>
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
-        <Toaster />
+            </SidebarInset>
+          </SidebarProvider>
+          <Toaster />
+        </SSEProvider>
       </ProjectProvider>
     </OrganizationProvider>
   );

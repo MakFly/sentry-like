@@ -145,6 +145,10 @@ app.onError((err, c) => {
   );
 });
 
+// === SSE (Server-Sent Events) ===
+import sseRoute from "./sse/route";
+app.route("/sse", sseRoute);
+
 // === API Versioning ===
 // Mount versioned API
 app.route("/api", api);
@@ -299,6 +303,7 @@ import { isRedisAvailable } from "./queue/connection";
 // === Graceful Shutdown ===
 import { closeRedis } from "./queue/connection";
 import { closeRateLimiter } from "./middleware/rate-limit";
+import { closePubClient } from "./sse/publisher";
 
 const shutdown = async (signal: string) => {
   logger.info(`Received ${signal}, shutting down gracefully...`);
@@ -317,6 +322,10 @@ const shutdown = async (signal: string) => {
       alertWorker.close(),
     ]);
     logger.info("Workers closed");
+
+    // Close SSE pub client
+    logger.info("Closing SSE publisher...");
+    await closePubClient();
 
     // Close rate limiter Redis connection
     logger.info("Closing rate limiter...");

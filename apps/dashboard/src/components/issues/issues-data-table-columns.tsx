@@ -9,6 +9,10 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   FileCode2Icon,
+  GlobeIcon,
+  TerminalIcon,
+  MessageSquareIcon,
+  AlertTriangleIcon,
   PlayCircleIcon,
   XCircleIcon,
   RotateCcwIcon,
@@ -39,12 +43,14 @@ import { toast } from "sonner"
 import { useUpdateGroupStatus } from "@/lib/trpc/hooks"
 
 import type { ErrorLevel, IssueStatus } from "@/server/api"
+import { detectEventSource } from "@/lib/event-source"
 
 export interface IssueGroup {
   fingerprint: string
   message: string
   file: string
   line: number
+  url?: string | null
   level: ErrorLevel
   count: number
   firstSeen: Date
@@ -52,6 +58,13 @@ export interface IssueGroup {
   hasReplay?: boolean
   status?: IssueStatus
 }
+
+const sourceIcons = {
+  Globe: GlobeIcon,
+  Terminal: TerminalIcon,
+  MessageSquare: MessageSquareIcon,
+  AlertTriangle: AlertTriangleIcon,
+} as const
 
 interface IssuesDataTableColumnsProps {
   orgSlug: string
@@ -124,6 +137,22 @@ export function createIssuesColumns({
         const bLevel = b.original.level.toLowerCase()
         return levelOrder.indexOf(aLevel) - levelOrder.indexOf(bLevel)
       },
+    },
+    {
+      id: "type",
+      header: "Type",
+      cell: ({ row }) => {
+        const source = detectEventSource(row.original.url)
+        const Icon = sourceIcons[source.icon]
+
+        return (
+          <Badge variant="outline" className={`gap-1 px-1.5 py-0.5 text-[10px] ${source.color}`}>
+            <Icon className="size-3" />
+            {source.label}
+          </Badge>
+        )
+      },
+      enableSorting: false,
     },
     {
       accessorKey: "message",

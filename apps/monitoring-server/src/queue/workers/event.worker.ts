@@ -8,16 +8,38 @@ import { eq, desc, sql } from "drizzle-orm";
 import { redisConnection } from "../connection";
 import { alertQueue, type EventJobData } from "../queues";
 import { db } from "../../db/connection";
-import { errorGroups, errorEvents, fingerprintRules } from "../../db/schema";
+import { errorGroups, errorEvents, fingerprintRules, projects } from "../../db/schema";
 import logger from "../../logger";
 import { scrubPII } from "../../services/scrubber";
 import { cache, CACHE_KEYS } from "../../utils/cache";
+import { publishEvent } from "../../sse/publisher";
 
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "10", 10);
 
 // In-memory cache for fingerprint rules (per project, TTL 60s)
 const rulesCache = new Map<string, { rules: Array<{ pattern: string; groupKey: string }>; cachedAt: number }>();
 const RULES_CACHE_TTL = 60_000;
+
+// In-memory cache for project → orgId mapping
+const orgIdCache = new Map<string, { orgId: string; cachedAt: number }>();
+const ORG_CACHE_TTL = 300_000; // 5 minutes
+
+async function getProjectOrgId(projectId: string): Promise<string | null> {
+  const cached = orgIdCache.get(projectId);
+  if (cached && Date.now() - cached.cachedAt < ORG_CACHE_TTL) {
+    return cached.orgId;
+  }
+  const result = await db
+    .select({ organizationId: projects.organizationId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (result[0]?.organizationId) {
+    orgIdCache.set(projectId, { orgId: result[0].organizationId, cachedAt: Date.now() });
+    return result[0].organizationId;
+  }
+  return null;
+}
 
 async function getProjectRules(projectId: string): Promise<Array<{ pattern: string; groupKey: string }>> {
   const cached = rulesCache.get(projectId);
@@ -176,6 +198,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
       message: scrubbedMessage,
       file,
       line,
+      url,
       statusCode,
       level,
       count: 1,
@@ -240,6 +263,17 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     await cache.delete(CACHE_KEYS.stats.envBreakdown(projectId));
     // Invalidate groups list cache
     await cache.deletePattern(`groups:list:${projectId}:*`);
+
+    // Publish SSE event (fire-and-forget)
+    const orgId = await getProjectOrgId(projectId);
+    if (orgId) {
+      publishEvent(orgId, {
+        type: isNewGroup ? "issue:new" : "issue:updated",
+        projectId,
+        payload: { fingerprint, message: scrubbedMessage, level },
+        timestamp: Date.now(),
+      });
+    }
   }
 
   logger.debug("Processed event", {

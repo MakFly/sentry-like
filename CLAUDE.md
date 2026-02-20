@@ -23,7 +23,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |-----------|----------|------|-------|
 | Monitoring Server | `apps/monitoring-server/` | 3333 | Hono.js 4, Drizzle ORM, PostgreSQL, BetterAuth |
 | Dashboard | `apps/dashboard/` | 3001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
-| Worker | `apps/worker/` | - | BullMQ, Redis, Hono.js |
 | SDK Universal | `packages/sdk/` | - | TypeScript |
 | SDK React | `packages/sdk/` (via exports) | - | React 18+ / 19+ |
 | SDK Vue | `packages/sdk/` (via exports) | - | Vue 3+ |
@@ -45,8 +44,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 sentry-like/
 ├── apps/
 │   ├── dashboard/                 # Next.js 16 frontend
-│   ├── monitoring-server/         # Hono.js API server + BullMQ workers
-│   └── worker/                    # (deprecated - workers run in monitoring-server)
+│   └── monitoring-server/         # Hono.js API server + BullMQ workers
 ├── packages/
 │   ├── sdk/                       # Universal SDK (Browser + React + Vue)
 │   ├── shared/                    # Shared types & Zod schemas
@@ -56,8 +54,8 @@ sentry-like/
 │   ├── vue-vite/
 │   └── example-symfony/
 ├── docs/                          # Documentation
-├── docker-compose.yml             # Production (PostgreSQL + Redis)
-├── docker-compose.dev.yml         # Development services
+├── docker-compose.yml             # DEPRECATED - Use local dev-infra
+├── docker-compose.dev.yml         # DEPRECATED - Use local dev-infra
 ├── package.json                   # Workspaces root
 ├── turbo.json                     # Turborepo config
 ├── tsconfig.base.json             # Base TypeScript config
@@ -76,8 +74,8 @@ sentry-like/
 │   └── vue-vite/
 ├── example-client/                # Symfony example client
 ├── docs/                          # Documentation
-├── docker-compose.yml             # Production (PostgreSQL + Redis)
-├── docker-compose.dev.yml         # Development services
+├── docker-compose.yml             # DEPRECATED - Use local dev-infra
+├── docker-compose.dev.yml         # DEPRECATED - Use local dev-infra
 ├── package.json                   # Workspaces root (apps only)
 ├── Makefile                       # Dev commands
 └── CLAUDE.md
@@ -128,25 +126,6 @@ bun install
 make docker-up       # Start PostgreSQL & Redis first (from root)
 bun run db:push      # Push schema to PostgreSQL
 bun run dev:standalone  # Port 3333
-```
-
----
-
-## Worker (`apps/worker/`)
-
-### Purpose
-
-Background job processing using BullMQ:
-- **Events** - Process error events from SDKs
-- **Replays** - Process session replay data
-- **Alerts** - Send notifications (email, Slack, webhooks)
-
-### Commands
-
-```bash
-cd apps/worker
-bun install
-bun run dev:standalone  # Start worker
 ```
 
 ---

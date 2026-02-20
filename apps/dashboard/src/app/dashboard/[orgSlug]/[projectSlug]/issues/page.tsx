@@ -15,6 +15,7 @@ import { createIssuesColumns } from "@/components/issues/issues-data-table-colum
 import type { ErrorLevel } from "@/server/api";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { toast } from "sonner";
+import { detectEventSource } from "@/lib/event-source";
 
 type DateRange = "24h" | "7d" | "30d" | "90d" | "all";
 
@@ -23,6 +24,7 @@ interface FiltersState {
   dateRange: DateRange;
   search: string;
   status: string;
+  source: string;
 }
 
 // Debounce hook
@@ -47,6 +49,7 @@ export default function IssuesPage() {
     dateRange: "all",
     search: "",
     status: "all",
+    source: "all",
   });
   const [levelFilter, setLevelFilter] = useState<ErrorLevel | "all">("all");
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -68,11 +71,20 @@ export default function IssuesPage() {
   });
 
   // Handle both old format (array) and new format ({ groups, total, ... })
-  const groups = useMemo(() => {
+  const allGroups = useMemo(() => {
     if (!groupsData) return [];
     if (Array.isArray(groupsData)) return groupsData;
     return (groupsData as any).groups || [];
   }, [groupsData]);
+
+  // Client-side source filter
+  const groups = useMemo(() => {
+    if (filters.source === "all") return allGroups;
+    return allGroups.filter((g: any) => {
+      const source = detectEventSource(g.url);
+      return source.type === filters.source;
+    });
+  }, [allGroups, filters.source]);
 
   const totalSignals = useMemo(() => {
     if (!groupsData) return 0;
@@ -85,6 +97,7 @@ export default function IssuesPage() {
     filters.dateRange !== "all" ||
     filters.search !== "" ||
     filters.status !== "all" ||
+    filters.source !== "all" ||
     levelFilter !== "all";
 
   const severityStats = useMemo(() => {
@@ -105,6 +118,7 @@ export default function IssuesPage() {
       dateRange: "all",
       search: "",
       status: "all",
+      source: "all",
     });
     setLevelFilter("all");
   };
@@ -183,6 +197,8 @@ export default function IssuesPage() {
         }
         status={filters.status}
         onStatusChange={(value) => setFilters({ ...filters, status: value })}
+        source={filters.source}
+        onSourceChange={(value) => setFilters({ ...filters, source: value })}
         onClear={handleClearFilters}
         hasActiveFilters={hasActiveFilters}
         className="mb-6"

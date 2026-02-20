@@ -11,6 +11,7 @@ export const errorGroups = pgTable("error_groups", {
   message: text("message").notNull(),
   file: text("file").notNull(),
   line: integer("line").notNull(),
+  url: text("url"),
   statusCode: integer("status_code"),
   level: text("level").notNull().default("error"), // fatal, error, warning, info, debug
   count: integer("count").notNull().default(1),

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { trpc } from "@/lib/trpc/client";
 import { WebVitalsCards, SlowestTable, TransactionsTable } from "@/components/performance";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -14,6 +15,53 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PerformanceDateRange } from "@/server/api/types";
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const idx = Math.ceil((p / 100) * sorted.length) - 1;
+  return sorted[Math.max(0, idx)];
+}
+
+function formatMs(ms: number): string {
+  if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`;
+  return `${ms}ms`;
+}
+
+function ServerPerformanceSummary({ durations }: { durations: number[] }) {
+  const stats = useMemo(() => {
+    const sorted = [...durations].sort((a, b) => a - b);
+    return {
+      p50: percentile(sorted, 50),
+      p95: percentile(sorted, 95),
+      p99: percentile(sorted, 99),
+      count: sorted.length,
+    };
+  }, [durations]);
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {[
+        { label: "p50", value: stats.p50 },
+        { label: "p95", value: stats.p95 },
+        { label: "p99", value: stats.p99 },
+      ].map(({ label, value }) => (
+        <Card key={label}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Server Response Time ({label})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold font-mono">{formatMs(value)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {stats.count} transaction{stats.count !== 1 ? "s" : ""}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function LoadingSkeleton() {
   return (
@@ -106,6 +154,15 @@ export default function PerformancePage() {
 
       {/* Web Vitals */}
       <WebVitalsCards vitals={webVitals || []} />
+
+      {/* Server Performance Summary — shown when no Web Vitals but transactions exist */}
+      {(!webVitals || webVitals.length === 0) &&
+        transactionsData &&
+        transactionsData.transactions.length > 0 && (
+          <ServerPerformanceSummary
+            durations={transactionsData.transactions.map((t) => t.duration)}
+          />
+        )}
 
       {/* Tabs for Transactions */}
       <Tabs defaultValue="all">

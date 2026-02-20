@@ -43,9 +43,13 @@ export function WebVitalsCards({ vitals }: WebVitalsCardsProps) {
   if (vitals.length === 0) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <p className="text-sm text-muted-foreground">
-            No Web Vitals data yet. Install the SDK to start collecting metrics.
+        <CardContent className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+          <p className="text-sm font-medium text-muted-foreground">
+            No Web Vitals data available
+          </p>
+          <p className="max-w-md text-xs text-muted-foreground/70">
+            Web Vitals track browser performance metrics (LCP, FID, CLS). For server-side
+            projects, check the Transactions section below for response times and query performance.
           </p>
         </CardContent>
       </Card>

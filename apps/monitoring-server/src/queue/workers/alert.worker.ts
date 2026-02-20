@@ -3,10 +3,14 @@
  * @description Processes alert notifications from the queue
  */
 import { Worker, Job } from "bullmq";
+import { eq } from "drizzle-orm";
 import { redisConnection } from "../connection";
 import { type AlertJobData } from "../queues";
 import { triggerAlertsForNewError } from "../../services/alerts";
+import { db } from "../../db/connection";
+import { projects } from "../../db/schema";
 import logger from "../../logger";
+import { publishEvent } from "../../sse/publisher";
 
 const WORKER_CONCURRENCY = parseInt(process.env.ALERT_WORKER_CONCURRENCY || "5", 10);
 
@@ -25,6 +29,22 @@ async function processAlert(job: Job<AlertJobData>): Promise<{ processed: boolea
 
   // Use existing alert service
   await triggerAlertsForNewError(projectId, fingerprint, isNewGroup);
+
+  // Publish SSE event for alert (fire-and-forget)
+  const project = await db
+    .select({ organizationId: projects.organizationId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+
+  if (project[0]?.organizationId) {
+    publishEvent(project[0].organizationId, {
+      type: "alert:triggered",
+      projectId,
+      payload: { fingerprint, message, level },
+      timestamp: Date.now(),
+    });
+  }
 
   return { processed: true };
 }

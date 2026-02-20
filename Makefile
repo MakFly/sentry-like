@@ -129,7 +129,6 @@ clean: ## Clean build artifacts and logs
 	@echo "$(YELLOW)Cleaning...$(RESET)"
 	@rm -rf apps/dashboard/.next
 	@rm -rf apps/monitoring-server/dist
-	@rm -rf apps/worker/dist
 	@rm -rf $(LOG_DIR)
 	@rm -rf node_modules/.cache
 	@echo "$(GREEN)Done.$(RESET)"

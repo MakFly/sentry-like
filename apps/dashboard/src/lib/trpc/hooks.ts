@@ -5,8 +5,8 @@ import { trpc } from "./client";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { toast } from "sonner";
 
-// Polling interval for live updates (30 seconds)
-const REFETCH_INTERVAL = 30_000;
+// Polling interval for fallback updates (5 minutes — SSE handles real-time)
+const REFETCH_INTERVAL = 300_000;
 
 interface GroupsFilter {
   env?: string;

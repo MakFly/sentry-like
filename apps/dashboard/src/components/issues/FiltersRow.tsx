@@ -21,6 +21,8 @@ interface FiltersRowProps {
   onDateRangeChange: (value: DateRange) => void;
   status: string;
   onStatusChange: (value: string) => void;
+  source?: string;
+  onSourceChange?: (value: string) => void;
   onClear: () => void;
   hasActiveFilters: boolean;
   className?: string;
@@ -35,6 +37,8 @@ export function FiltersRow({
   onDateRangeChange,
   status,
   onStatusChange,
+  source,
+  onSourceChange,
   onClear,
   hasActiveFilters,
   className,
@@ -125,6 +129,22 @@ export function FiltersRow({
           <SelectItem value="ignored">Ignored</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Source */}
+      {onSourceChange && (
+        <Select value={source || "all"} onValueChange={onSourceChange}>
+          <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
+            <SelectValue placeholder="Source" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All sources</SelectItem>
+            <SelectItem value="http">HTTP</SelectItem>
+            <SelectItem value="cli">CLI</SelectItem>
+            <SelectItem value="messenger">Queue</SelectItem>
+            <SelectItem value="deprecation">Deprecation</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
 
       {/* Clear filters */}
       {hasActiveFilters && (
