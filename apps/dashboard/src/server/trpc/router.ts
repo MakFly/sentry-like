@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import superjson from "superjson";
 import { router, publicProcedure, createCallerFactory, createTRPCContext } from "./trpc";
 import { api } from "../api";
 
@@ -176,6 +177,12 @@ const statsRouter = router({
     .input(z.object({ projectId: z.string().uuid().optional() }).optional())
     .query(async ({ input }) => {
       return api.stats.getEnvBreakdown(input?.projectId);
+    }),
+
+  getSeverityBreakdown: protectedProcedure
+    .input(z.object({ projectId: z.string().uuid().optional() }).optional())
+    .query(async ({ input }) => {
+      return api.stats.getSeverityBreakdown(input?.projectId);
     }),
 
   getDashboardStats: protectedProcedure
@@ -716,7 +723,7 @@ const performanceRouter = router({
   getWebVitals: protectedProcedure
     .input(z.object({
       projectId: z.string().uuid(),
-      dateRange: z.enum(["24h", "7d", "30d"]).optional(),
+      dateRange: z.enum(["24h", "7d", "30d", "90d", "6m", "1y"]).optional(),
     }))
     .query(async ({ input }) => {
       return api.performance.getWebVitals(input.projectId, input.dateRange);
@@ -746,10 +753,46 @@ const performanceRouter = router({
   getSlowest: protectedProcedure
     .input(z.object({
       projectId: z.string().uuid(),
-      dateRange: z.enum(["24h", "7d", "30d"]).optional(),
+      dateRange: z.enum(["24h", "7d", "30d", "90d", "6m", "1y"]).optional(),
     }))
     .query(async ({ input }) => {
       return api.performance.getSlowest(input.projectId, input.dateRange);
+    }),
+
+  getSpanAnalysis: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      dateRange: z.enum(["24h", "7d", "30d", "90d", "6m", "1y"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getSpanAnalysis(input.projectId, input.dateRange);
+    }),
+
+  getApdex: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      dateRange: z.enum(["24h", "7d", "30d", "90d", "6m", "1y"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getApdex(input.projectId, input.dateRange);
+    }),
+
+  getServerStats: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      dateRange: z.enum(["24h", "7d", "30d", "90d", "6m", "1y"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getServerStats(input.projectId, input.dateRange);
+    }),
+
+  getTopEndpoints: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      dateRange: z.enum(["24h", "7d", "30d", "90d", "6m", "1y"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getTopEndpoints(input.projectId, input.dateRange);
     }),
 });
 
@@ -783,4 +826,18 @@ export const createCaller = createCallerFactory(appRouter);
 export const getServerCaller = async () => {
   const context = await createTRPCContext();
   return createCaller(context);
+};
+
+/**
+ * Server-side helpers for SSR prefetch + HydrationBoundary
+ */
+import { createServerSideHelpers } from "@trpc/react-query/server";
+
+export const createSSRHelpers = async () => {
+  const context = await createTRPCContext();
+  return createServerSideHelpers({
+    router: appRouter,
+    ctx: context,
+    transformer: superjson,
+  });
 };

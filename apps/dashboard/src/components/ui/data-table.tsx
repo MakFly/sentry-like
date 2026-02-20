@@ -90,6 +90,7 @@ export interface DataTableProps<TData, TValue> {
   toolbar?: React.ReactNode
   rowSelection?: Record<string, boolean>
   onRowSelectionChange?: (selection: Record<string, boolean>) => void
+  onRowClick?: (row: TData) => void
 }
 
 const PAGE_SIZE_OPTIONS = [15, 25, 35, 45, 50] as const
@@ -166,6 +167,7 @@ export function DataTable<TData, TValue>({
   toolbar,
   rowSelection: controlledRowSelection,
   onRowSelectionChange: controlledOnRowSelectionChange,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [data, setData] = React.useState(() => initialData)
   const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({})
@@ -404,6 +406,8 @@ export function DataTable<TData, TValue>({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
+                      className={onRowClick ? "cursor-pointer hover:bg-muted/50" : undefined}
+                      onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>

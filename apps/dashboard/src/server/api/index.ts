@@ -73,6 +73,7 @@ export const api = {
     getDashboardStats: statsApi.getDashboardStats,
     getTimeline: statsApi.getTimeline,
     getEnvBreakdown: statsApi.getEnvBreakdown,
+    getSeverityBreakdown: statsApi.getSeverityBreakdown,
   },
   apiKeys: {
     getAll: apiKeysApi.getAll,
@@ -110,6 +111,10 @@ export const api = {
     getTransactions: performanceApi.getTransactions,
     getTransaction: performanceApi.getTransaction,
     getSlowest: performanceApi.getSlowest,
+    getSpanAnalysis: performanceApi.getSpanAnalysis,
+    getApdex: performanceApi.getApdex,
+    getServerStats: performanceApi.getServerStats,
+    getTopEndpoints: performanceApi.getTopEndpoints,
   },
 };
 

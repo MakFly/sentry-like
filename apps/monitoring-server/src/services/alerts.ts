@@ -1,7 +1,7 @@
 import { eq, and, gt, desc } from "drizzle-orm";
 import { db } from "../db/connection";
 import { alertRules, notifications, errorGroups, errorEvents, projects } from "../db/schema";
-import { sendErrorAlertEmail, sendThresholdAlertEmail } from "./email";
+import { sendErrorAlertEmail, sendThresholdAlertEmail, sendRegressionAlertEmail } from "./email";
 import logger from "../logger";
 import type { AlertRuleType, AlertChannel, AlertRuleConfig, CreateAlertRuleInput } from "../types/services";
 
@@ -72,7 +72,8 @@ export async function deleteAlertRule(ruleId: string) {
 export async function triggerAlertsForNewError(
   projectId: string,
   fingerprint: string,
-  isNewGroup: boolean
+  isNewGroup: boolean,
+  isRegression?: boolean
 ) {
   logger.debug("Checking alerts for error", { projectId, fingerprint, isNewGroup });
 
@@ -143,6 +144,8 @@ export async function triggerAlertsForNewError(
             shouldTrigger = true;
           }
         }
+      } else if (rule.type === "regression" && isRegression) {
+        shouldTrigger = true;
       }
 
       if (!shouldTrigger) {
@@ -160,6 +163,27 @@ export async function triggerAlertsForNewError(
             eventCount: group.count,
             threshold: rule.threshold!,
             windowMinutes: rule.windowMinutes!,
+            dashboardUrl: DASHBOARD_URL,
+          });
+        } else if (rule.type === "regression") {
+          // Get latest event for environment info
+          const latestEvent = (await db
+            .select({ env: errorEvents.env })
+            .from(errorEvents)
+            .where(eq(errorEvents.fingerprint, fingerprint))
+            .orderBy(desc(errorEvents.createdAt))
+            .limit(1))[0];
+
+          result = await sendRegressionAlertEmail({
+            to: config.email,
+            projectName,
+            errorMessage: group.message,
+            errorFile: group.file,
+            errorLine: group.line,
+            eventCount: group.count,
+            fingerprint,
+            environment: latestEvent?.env,
+            resolvedAt: group.resolvedAt?.toISOString(),
             dashboardUrl: DASHBOARD_URL,
           });
         } else {

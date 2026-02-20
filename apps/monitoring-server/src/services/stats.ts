@@ -178,6 +178,34 @@ export const getTimeline = async (
   return result;
 };
 
+export interface SeverityBreakdown {
+  level: string;
+  count: number;
+}
+
+export const getSeverityBreakdown = async (projectId?: string): Promise<SeverityBreakdown[]> => {
+  const cacheKey = `stats:severity:${projectId || "all"}`;
+
+  const cached = await cache.get<SeverityBreakdown[]>(cacheKey);
+  if (cached) return cached;
+
+  const conditions = projectId ? eq(errorGroups.projectId, projectId) : undefined;
+
+  const result = await db
+    .select({
+      level: errorGroups.level,
+      count: sql<number>`coalesce(sum(${errorGroups.count}), 0)`,
+    })
+    .from(errorGroups)
+    .where(conditions)
+    .groupBy(errorGroups.level)
+    .orderBy(desc(sql`coalesce(sum(${errorGroups.count}), 0)`));
+
+  const mapped = result.map((r) => ({ level: r.level, count: Number(r.count) }));
+  await cache.set(cacheKey, mapped, { ttl: CACHE_TTL.STATS_ENV_BREAKDOWN });
+  return mapped;
+};
+
 export const getEnvBreakdown = async (projectId?: string): Promise<EnvBreakdown[]> => {
   const cacheKey = CACHE_KEYS.stats.envBreakdown(projectId);
   

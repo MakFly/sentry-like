@@ -44,6 +44,8 @@ const eventSchema = z.object({
   session_id: z.string().max(100).optional(),
   // Release version (e.g. "v1.2.3", "abc123")
   release: z.string().max(200).optional().nullable(),
+  // User identifier for impact analysis
+  user_id: z.string().max(200).optional().nullable(),
 });
 
 /**
@@ -159,6 +161,7 @@ export const submit = async (c: Context) => {
       sessionId: shouldLinkReplay ? (input.session_id || null) : null,
       createdAt: createdAt.toISOString(),
       release: input.release || null,
+      userId: rawInput.user_id || null,
     }, { jobId });
 
     logger.debug("Event queued", {

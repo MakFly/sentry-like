@@ -18,19 +18,6 @@ import {
   ContextCards,
 } from "@/components/issue-detail";
 
-function LoadingSkeleton() {
-  return (
-    <div className="min-h-screen bg-issues-bg p-4 md:p-6 lg:p-8">
-      <div className="space-y-6">
-        <div className="h-48 rounded-xl bg-issues-surface animate-pulse" />
-        <div className="h-32 rounded-xl bg-issues-surface animate-pulse" />
-        <div className="h-64 rounded-xl bg-issues-surface animate-pulse" />
-        <div className="h-96 rounded-xl bg-issues-surface animate-pulse" />
-      </div>
-    </div>
-  );
-}
-
 function ErrorState() {
   const { currentOrgSlug } = useCurrentOrganization();
   const { currentProjectSlug } = useCurrentProject();
@@ -129,7 +116,7 @@ export default function IssueDetailPage() {
 
   // Loading state
   if (groupLoading) {
-    return <LoadingSkeleton />;
+    return null;
   }
 
   // Error state

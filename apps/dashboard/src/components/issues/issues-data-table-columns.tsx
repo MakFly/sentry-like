@@ -16,6 +16,7 @@ import {
   PlayCircleIcon,
   XCircleIcon,
   RotateCcwIcon,
+  UsersIcon,
 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 
@@ -53,10 +54,12 @@ export interface IssueGroup {
   url?: string | null
   level: ErrorLevel
   count: number
+  usersAffected?: number
   firstSeen: Date
   lastSeen: Date
   hasReplay?: boolean
   status?: IssueStatus
+  resolvedAt?: Date | string | null
 }
 
 const sourceIcons = {
@@ -255,6 +258,36 @@ export function createIssuesColumns({
       ),
     },
     {
+      accessorKey: "usersAffected",
+      header: ({ column }) => (
+        <div className="hidden text-right lg:block">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="h-8 px-0"
+          >
+            Users
+            {column.getIsSorted() === "asc" && (
+              <ChevronUpIcon className="ml-2 size-4" />
+            )}
+            {column.getIsSorted() === "desc" && (
+              <ChevronDownIcon className="ml-2 size-4" />
+            )}
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const users = row.original.usersAffected ?? 0
+        if (users === 0) return <div className="hidden lg:block" />
+        return (
+          <div className="hidden items-center justify-end gap-1.5 lg:flex">
+            <UsersIcon className="size-3 text-muted-foreground" />
+            <span className="text-sm font-medium">{users}</span>
+          </div>
+        )
+      },
+    },
+    {
       accessorKey: "lastSeen",
       header: ({ column }) => (
         <div className="hidden text-right sm:block">
@@ -289,15 +322,26 @@ export function createIssuesColumns({
       header: "Status",
       cell: ({ row }) => {
         const status = row.original.status || "open"
+        const resolvedAt = row.original.resolvedAt
+        // Regression: issue is open but was previously resolved
+        const isRegression = status === "open" && resolvedAt != null
 
         return (
-          <div className="hidden sm:block">
+          <div className="hidden gap-1 sm:flex">
             <Badge
               variant={getStatusColor(status as IssueStatus) as any}
               className="px-1.5 py-0.5 text-[10px]"
             >
               {status}
             </Badge>
+            {isRegression && (
+              <Badge
+                variant="outline"
+                className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-500"
+              >
+                Regressed
+              </Badge>
+            )}
           </div>
         )
       },

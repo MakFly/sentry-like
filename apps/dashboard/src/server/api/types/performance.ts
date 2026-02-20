@@ -1,4 +1,4 @@
-export type PerformanceDateRange = "24h" | "7d" | "30d";
+export type PerformanceDateRange = "24h" | "7d" | "30d" | "90d" | "6m" | "1y";
 
 export type WebVitalSummary = {
   name: string;
@@ -62,3 +62,56 @@ export type SlowestTransaction = {
   maxDuration: number;
   count: number;
 };
+
+export interface SpanOpSummary {
+  op: string;
+  count: number;
+  totalDuration: number;
+  avgDuration: number;
+}
+
+export interface DuplicateQuery {
+  description: string;
+  count: number;
+  totalDuration: number;
+}
+
+export interface SlowQuery {
+  description: string;
+  duration: number;
+  transactionId: string;
+  transactionName: string;
+}
+
+export interface SpanAnalysis {
+  byOp: SpanOpSummary[];
+  duplicateQueries: DuplicateQuery[];
+  slowQueries: SlowQuery[];
+}
+
+export interface ApdexScore {
+  score: number;
+  total: number;
+  satisfied: number;
+  tolerating: number;
+  frustrated: number;
+  threshold: number;
+}
+
+export interface ServerStats {
+  throughput: number;
+  totalTransactions: number;
+  errorRate: number;
+  errorCount: number;
+  avgDuration: number;
+}
+
+export interface EndpointImpact {
+  name: string;
+  op: string;
+  count: number;
+  avgDuration: number;
+  totalDuration: number;
+  errorCount: number;
+  percentOfTotal: number;
+}

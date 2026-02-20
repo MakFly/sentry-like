@@ -26,3 +26,8 @@ export type EnvBreakdown = {
   count: number;
 };
 
+export type SeverityBreakdown = {
+  level: string;
+  count: number;
+};
+

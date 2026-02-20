@@ -1,5 +1,6 @@
 # ===========================================
 # ErrorWatch Production Docker Compose
+# DEPRECATED - Use local dev-infra instead
 # ===========================================
 
 version: "3.9"

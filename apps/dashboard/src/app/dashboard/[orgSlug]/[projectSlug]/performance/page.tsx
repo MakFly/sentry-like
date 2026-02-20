@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCurrentProject } from "@/contexts/ProjectContext";
-import { trpc } from "@/lib/trpc/client";
-import { WebVitalsCards, SlowestTable, TransactionsTable } from "@/components/performance";
+import { usePerformanceQueries } from "@/hooks/usePerformanceQueries";
+import { ApdexGauge } from "@/components/performance/ApdexGauge";
+import { SpanBreakdownOverview, WebVitalsCards } from "@/components/performance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import {
   Select,
   SelectContent,
@@ -13,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { ArrowRight, Database, Globe, List } from "lucide-react";
 import type { PerformanceDateRange } from "@/server/api/types";
 
 function percentile(sorted: number[], p: number): number {
@@ -27,7 +36,17 @@ function formatMs(ms: number): string {
   return `${ms}ms`;
 }
 
-function ServerPerformanceSummary({ durations }: { durations: number[] }) {
+function ServerPerformanceSummary({
+  durations,
+  throughput,
+  errorRate,
+  avgDuration,
+}: {
+  durations: number[];
+  throughput?: number;
+  errorRate?: number;
+  avgDuration?: number;
+}) {
   const stats = useMemo(() => {
     const sorted = [...durations].sort((a, b) => a - b);
     return {
@@ -38,42 +57,56 @@ function ServerPerformanceSummary({ durations }: { durations: number[] }) {
     };
   }, [durations]);
 
+  const cards = [
+    { label: "p50", value: formatMs(stats.p50), sub: `${stats.count} txn${stats.count !== 1 ? "s" : ""}` },
+    { label: "p95", value: formatMs(stats.p95) },
+    { label: "p99", value: formatMs(stats.p99) },
+  ];
+
+  if (throughput !== undefined) {
+    cards.push({ label: "Throughput", value: `${throughput.toFixed(1)}/min`, sub: "req/min" });
+  }
+
+  if (errorRate !== undefined) {
+    cards.push({
+      label: "Error Rate",
+      value: `${errorRate}%`,
+      sub: errorRate > 5 ? "Above threshold" : undefined,
+    });
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {[
-        { label: "p50", value: stats.p50 },
-        { label: "p95", value: stats.p95 },
-        { label: "p99", value: stats.p99 },
-      ].map(({ label, value }) => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      {cards.map(({ label, value, sub }) => (
         <Card key={label}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Server Response Time ({label})
+              {label === "Error Rate" ? label : `Server Response Time (${label})`}
+              {label === "Throughput" && (
+                <span className="block text-xs text-muted-foreground/60 font-normal">Throughput</span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold font-mono">{formatMs(value)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {stats.count} transaction{stats.count !== 1 ? "s" : ""}
+            <p className={`text-2xl font-bold font-mono ${
+              label === "Error Rate" && errorRate !== undefined && errorRate > 5
+                ? "text-red-500"
+                : ""
+            }`}>
+              {value}
             </p>
+            {sub && (
+              <p className={`mt-1 text-xs ${
+                label === "Error Rate" && errorRate !== undefined && errorRate > 5
+                  ? "text-red-400"
+                  : "text-muted-foreground"
+              }`}>
+                {sub}
+              </p>
+            )}
           </CardContent>
         </Card>
       ))}
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-      <div className="h-12 w-48 animate-pulse rounded-lg bg-dashboard-surface/50" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-36 animate-pulse rounded-xl bg-dashboard-surface/50" />
-        ))}
-      </div>
-      <div className="h-64 animate-pulse rounded-xl bg-dashboard-surface/50" />
-      <div className="h-64 animate-pulse rounded-xl bg-dashboard-surface/50" />
     </div>
   );
 }
@@ -84,108 +117,129 @@ export default function PerformancePage() {
   const projectSlug = params.projectSlug as string;
   const baseUrl = `/dashboard/${orgSlug}/${projectSlug}`;
 
-  const { currentProjectId, isLoading: projectLoading } = useCurrentProject();
+  const { currentProjectId, currentProject, isLoading: projectLoading } = useCurrentProject();
   const [dateRange, setDateRange] = useState<PerformanceDateRange>("24h");
-  const [opFilter, setOpFilter] = useState<string>("");
-  const [page, setPage] = useState(1);
 
-  const { data: webVitals, isLoading: vitalsLoading } =
-    trpc.performance.getWebVitals.useQuery(
-      { projectId: currentProjectId!, dateRange },
-      { enabled: !!currentProjectId }
-    );
+  const platform = currentProject?.platform ?? "";
+  const isServerSide = ["symfony", "laravel", "nodejs", "hono", "fastify"].includes(platform);
 
-  const { data: slowest, isLoading: slowestLoading } =
-    trpc.performance.getSlowest.useQuery(
-      { projectId: currentProjectId!, dateRange },
-      { enabled: !!currentProjectId }
-    );
+  const { webVitals, transactionsData, spanAnalysis, apdexData, serverStats } =
+    usePerformanceQueries(currentProjectId, dateRange, isServerSide);
 
-  const { data: transactionsData, isLoading: transactionsLoading } =
-    trpc.performance.getTransactions.useQuery(
-      {
-        projectId: currentProjectId!,
-        op: opFilter || undefined,
-        page,
-        limit: 20,
-      },
-      { enabled: !!currentProjectId }
-    );
-
-  const isLoading = projectLoading || vitalsLoading;
+  const isLoading = projectLoading || (!isServerSide && webVitals.isLoading);
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return null;
   }
+
+  const subPages = [
+    {
+      title: "Transactions",
+      description: "View all transactions, grouped or individual, with filtering and pagination.",
+      href: `${baseUrl}/performance/transactions`,
+      icon: List,
+    },
+    {
+      title: "Web Vitals",
+      description: "Core Web Vitals metrics: LCP, FID, CLS, TTFB, INP.",
+      href: `${baseUrl}/performance/web-vitals`,
+      icon: Globe,
+    },
+    {
+      title: "Database Queries",
+      description: "Duplicate queries (N+1), slowest queries, and endpoint impact analysis.",
+      href: `${baseUrl}/performance/queries`,
+      icon: Database,
+    },
+  ];
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+      {/* Breadcrumb */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Performance</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Performance</h1>
-        <div className="flex items-center gap-3">
-          {/* Op filter */}
-          <input
-            type="text"
-            placeholder="Filter by op..."
-            value={opFilter}
-            onChange={(e) => {
-              setOpFilter(e.target.value);
-              setPage(1);
-            }}
-            className="h-9 w-[160px] rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          {/* Date range */}
-          <Select
-            value={dateRange}
-            onValueChange={(v) => setDateRange(v as PerformanceDateRange)}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="24h">Last 24h</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Performance Overview</h1>
+        <Select
+          value={dateRange}
+          onValueChange={(v) => setDateRange(v as PerformanceDateRange)}
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="24h">Last 24h</SelectItem>
+            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+            <SelectItem value="90d">Last 90 days</SelectItem>
+            <SelectItem value="6m">Last 6 months</SelectItem>
+            <SelectItem value="1y">Last year</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Web Vitals */}
-      <WebVitalsCards vitals={webVitals || []} />
-
-      {/* Server Performance Summary — shown when no Web Vitals but transactions exist */}
-      {(!webVitals || webVitals.length === 0) &&
-        transactionsData &&
-        transactionsData.transactions.length > 0 && (
-          <ServerPerformanceSummary
-            durations={transactionsData.transactions.map((t) => t.duration)}
-          />
-        )}
-
-      {/* Tabs for Transactions */}
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Transactions</TabsTrigger>
-          <TabsTrigger value="slowest">Slowest</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
-          {!transactionsLoading && transactionsData && (
-            <TransactionsTable
-              transactions={transactionsData.transactions}
-              pagination={transactionsData.pagination}
-              baseUrl={baseUrl}
-              onPageChange={setPage}
+      {/* Server-side summary */}
+      {isServerSide && (
+        <>
+          {transactionsData.data && transactionsData.data.transactions.length > 0 && (
+            <ServerPerformanceSummary
+              durations={transactionsData.data.transactions.map((t) => t.duration)}
+              throughput={serverStats.data?.throughput}
+              errorRate={serverStats.data?.errorRate}
+              avgDuration={serverStats.data?.avgDuration}
             />
           )}
-        </TabsContent>
 
-        <TabsContent value="slowest">
-          {!slowestLoading && <SlowestTable transactions={slowest || []} />}
-        </TabsContent>
-      </Tabs>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ApdexGauge data={apdexData.data} isLoading={apdexData.isLoading} />
+            <SpanBreakdownOverview
+              data={spanAnalysis.data?.byOp ?? []}
+              isLoading={spanAnalysis.isLoading}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Client-side summary */}
+      {!isServerSide && (
+        <>
+          <WebVitalsCards vitals={webVitals.data || []} />
+          {(!webVitals.data || webVitals.data.length === 0) &&
+            transactionsData.data &&
+            transactionsData.data.transactions.length > 0 && (
+              <ServerPerformanceSummary
+                durations={transactionsData.data.transactions.map((t) => t.duration)}
+              />
+            )}
+        </>
+      )}
+
+      {/* Quick navigation to sub-pages */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {subPages.map((page) => (
+          <Link key={page.href} href={page.href}>
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <page.icon className="h-4 w-4 text-muted-foreground" />
+                  {page.title}
+                  <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">{page.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

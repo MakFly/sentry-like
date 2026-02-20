@@ -156,6 +156,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     sessionId,
     release,
     createdAt,
+    userId,
   } = job.data;
 
   // Scrub PII from message and stack
@@ -188,6 +189,11 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
   // Convert to ISO strings for SQL template compatibility
   const eventCreatedAtISO = eventCreatedAt.toISOString();
   const nowISO = now.toISOString();
+
+  // Check for regression (resolved issue recurring)
+  const existing = await db.select({ status: errorGroups.status, resolvedAt: errorGroups.resolvedAt })
+    .from(errorGroups).where(eq(errorGroups.fingerprint, fingerprint)).limit(1);
+  const wasResolved = existing[0]?.status === 'resolved';
 
   // Upsert error group (atomic operation) - PostgreSQL syntax
   const result = await db
@@ -235,6 +241,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
       level,
       breadcrumbs,
       sessionId,
+      userId: userId || null,
       release,
       createdAt: eventCreatedAt,
     });
@@ -246,12 +253,23 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     throw e;
   }
 
+  // Update users affected count on the error group
+  if (userId) {
+    await db.execute(sql`
+      UPDATE error_groups SET users_affected = (
+        SELECT COUNT(DISTINCT user_id) FROM error_events
+        WHERE fingerprint = ${fingerprint} AND user_id IS NOT NULL
+      ) WHERE fingerprint = ${fingerprint}
+    `);
+  }
+
   // Queue alert job for notification processing
   if (projectId) {
     await alertQueue.add("check-alerts", {
       projectId,
       fingerprint,
       isNewGroup,
+      isRegression: wasResolved,
       level,
       message,
     });
@@ -268,7 +286,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     const orgId = await getProjectOrgId(projectId);
     if (orgId) {
       publishEvent(orgId, {
-        type: isNewGroup ? "issue:new" : "issue:updated",
+        type: wasResolved ? "issue:regressed" : (isNewGroup ? "issue:new" : "issue:updated"),
         projectId,
         payload: { fingerprint, message: scrubbedMessage, level },
         timestamp: Date.now(),

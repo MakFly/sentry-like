@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, Copy } from "lucide-react";
 import type { TransactionWithSpans, Span } from "@/server/api/types";
 
 function formatDuration(ms: number): string {
@@ -20,10 +21,85 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-muted text-muted-foreground",
 };
 
-function SpanBar({ span, totalDuration, transactionStart }: {
+/**
+ * Analyze spans to detect repetitions of the same query
+ * Returns a map: description -> { occurrences: [{index, total}], totalCount }
+ */
+function analyzeSpanRepetitions(spans: Span[]): Map<string, { occurrences: Array<{ index: number; total: number }>; totalCount: number }> {
+  const result = new Map<string, { occurrences: Array<{ index: number; total: number }>; totalCount: number }>();
+
+  // Count occurrences per description
+  const counts = new Map<string, number>();
+  for (const span of spans) {
+    if (span.op === "db.sql.query" && span.description) {
+      counts.set(span.description, (counts.get(span.description) || 0) + 1);
+    }
+  }
+
+  // Only track descriptions with multiple occurrences
+  for (const [desc, total] of counts) {
+    if (total >= 2) {
+      result.set(desc, { occurrences: [], totalCount: total });
+    }
+  }
+
+  // Record occurrence indices
+  const counters = new Map<string, number>();
+  spans.forEach((span, index) => {
+    if (span.op === "db.sql.query" && span.description && result.has(span.description)) {
+      const current = (counters.get(span.description) || 0) + 1;
+      counters.set(span.description, current);
+      result.get(span.description)!.occurrences.push({ index, total: current });
+    }
+  });
+
+  return result;
+}
+
+interface SpanWithRepetition {
+  span: Span;
+  repetition?: {
+    current: number;
+    total: number;
+    isFirst: boolean;
+    isLast: boolean;
+  };
+}
+
+function enrichSpansWithRepetitions(spans: Span[]): SpanWithRepetition[] {
+  const repetitionMap = analyzeSpanRepetitions(spans);
+  const counters = new Map<string, number>();
+
+  return spans.map((span) => {
+    if (span.op === "db.sql.query" && span.description && repetitionMap.has(span.description)) {
+      const info = repetitionMap.get(span.description)!;
+      const current = (counters.get(span.description) || 0) + 1;
+      counters.set(span.description, current);
+
+      return {
+        span,
+        repetition: {
+          current,
+          total: info.totalCount,
+          isFirst: current === 1,
+          isLast: current === info.totalCount,
+        },
+      };
+    }
+    return { span };
+  });
+}
+
+function SpanBar({ span, totalDuration, transactionStart, repetition }: {
   span: Span;
   totalDuration: number;
   transactionStart: number;
+  repetition?: {
+    current: number;
+    total: number;
+    isFirst: boolean;
+    isLast: boolean;
+  };
 }) {
   const spanStart = new Date(span.startTimestamp).getTime();
   const offsetMs = spanStart - transactionStart;
@@ -32,16 +108,34 @@ function SpanBar({ span, totalDuration, transactionStart }: {
     ? Math.max((span.duration / totalDuration) * 100, 0.5)
     : 100;
 
+  const isRepeated = repetition && repetition.total >= 2;
+  const isN1Suspect = isRepeated && repetition.total >= 5;
+
+  // Bar color: amber for repeated, red for error, violet for normal
   const barColor = span.status === "error"
     ? "bg-red-500"
     : span.status === "cancelled"
       ? "bg-muted-foreground"
-      : "bg-violet-500";
+      : isN1Suspect
+        ? "bg-amber-500"
+        : isRepeated
+          ? "bg-orange-400"
+          : "bg-violet-500";
+
+  // Row background for repeated spans
+  const rowBg = isRepeated
+    ? repetition.isFirst
+      ? "bg-amber-500/5 border-t border-amber-500/20"
+      : repetition.isLast
+        ? "bg-amber-500/5 border-b border-amber-500/20"
+        : "bg-amber-500/5"
+    : "";
 
   return (
-    <div className="flex items-center gap-3 py-1.5 text-sm">
-      <div className="w-[140px] shrink-0 truncate text-xs text-muted-foreground font-mono">
-        {span.op}
+    <div className={`flex items-center gap-3 py-1.5 text-sm ${rowBg}`}>
+      <div className="w-[140px] shrink-0 truncate text-xs text-muted-foreground font-mono flex items-center gap-1">
+        {isRepeated && <Copy className="h-3 w-3 text-amber-500 flex-shrink-0" />}
+        <span className="truncate">{span.op}</span>
       </div>
       <div className="flex-1 relative h-6 rounded bg-muted/30">
         <div
@@ -60,11 +154,43 @@ function SpanBar({ span, totalDuration, transactionStart }: {
           </span>
         </div>
       </div>
-      <div className="w-[180px] shrink-0 truncate text-xs text-muted-foreground">
-        {span.description || "—"}
+      <div className="w-[180px] shrink-0 flex items-center gap-1">
+        <span className="truncate text-xs text-muted-foreground flex-1">
+          {span.description || "—"}
+        </span>
+        {isRepeated && (
+          <Badge
+            variant="outline"
+            className={`text-[9px] px-1 py-0 h-4 flex-shrink-0 ${
+              isN1Suspect
+                ? "bg-amber-500/20 text-amber-600 border-amber-500/40"
+                : "bg-orange-500/15 text-orange-500 border-orange-500/30"
+            }`}
+          >
+            {repetition.current}/{repetition.total}
+          </Badge>
+        )}
       </div>
     </div>
   );
+}
+
+function detectDuplicateSpans(spans: Span[]) {
+  const dbSpans = spans.filter((s) => s.op === "db.sql.query" && s.description);
+  const counts = new Map<string, { count: number; totalDuration: number }>();
+  for (const span of dbSpans) {
+    const desc = span.description!;
+    const existing = counts.get(desc);
+    if (existing) {
+      existing.count++;
+      existing.totalDuration += span.duration;
+    } else {
+      counts.set(desc, { count: 1, totalDuration: span.duration });
+    }
+  }
+  return Array.from(counts.entries())
+    .filter(([, v]) => v.count >= 5)
+    .map(([description, { count, totalDuration }]) => ({ description, count, totalDuration }));
 }
 
 function SpanBreakdown({ spans, totalDuration }: { spans: Span[]; totalDuration: number }) {
@@ -76,6 +202,8 @@ function SpanBreakdown({ spans, totalDuration }: { spans: Span[]; totalDuration:
   }, {});
 
   const sorted = Object.entries(groups).sort((a, b) => b[1].totalMs - a[1].totalMs);
+  const duplicateSpans = detectDuplicateSpans(spans);
+  const hasN1 = duplicateSpans.length > 0;
 
   return (
     <Card>
@@ -91,6 +219,11 @@ function SpanBreakdown({ spans, totalDuration }: { spans: Span[]; totalDuration:
                 <span className="w-[140px] shrink-0 truncate font-mono text-xs text-muted-foreground">
                   {op}
                 </span>
+                {op === "db.sql.query" && hasN1 && (
+                  <Badge variant="outline" className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-[10px] px-1.5 py-0">
+                    N+1
+                  </Badge>
+                )}
                 <div className="flex-1 relative h-5 rounded bg-muted/30">
                   <div
                     className="absolute h-full rounded bg-violet-500/60"
@@ -115,12 +248,66 @@ function SpanBreakdown({ spans, totalDuration }: { spans: Span[]; totalDuration:
   );
 }
 
+function WaterfallGrid({ spans, totalDuration, transactionStart }: {
+  spans: Span[];
+  totalDuration: number;
+  transactionStart: number;
+}) {
+  const enrichedSpans = enrichSpansWithRepetitions(spans);
+
+  return (
+    <div className="space-y-0.5">
+      {/* Header row */}
+      <div className="flex items-center gap-3 py-2 border-b border-border/50 mb-2">
+        <div className="w-[140px] shrink-0 text-xs font-medium text-muted-foreground">
+          Operation
+        </div>
+        <div className="flex-1 text-xs font-medium text-muted-foreground">
+          Timeline
+        </div>
+        <div className="w-[180px] shrink-0 text-xs font-medium text-muted-foreground">
+          Description
+        </div>
+      </div>
+      {/* Span rows */}
+      {enrichedSpans.map(({ span, repetition }) => (
+        <SpanBar
+          key={span.id}
+          span={span}
+          totalDuration={totalDuration}
+          transactionStart={transactionStart}
+          repetition={repetition}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface TransactionDetailProps {
   transaction: TransactionWithSpans;
 }
 
 export function TransactionDetail({ transaction }: TransactionDetailProps) {
   const transactionStart = new Date(transaction.startTimestamp).getTime();
+  const duplicateSpans = detectDuplicateSpans(transaction.spans);
+  const hasN1 = duplicateSpans.length > 0;
+
+  const parsedData = (() => {
+    if (!transaction.data) return null;
+    try {
+      return JSON.parse(transaction.data) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  })();
+
+  const sdkN1Queries = parsedData?.n_plus_one_queries as
+    | Array<{ query_pattern: string; count: number; total_duration: number }>
+    | undefined;
+
+  const queryStats = parsedData?.query_stats as
+    | { total_queries: number; unique_queries: number; total_query_time: number }
+    | undefined;
 
   return (
     <div className="space-y-6">
@@ -183,10 +370,90 @@ export function TransactionDetail({ transaction }: TransactionDetailProps) {
         <SpanBreakdown spans={transaction.spans} totalDuration={transaction.duration} />
       )}
 
+      {/* SDK Query Stats */}
+      {queryStats && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Query Statistics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Queries</p>
+                <p className="text-sm font-medium font-mono">{queryStats.total_queries}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Unique Queries</p>
+                <p className="text-sm font-medium font-mono">{queryStats.unique_queries}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Query Time</p>
+                <p className="text-sm font-medium font-mono">{formatDuration(queryStats.total_query_time)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SDK-detected N+1 Queries */}
+      {sdkN1Queries && sdkN1Queries.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span className="font-medium text-amber-800 dark:text-amber-200">SDK-Detected N+1 Queries</span>
+            </div>
+            <ul className="text-sm space-y-1">
+              {sdkN1Queries.map((q) => (
+                <li key={q.query_pattern}>
+                  <code className="text-xs">{q.query_pattern}</code> — {q.count} times (total: {formatDuration(q.total_duration)})
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* N+1 Warning (span-based detection) */}
+      {hasN1 && (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span className="font-medium text-amber-800 dark:text-amber-200">N+1 Query Pattern Detected</span>
+            </div>
+            <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
+              The same query was executed multiple times in this request:
+            </p>
+            <ul className="text-sm space-y-1">
+              {duplicateSpans.map(({ description, count, totalDuration }) => (
+                <li key={description}>
+                  <code className="text-xs">{description}</code> — {count} times (total: {totalDuration.toFixed(0)}ms)
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Waterfall */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Span Waterfall</CardTitle>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-violet-500" />
+              <span>Normal</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-orange-400" />
+              <span>Repeated</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-amber-500" />
+              <span>N+1 Suspect</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {transaction.spans.length === 0 ? (
@@ -194,16 +461,11 @@ export function TransactionDetail({ transaction }: TransactionDetailProps) {
               No spans recorded for this transaction.
             </p>
           ) : (
-            <div className="space-y-0.5">
-              {transaction.spans.map((span) => (
-                <SpanBar
-                  key={span.id}
-                  span={span}
-                  totalDuration={transaction.duration}
-                  transactionStart={transactionStart}
-                />
-              ))}
-            </div>
+            <WaterfallGrid
+              spans={transaction.spans}
+              totalDuration={transaction.duration}
+              transactionStart={transactionStart}
+            />
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useRef, useCallback } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { trpc } from "@/lib/trpc/client";
 
 interface Organization {
   id: string;
@@ -33,42 +34,16 @@ function extractOrgSlugFromPath(pathname: string): string | null {
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const orgsFetched = useRef(false);
+  const { data: organizations = [], isLoading, refetch: refetchOrgs } = trpc.organizations.getAll.useQuery();
 
   // Derive slug from URL - always in sync
   const currentOrgSlug = useMemo(() => {
     return extractOrgSlugFromPath(pathname);
   }, [pathname]);
 
-  // Fetch organizations function
-  const fetchOrganizations = useCallback(async () => {
-    try {
-      const res = await fetch("/api/trpc/organizations.getAll?input={}");
-      const data = await res.json();
-      const orgsList = data?.result?.data?.json || [];
-      console.log('[OrganizationContext] Fetched orgs:', orgsList.map((o: Organization) => ({ id: o.id, slug: o.slug })));
-      setOrganizations(orgsList);
-    } catch (err) {
-      console.error('[OrganizationContext] Error fetching orgs:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Refetch function exposed to consumers
-  const refetch = useCallback(async () => {
-    setIsLoading(true);
-    await fetchOrganizations();
-  }, [fetchOrganizations]);
-
-  // Initial fetch
-  useEffect(() => {
-    if (orgsFetched.current) return;
-    orgsFetched.current = true;
-    fetchOrganizations();
-  }, [fetchOrganizations]);
+  const refetch = async () => {
+    await refetchOrgs();
+  };
 
   // Resolve org from slug
   const currentOrganization = useMemo(() => {

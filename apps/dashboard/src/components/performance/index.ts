@@ -1,4 +1,9 @@
 export { WebVitalsCards } from './WebVitalsCards';
 export { SlowestTable } from './SlowestTable';
 export { TransactionsTable } from './TransactionsTable';
+export { TransactionsDataTable } from './TransactionsDataTable';
 export { TransactionDetail } from './TransactionDetail';
+export { SpanBreakdownOverview } from './SpanBreakdownOverview';
+export { QueryInsights } from './QueryInsights';
+export { ApdexGauge } from './ApdexGauge';
+export { EndpointImpact } from './EndpointImpact';

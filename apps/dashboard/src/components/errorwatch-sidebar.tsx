@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Zap,
   LayoutDashboard,
+  Wrench,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -39,9 +40,13 @@ export function ErrorWatchSidebar({
 }: React.ComponentProps<typeof Sidebar>) {
   const { currentOrgSlug } = useCurrentOrganization();
   const { currentProjectSlug } = useCurrentProject();
-  const { data: session, isLoading: sessionLoading } = trpc.auth.getSession.useQuery();
+  const { data: session, isLoading: sessionLoading } = trpc.auth.getSession.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
   const pathname = usePathname();
   const sseStatus = useSSEStatus();
+
+  const baseUrl = currentOrgSlug && currentProjectSlug
+    ? `/dashboard/${currentOrgSlug}/${currentProjectSlug}`
+    : null;
 
   // Build navigation items based on current org AND project
   const navMain = React.useMemo(() => {
@@ -57,7 +62,7 @@ export function ErrorWatchSidebar({
     }
 
     // If no project selected, point to org-level (will show empty state)
-    if (!currentProjectSlug) {
+    if (!baseUrl) {
       const orgUrl = `/dashboard/${currentOrgSlug}`;
       return [
         {
@@ -69,7 +74,6 @@ export function ErrorWatchSidebar({
       ];
     }
 
-    const baseUrl = `/dashboard/${currentOrgSlug}/${currentProjectSlug}`;
     return [
       {
         title: "Dashboard",
@@ -100,17 +104,24 @@ export function ErrorWatchSidebar({
         url: `${baseUrl}/performance`,
         icon: Gauge,
         isActive: pathname.startsWith(`${baseUrl}/performance`),
+        children: [
+          { title: "Overview", url: `${baseUrl}/performance`, isActive: pathname === `${baseUrl}/performance` },
+          { title: "Transactions", url: `${baseUrl}/performance/transactions`, isActive: pathname.startsWith(`${baseUrl}/performance/transactions`) },
+          { title: "Web Vitals", url: `${baseUrl}/performance/web-vitals`, isActive: pathname === `${baseUrl}/performance/web-vitals` },
+          { title: "Database Queries", url: `${baseUrl}/performance/queries`, isActive: pathname === `${baseUrl}/performance/queries` },
+        ],
       },
     ];
-  }, [currentOrgSlug, currentProjectSlug, pathname]);
+  }, [currentOrgSlug, baseUrl, pathname]);
+
+  const isDev = process.env.NODE_ENV !== "production";
 
   const navSecondary = React.useMemo(() => {
     // Settings and Help require project context
-    if (!currentOrgSlug || !currentProjectSlug) {
+    if (!baseUrl) {
       return [];
     }
-    const baseUrl = `/dashboard/${currentOrgSlug}/${currentProjectSlug}`;
-    return [
+    const items = [
       {
         title: "Settings",
         url: `${baseUrl}/settings`,
@@ -122,7 +133,17 @@ export function ErrorWatchSidebar({
         icon: HelpCircle,
       },
     ];
-  }, [currentOrgSlug, currentProjectSlug]);
+
+    if (isDev) {
+      items.push({
+        title: "Admin",
+        url: `${baseUrl}/admin`,
+        icon: Wrench,
+      });
+    }
+
+    return items;
+  }, [baseUrl, isDev]);
 
   const user = React.useMemo(
     () => ({
@@ -142,7 +163,7 @@ export function ErrorWatchSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-transparent active:bg-transparent"
             >
               <Link href="/dashboard">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 shadow-lg shadow-violet-600/25">

@@ -11,6 +11,7 @@ router.get("/", asHandler(StatsController.getGlobalStats));
 router.get("/dashboard", asHandler(StatsController.getDashboardStats));
 router.get("/timeline", asHandler(StatsController.getTimelineStats));
 router.get("/env-breakdown", asHandler(StatsController.getEnvBreakdown));
+router.get("/severity-breakdown", asHandler(StatsController.getSeverityBreakdown));
 
 export default router;
 

@@ -21,7 +21,7 @@ export function ProjectSelector() {
   const { currentOrgSlug, isLoading: orgsLoading } = useCurrentOrganization();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: canCreateResult } = trpc.projects.canCreate.useQuery();
+  const { data: canCreateResult } = trpc.projects.canCreate.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
 
   const isLoading = projectsLoading || orgsLoading;
 

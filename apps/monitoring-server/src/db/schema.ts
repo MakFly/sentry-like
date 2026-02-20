@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, unique, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, unique, index, uniqueIndex, jsonb, real } from "drizzle-orm/pg-core";
 
 // ============================================
 // Error Tracking Tables
@@ -26,6 +26,8 @@ export const errorGroups = pgTable("error_groups", {
   assignedAt: timestamp("assigned_at", { withTimezone: true }),
   // Merge support
   mergedInto: text("merged_into"),
+  // User impact
+  usersAffected: integer("users_affected").notNull().default(0),
   // Snooze support
   snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
   snoozedBy: text("snoozed_by"),
@@ -58,12 +60,15 @@ export const errorEvents = pgTable("error_events", {
   breadcrumbs: jsonb("breadcrumbs"),
   // Session ID for session replay linking
   sessionId: text("session_id"),
+  // User context
+  userId: text("user_id"),
   // Release tracking
   release: text("release"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 }, (table) => ({
   // Performance indexes for common queries
   projectCreatedIdx: index("idx_error_events_project_created").on(table.projectId, table.createdAt),
+  userIdx: index("idx_error_events_user").on(table.userId),
   fingerprintIdx: index("idx_error_events_fingerprint").on(table.fingerprint),
   envIdx: index("idx_error_events_env").on(table.env),
   sessionIdx: index("idx_error_events_session").on(table.sessionId),
@@ -415,4 +420,118 @@ export const fingerprintRules = pgTable("fingerprint_rules", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 }, (table) => ({
   projectPriorityIdx: index("idx_fingerprint_rules_project").on(table.projectId, table.priority),
+}));
+
+// ============================================
+// Performance Aggregation Tables
+// ============================================
+
+// Hourly aggregates of performance metrics (Web Vitals, custom)
+export const performanceMetricsHourly = pgTable("performance_metrics_hourly", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  name: text("name").notNull(),
+  env: text("env").notNull(),
+  hourBucket: timestamp("hour_bucket", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+  sum: real("sum").notNull().default(0),
+  avg: real("avg").notNull().default(0),
+  min: real("min").notNull().default(0),
+  max: real("max").notNull().default(0),
+  p50: real("p50").notNull().default(0),
+  p75: real("p75").notNull().default(0),
+  p90: real("p90").notNull().default(0),
+  p95: real("p95").notNull().default(0),
+  p99: real("p99").notNull().default(0),
+}, (table) => ({
+  projectTypeHourIdx: index("idx_perf_hourly_project_type").on(table.projectId, table.type, table.hourBucket),
+  uniqueBucket: uniqueIndex("idx_perf_hourly_unique").on(table.projectId, table.type, table.name, table.env, table.hourBucket),
+}));
+
+// Daily aggregates of performance metrics
+export const performanceMetricsDaily = pgTable("performance_metrics_daily", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  name: text("name").notNull(),
+  env: text("env").notNull(),
+  dayBucket: timestamp("day_bucket", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+  sum: real("sum").notNull().default(0),
+  avg: real("avg").notNull().default(0),
+  min: real("min").notNull().default(0),
+  max: real("max").notNull().default(0),
+  p50: real("p50").notNull().default(0),
+  p75: real("p75").notNull().default(0),
+  p90: real("p90").notNull().default(0),
+  p95: real("p95").notNull().default(0),
+  p99: real("p99").notNull().default(0),
+}, (table) => ({
+  projectTypeDayIdx: index("idx_perf_daily_project_type").on(table.projectId, table.type, table.dayBucket),
+  uniqueBucket: uniqueIndex("idx_perf_daily_unique").on(table.projectId, table.type, table.name, table.env, table.dayBucket),
+}));
+
+// Hourly aggregates of transactions
+export const transactionAggregatesHourly = pgTable("transaction_aggregates_hourly", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  op: text("op").notNull(),
+  env: text("env").notNull(),
+  hourBucket: timestamp("hour_bucket", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+  errorCount: integer("error_count").notNull().default(0),
+  durationSum: real("duration_sum").notNull().default(0),
+  durationAvg: real("duration_avg").notNull().default(0),
+  durationMin: real("duration_min").notNull().default(0),
+  durationMax: real("duration_max").notNull().default(0),
+  durationP50: real("duration_p50").notNull().default(0),
+  durationP75: real("duration_p75").notNull().default(0),
+  durationP90: real("duration_p90").notNull().default(0),
+  durationP95: real("duration_p95").notNull().default(0),
+  durationP99: real("duration_p99").notNull().default(0),
+  // Pre-computed Apdex buckets
+  apdexSatisfied: integer("apdex_satisfied").notNull().default(0),
+  apdexTolerating: integer("apdex_tolerating").notNull().default(0),
+  apdexFrustrated: integer("apdex_frustrated").notNull().default(0),
+}, (table) => ({
+  projectOpHourIdx: index("idx_trans_hourly_project_op").on(table.projectId, table.op, table.hourBucket),
+  uniqueBucket: uniqueIndex("idx_trans_hourly_unique").on(table.projectId, table.name, table.op, table.env, table.hourBucket),
+}));
+
+// Daily aggregates of transactions
+export const transactionAggregatesDaily = pgTable("transaction_aggregates_daily", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  op: text("op").notNull(),
+  env: text("env").notNull(),
+  dayBucket: timestamp("day_bucket", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+  errorCount: integer("error_count").notNull().default(0),
+  durationSum: real("duration_sum").notNull().default(0),
+  durationAvg: real("duration_avg").notNull().default(0),
+  durationMin: real("duration_min").notNull().default(0),
+  durationMax: real("duration_max").notNull().default(0),
+  durationP50: real("duration_p50").notNull().default(0),
+  durationP75: real("duration_p75").notNull().default(0),
+  durationP90: real("duration_p90").notNull().default(0),
+  durationP95: real("duration_p95").notNull().default(0),
+  durationP99: real("duration_p99").notNull().default(0),
+  // Pre-computed Apdex buckets
+  apdexSatisfied: integer("apdex_satisfied").notNull().default(0),
+  apdexTolerating: integer("apdex_tolerating").notNull().default(0),
+  apdexFrustrated: integer("apdex_frustrated").notNull().default(0),
+}, (table) => ({
+  projectOpDayIdx: index("idx_trans_daily_project_op").on(table.projectId, table.op, table.dayBucket),
+  uniqueBucket: uniqueIndex("idx_trans_daily_unique").on(table.projectId, table.name, table.op, table.env, table.dayBucket),
 }));

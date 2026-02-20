@@ -85,6 +85,7 @@ export interface EventJobData {
   breadcrumbs: unknown;
   sessionId: string | null;
   release?: string;
+  userId?: string | null;
   createdAt: string;
 }
 
@@ -109,6 +110,35 @@ export interface AlertJobData {
   projectId: string;
   fingerprint: string;
   isNewGroup: boolean;
+  isRegression?: boolean;
   level: string;
   message: string;
+}
+
+/**
+ * Aggregation queue - nightly aggregation & cleanup cron jobs
+ */
+export const aggregationQueue = new Queue("aggregation", {
+  ...redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 10000,
+    },
+    removeOnComplete: {
+      age: 86400, // Keep for 24 hours
+      count: 100,
+    },
+    removeOnFail: {
+      age: 604800, // Keep failed for 7 days
+    },
+  },
+});
+
+export type AggregationJobType = "aggregate-hourly" | "aggregate-daily" | "cleanup-expired";
+
+export interface AggregationJobData {
+  type: AggregationJobType;
+  targetDate?: string; // ISO date string
 }

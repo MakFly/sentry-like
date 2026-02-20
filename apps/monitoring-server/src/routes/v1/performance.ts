@@ -16,5 +16,9 @@ router.get("/web-vitals", auth(), asHandler(PerformanceController.getWebVitalsSu
 router.get("/transactions", auth(), asHandler(PerformanceController.getTransactions));
 router.get("/transactions/:id", auth(), asHandler(PerformanceController.getTransaction));
 router.get("/slowest", auth(), asHandler(PerformanceController.getSlowestTransactions));
+router.get("/span-analysis", auth(), asHandler(PerformanceController.getSpanAnalysis));
+router.get("/apdex", auth(), asHandler(PerformanceController.getApdexScore));
+router.get("/server-stats", auth(), asHandler(PerformanceController.getServerStats));
+router.get("/top-endpoints", auth(), asHandler(PerformanceController.getTopEndpoints));
 
 export default router;

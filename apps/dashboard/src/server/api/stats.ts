@@ -1,5 +1,5 @@
 import { fetchAPI } from './client';
-import type { Stats, DashboardStats, TimelinePoint, EnvBreakdown, TimelineRange } from './types';
+import type { Stats, DashboardStats, TimelinePoint, EnvBreakdown, SeverityBreakdown, TimelineRange } from './types';
 
 export const getGlobal = async (projectId?: string): Promise<Stats> => {
   const params = projectId ? `?projectId=${projectId}` : "";
@@ -21,5 +21,10 @@ export const getTimeline = async (range: TimelineRange = "30d", projectId?: stri
 export const getEnvBreakdown = async (projectId?: string): Promise<EnvBreakdown[]> => {
   const params = projectId ? `?projectId=${projectId}` : "";
   return fetchAPI<EnvBreakdown[]>(`/stats/env-breakdown${params}`);
+};
+
+export const getSeverityBreakdown = async (projectId?: string): Promise<SeverityBreakdown[]> => {
+  const params = projectId ? `?projectId=${projectId}` : "";
+  return fetchAPI<SeverityBreakdown[]>(`/stats/severity-breakdown${params}`);
 };
 

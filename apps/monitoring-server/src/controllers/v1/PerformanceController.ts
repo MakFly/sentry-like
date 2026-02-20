@@ -6,12 +6,50 @@ import type { Context } from "hono";
 import type { AuthContext } from "../../types/context";
 import { z } from "zod";
 import { db } from "../../db/connection";
-import { performanceMetrics, transactions, spans } from "../../db/schema";
+import { performanceMetrics, performanceMetricsHourly, performanceMetricsDaily, transactions, transactionAggregatesHourly, transactionAggregatesDaily, spans, projects } from "../../db/schema";
 import { verifyProjectAccess } from "../../services/project-access";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import logger from "../../logger";
+import { publishEvent } from "../../sse/publisher";
+
+// === Date Range Helpers ===
+
+type ExtendedDateRange = "24h" | "7d" | "30d" | "90d" | "6m" | "1y";
+
+function getStartDate(dateRange: ExtendedDateRange | undefined): Date {
+  const now = Date.now();
+  switch (dateRange) {
+    case "24h": return new Date(now - 24 * 60 * 60 * 1000);
+    case "7d": return new Date(now - 7 * 24 * 60 * 60 * 1000);
+    case "30d": return new Date(now - 30 * 24 * 60 * 60 * 1000);
+    case "90d": return new Date(now - 90 * 24 * 60 * 60 * 1000);
+    case "6m": return new Date(now - 180 * 24 * 60 * 60 * 1000);
+    case "1y": return new Date(now - 365 * 24 * 60 * 60 * 1000);
+    default: return new Date(now - 24 * 60 * 60 * 1000);
+  }
+}
+
+function getAggregationSource(dateRange: ExtendedDateRange | undefined): "raw" | "hourly" | "daily" {
+  switch (dateRange) {
+    case "24h":
+    case undefined:
+      return "raw";
+    case "7d":
+    case "30d":
+      return "hourly";
+    case "90d":
+    case "6m":
+    case "1y":
+      return "daily";
+  }
+}
 
 // === Validation Schemas ===
+
+// PHP json_encode([]) produces [] (array) instead of {} (object).
+// This preprocessor normalizes empty arrays to empty objects for record fields.
+const emptyArrayToObject = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((val) => (Array.isArray(val) && val.length === 0 ? {} : val), schema);
 
 const metricSchema = z.object({
   type: z.enum(["web_vitals", "page_load", "custom"]),
@@ -19,7 +57,7 @@ const metricSchema = z.object({
   value: z.number(),
   unit: z.string().max(20).optional(),
   url: z.string().max(2000).optional(),
-  tags: z.record(z.string()).optional(),
+  tags: emptyArrayToObject(z.record(z.string())).optional(),
   timestamp: z.number(),
   sessionId: z.string().max(100).optional(),
   userId: z.string().max(100).optional(),
@@ -33,7 +71,7 @@ const spanSchema = z.object({
   status: z.string().max(20).optional(),
   startTimestamp: z.number(),
   endTimestamp: z.number(),
-  data: z.record(z.any()).optional(),
+  data: emptyArrayToObject(z.record(z.any())).optional(),
 });
 
 const transactionSchema = z.object({
@@ -46,8 +84,8 @@ const transactionSchema = z.object({
   startTimestamp: z.number(),
   endTimestamp: z.number(),
   spans: z.array(spanSchema).optional(),
-  tags: z.record(z.string()).optional(),
-  data: z.record(z.any()).optional(),
+  tags: emptyArrayToObject(z.record(z.string())).optional(),
+  data: emptyArrayToObject(z.record(z.any())).optional(),
 });
 
 const metricsPayloadSchema = z.object({
@@ -123,6 +161,38 @@ export const submitMetrics = async (c: Context) => {
 };
 
 /**
+ * Normalize transaction data fields to canonical format.
+ * Accepts both SDK-specific and canonical names (forward-compatible).
+ */
+function normalizeTransactionData(data: Record<string, any>): Record<string, any> {
+  const normalized = { ...data };
+
+  // Normalize n_plus_one_queries entries
+  if (Array.isArray(normalized.n_plus_one_queries)) {
+    normalized.n_plus_one_queries = normalized.n_plus_one_queries.map(
+      (entry: Record<string, any>) => ({
+        ...entry,
+        query_pattern: entry.query_pattern ?? entry.query,
+        total_duration: entry.total_duration ?? entry.totalDurationMs,
+      })
+    );
+  }
+
+  // Normalize query_stats
+  if (normalized.query_stats && typeof normalized.query_stats === "object") {
+    const qs = normalized.query_stats;
+    normalized.query_stats = {
+      ...qs,
+      total_queries: qs.total_queries ?? qs.total,
+      unique_queries: qs.unique_queries ?? qs.uniqueQueries,
+      total_query_time: qs.total_query_time ?? qs.totalQueryTimeMs,
+    };
+  }
+
+  return normalized;
+}
+
+/**
  * Submit a transaction from SDK
  */
 export const submitTransaction = async (c: Context) => {
@@ -154,7 +224,7 @@ export const submitTransaction = async (c: Context) => {
       startTimestamp: new Date(transaction.startTimestamp),
       endTimestamp: new Date(transaction.endTimestamp),
       tags: transaction.tags ? JSON.stringify(transaction.tags) : null,
-      data: transaction.data ? JSON.stringify(transaction.data) : null,
+      data: transaction.data ? JSON.stringify(normalizeTransactionData(transaction.data)) : null,
       env: input.env,
       createdAt: now,
     });
@@ -186,6 +256,25 @@ export const submitTransaction = async (c: Context) => {
       projectId,
     });
 
+    // Publish SSE event for real-time dashboard updates
+    const project = await db
+      .select({ organizationId: projects.organizationId })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (project[0]?.organizationId) {
+      publishEvent(project[0].organizationId, {
+        type: "transaction:new",
+        projectId,
+        payload: {
+          transactionId: transaction.id,
+          message: transaction.name,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
     return c.json({ success: true, transactionId: transaction.id });
   } catch (e) {
     if (e instanceof z.ZodError) {
@@ -209,7 +298,7 @@ export const getMetrics = async (c: AuthContext) => {
   const projectId = c.req.query("projectId");
   const type = c.req.query("type") as string | undefined;
   const name = c.req.query("name") as string | undefined;
-  const dateRange = c.req.query("dateRange") as "24h" | "7d" | "30d" | undefined;
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
 
   if (!projectId) {
     return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
@@ -220,18 +309,8 @@ export const getMetrics = async (c: AuthContext) => {
     return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
   }
 
-  // Build date filter
-  let startDate: Date | undefined;
-  if (dateRange) {
-    const now = new Date();
-    if (dateRange === "24h") {
-      startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    } else if (dateRange === "7d") {
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    } else if (dateRange === "30d") {
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    }
-  }
+  // Build date filter - getMetrics always uses raw data (paginated individual records)
+  const startDate = dateRange ? getStartDate(dateRange) : undefined;
 
   // Build conditions array - all filters must be combined
   const conditions = [eq(performanceMetrics.projectId, projectId)];
@@ -266,7 +345,7 @@ export const getMetrics = async (c: AuthContext) => {
 export const getWebVitalsSummary = async (c: AuthContext) => {
   const userId = c.get("userId");
   const projectId = c.req.query("projectId");
-  const dateRange = c.req.query("dateRange") as "24h" | "7d" | "30d" | undefined;
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
 
   if (!projectId) {
     return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
@@ -277,34 +356,72 @@ export const getWebVitalsSummary = async (c: AuthContext) => {
     return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
   }
 
-  // Build date filter
-  let startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  if (dateRange === "7d") {
-    startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  } else if (dateRange === "30d") {
-    startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  }
+  const startDate = getStartDate(dateRange);
+  const source = getAggregationSource(dateRange);
 
-  // Get aggregated Web Vitals
-  const vitals = await db
-    .select({
-      name: performanceMetrics.name,
-      avg: sql<number>`avg(${performanceMetrics.value})`,
-      p50: sql<number>`avg(${performanceMetrics.value})`, // Approximation
-      p75: sql<number>`avg(${performanceMetrics.value}) * 1.1`, // Approximation
-      p95: sql<number>`max(${performanceMetrics.value})`,
-      count: sql<number>`count(*)`,
-    })
-    .from(performanceMetrics)
-    .where(
-      and(
-        eq(performanceMetrics.projectId, projectId),
-        eq(performanceMetrics.type, "web_vitals"),
-        gte(performanceMetrics.timestamp, startDate)
+  let vitals: { name: string; avg: number; p50: number; p75: number; p95: number; count: number }[];
+
+  if (source === "raw") {
+    // Real-time: query raw performance_metrics
+    vitals = await db
+      .select({
+        name: performanceMetrics.name,
+        avg: sql<number>`avg(${performanceMetrics.value})`,
+        p50: sql<number>`avg(${performanceMetrics.value})`,
+        p75: sql<number>`avg(${performanceMetrics.value}) * 1.1`,
+        p95: sql<number>`max(${performanceMetrics.value})`,
+        count: sql<number>`count(*)`,
+      })
+      .from(performanceMetrics)
+      .where(
+        and(
+          eq(performanceMetrics.projectId, projectId),
+          eq(performanceMetrics.type, "web_vitals"),
+          gte(performanceMetrics.timestamp, startDate)
+        )
       )
-    )
-    .groupBy(performanceMetrics.name)
-    ;
+      .groupBy(performanceMetrics.name);
+  } else if (source === "hourly") {
+    // 7d/30d: query hourly aggregates
+    vitals = await db
+      .select({
+        name: performanceMetricsHourly.name,
+        avg: sql<number>`CASE WHEN SUM(${performanceMetricsHourly.count}) > 0 THEN SUM(${performanceMetricsHourly.sum}) / SUM(${performanceMetricsHourly.count}) ELSE 0 END`,
+        p50: sql<number>`CASE WHEN SUM(${performanceMetricsHourly.count}) > 0 THEN SUM(${performanceMetricsHourly.p50} * ${performanceMetricsHourly.count}) / SUM(${performanceMetricsHourly.count}) ELSE 0 END`,
+        p75: sql<number>`CASE WHEN SUM(${performanceMetricsHourly.count}) > 0 THEN SUM(${performanceMetricsHourly.p75} * ${performanceMetricsHourly.count}) / SUM(${performanceMetricsHourly.count}) ELSE 0 END`,
+        p95: sql<number>`MAX(${performanceMetricsHourly.p95})`,
+        count: sql<number>`SUM(${performanceMetricsHourly.count})`,
+      })
+      .from(performanceMetricsHourly)
+      .where(
+        and(
+          eq(performanceMetricsHourly.projectId, projectId),
+          eq(performanceMetricsHourly.type, "web_vitals"),
+          gte(performanceMetricsHourly.hourBucket, startDate)
+        )
+      )
+      .groupBy(performanceMetricsHourly.name);
+  } else {
+    // 90d/6m/1y: query daily aggregates
+    vitals = await db
+      .select({
+        name: performanceMetricsDaily.name,
+        avg: sql<number>`CASE WHEN SUM(${performanceMetricsDaily.count}) > 0 THEN SUM(${performanceMetricsDaily.sum}) / SUM(${performanceMetricsDaily.count}) ELSE 0 END`,
+        p50: sql<number>`CASE WHEN SUM(${performanceMetricsDaily.count}) > 0 THEN SUM(${performanceMetricsDaily.p50} * ${performanceMetricsDaily.count}) / SUM(${performanceMetricsDaily.count}) ELSE 0 END`,
+        p75: sql<number>`CASE WHEN SUM(${performanceMetricsDaily.count}) > 0 THEN SUM(${performanceMetricsDaily.p75} * ${performanceMetricsDaily.count}) / SUM(${performanceMetricsDaily.count}) ELSE 0 END`,
+        p95: sql<number>`MAX(${performanceMetricsDaily.p95})`,
+        count: sql<number>`SUM(${performanceMetricsDaily.count})`,
+      })
+      .from(performanceMetricsDaily)
+      .where(
+        and(
+          eq(performanceMetricsDaily.projectId, projectId),
+          eq(performanceMetricsDaily.type, "web_vitals"),
+          gte(performanceMetricsDaily.dayBucket, startDate)
+        )
+      )
+      .groupBy(performanceMetricsDaily.name);
+  }
 
   // Define thresholds for good/needs improvement/poor
   const thresholds: Record<string, { good: number; needsImprovement: number }> = {
@@ -333,7 +450,7 @@ export const getWebVitalsSummary = async (c: AuthContext) => {
       p50: Math.round(vital.p50),
       p75: Math.round(vital.p75),
       p95: Math.round(vital.p95),
-      count: vital.count,
+      count: Number(vital.count),
       status,
       threshold: threshold || null,
     };
@@ -431,12 +548,15 @@ export const getTransaction = async (c: AuthContext) => {
 };
 
 /**
- * Get slowest transactions summary
+ * Get Apdex score for a project
+ * Formula: (satisfied + tolerating/2) / total
+ * Satisfied: duration < 500ms, Tolerating: 500ms–2000ms, Frustrated: >= 2000ms
  */
-export const getSlowestTransactions = async (c: AuthContext) => {
+export const getApdexScore = async (c: AuthContext) => {
   const userId = c.get("userId");
   const projectId = c.req.query("projectId");
-  const dateRange = c.req.query("dateRange") as "24h" | "7d" | "30d" | undefined;
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
+  const threshold = parseInt(c.req.query("threshold") || "500", 10);
 
   if (!projectId) {
     return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
@@ -447,38 +567,467 @@ export const getSlowestTransactions = async (c: AuthContext) => {
     return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
   }
 
-  let startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  if (dateRange === "7d") {
-    startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  } else if (dateRange === "30d") {
-    startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const startDate = getStartDate(dateRange);
+  const source = getAggregationSource(dateRange);
+
+  let total: number, satisfied: number, tolerating: number, frustrated: number;
+
+  if (source === "raw") {
+    const toleratingThreshold = threshold * 4; // Standard Apdex: 4x satisfied threshold
+
+    const result = await db
+      .select({
+        total: sql<number>`count(*)`,
+        satisfied: sql<number>`count(*) filter (where ${transactions.duration} < ${threshold})`,
+        tolerating: sql<number>`count(*) filter (where ${transactions.duration} >= ${threshold} and ${transactions.duration} < ${toleratingThreshold})`,
+        frustrated: sql<number>`count(*) filter (where ${transactions.duration} >= ${toleratingThreshold})`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.projectId, projectId),
+          gte(transactions.startTimestamp, startDate)
+        )
+      );
+
+    const row = result[0] || { total: 0, satisfied: 0, tolerating: 0, frustrated: 0 };
+    total = Number(row.total);
+    satisfied = Number(row.satisfied);
+    tolerating = Number(row.tolerating);
+    frustrated = Number(row.frustrated);
+  } else if (source === "hourly") {
+    const result = await db
+      .select({
+        satisfied: sql<number>`SUM(${transactionAggregatesHourly.apdexSatisfied})`,
+        tolerating: sql<number>`SUM(${transactionAggregatesHourly.apdexTolerating})`,
+        frustrated: sql<number>`SUM(${transactionAggregatesHourly.apdexFrustrated})`,
+        total: sql<number>`SUM(${transactionAggregatesHourly.count})`,
+      })
+      .from(transactionAggregatesHourly)
+      .where(
+        and(
+          eq(transactionAggregatesHourly.projectId, projectId),
+          gte(transactionAggregatesHourly.hourBucket, startDate)
+        )
+      );
+
+    const row = result[0] || { total: 0, satisfied: 0, tolerating: 0, frustrated: 0 };
+    total = Number(row.total) || 0;
+    satisfied = Number(row.satisfied) || 0;
+    tolerating = Number(row.tolerating) || 0;
+    frustrated = Number(row.frustrated) || 0;
+  } else {
+    const result = await db
+      .select({
+        satisfied: sql<number>`SUM(${transactionAggregatesDaily.apdexSatisfied})`,
+        tolerating: sql<number>`SUM(${transactionAggregatesDaily.apdexTolerating})`,
+        frustrated: sql<number>`SUM(${transactionAggregatesDaily.apdexFrustrated})`,
+        total: sql<number>`SUM(${transactionAggregatesDaily.count})`,
+      })
+      .from(transactionAggregatesDaily)
+      .where(
+        and(
+          eq(transactionAggregatesDaily.projectId, projectId),
+          gte(transactionAggregatesDaily.dayBucket, startDate)
+        )
+      );
+
+    const row = result[0] || { total: 0, satisfied: 0, tolerating: 0, frustrated: 0 };
+    total = Number(row.total) || 0;
+    satisfied = Number(row.satisfied) || 0;
+    tolerating = Number(row.tolerating) || 0;
+    frustrated = Number(row.frustrated) || 0;
   }
 
-  const slowest = await db
+  const apdex = total > 0
+    ? (satisfied + tolerating / 2) / total
+    : 1;
+
+  return c.json({
+    score: Math.round(apdex * 1000) / 1000,
+    total,
+    satisfied,
+    tolerating,
+    frustrated,
+    threshold,
+  });
+};
+
+/**
+ * Get server stats: throughput (req/min) and error rate
+ */
+export const getServerStats = async (c: AuthContext) => {
+  const userId = c.get("userId");
+  const projectId = c.req.query("projectId");
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
+
+  if (!projectId) {
+    return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
+  }
+
+  const hasAccess = await verifyProjectAccess(projectId, userId);
+  if (!hasAccess) {
+    return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
+  }
+
+  const startDate = getStartDate(dateRange);
+  const source = getAggregationSource(dateRange);
+  const minutesSinceStart = (Date.now() - startDate.getTime()) / 60000;
+
+  let totalNum: number, errorsNum: number, avgDurationNum: number;
+
+  if (source === "raw") {
+    const result = await db
+      .select({
+        total: sql<number>`count(*)`,
+        errors: sql<number>`count(*) filter (where ${transactions.status} = 'error')`,
+        avgDuration: sql<number>`avg(${transactions.duration})`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.projectId, projectId),
+          gte(transactions.startTimestamp, startDate)
+        )
+      );
+
+    const row = result[0] || { total: 0, errors: 0, avgDuration: 0 };
+    totalNum = Number(row.total);
+    errorsNum = Number(row.errors);
+    avgDurationNum = Number(row.avgDuration) || 0;
+  } else if (source === "hourly") {
+    const result = await db
+      .select({
+        total: sql<number>`SUM(${transactionAggregatesHourly.count})`,
+        errors: sql<number>`SUM(${transactionAggregatesHourly.errorCount})`,
+        avgDuration: sql<number>`CASE WHEN SUM(${transactionAggregatesHourly.count}) > 0 THEN SUM(${transactionAggregatesHourly.durationSum}) / SUM(${transactionAggregatesHourly.count}) ELSE 0 END`,
+      })
+      .from(transactionAggregatesHourly)
+      .where(
+        and(
+          eq(transactionAggregatesHourly.projectId, projectId),
+          gte(transactionAggregatesHourly.hourBucket, startDate)
+        )
+      );
+
+    const row = result[0] || { total: 0, errors: 0, avgDuration: 0 };
+    totalNum = Number(row.total) || 0;
+    errorsNum = Number(row.errors) || 0;
+    avgDurationNum = Number(row.avgDuration) || 0;
+  } else {
+    const result = await db
+      .select({
+        total: sql<number>`SUM(${transactionAggregatesDaily.count})`,
+        errors: sql<number>`SUM(${transactionAggregatesDaily.errorCount})`,
+        avgDuration: sql<number>`CASE WHEN SUM(${transactionAggregatesDaily.count}) > 0 THEN SUM(${transactionAggregatesDaily.durationSum}) / SUM(${transactionAggregatesDaily.count}) ELSE 0 END`,
+      })
+      .from(transactionAggregatesDaily)
+      .where(
+        and(
+          eq(transactionAggregatesDaily.projectId, projectId),
+          gte(transactionAggregatesDaily.dayBucket, startDate)
+        )
+      );
+
+    const row = result[0] || { total: 0, errors: 0, avgDuration: 0 };
+    totalNum = Number(row.total) || 0;
+    errorsNum = Number(row.errors) || 0;
+    avgDurationNum = Number(row.avgDuration) || 0;
+  }
+
+  return c.json({
+    throughput: totalNum > 0 ? Math.round((totalNum / minutesSinceStart) * 100) / 100 : 0,
+    totalTransactions: totalNum,
+    errorRate: totalNum > 0 ? Math.round((errorsNum / totalNum) * 10000) / 100 : 0,
+    errorCount: errorsNum,
+    avgDuration: Math.round(avgDurationNum),
+  });
+};
+
+/**
+ * Get top endpoints by impact (count × avg duration)
+ */
+export const getTopEndpoints = async (c: AuthContext) => {
+  const userId = c.get("userId");
+  const projectId = c.req.query("projectId");
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
+
+  if (!projectId) {
+    return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
+  }
+
+  const hasAccess = await verifyProjectAccess(projectId, userId);
+  if (!hasAccess) {
+    return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
+  }
+
+  const startDate = getStartDate(dateRange);
+  const source = getAggregationSource(dateRange);
+
+  let endpoints: { name: string; op: string; count: number; avgDuration: number; totalDuration: number; errorCount: number }[];
+
+  if (source === "raw") {
+    endpoints = await db
+      .select({
+        name: transactions.name,
+        op: transactions.op,
+        count: sql<number>`count(*)`,
+        avgDuration: sql<number>`avg(${transactions.duration})`,
+        totalDuration: sql<number>`sum(${transactions.duration})`,
+        errorCount: sql<number>`count(*) filter (where ${transactions.status} = 'error')`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.projectId, projectId),
+          gte(transactions.startTimestamp, startDate)
+        )
+      )
+      .groupBy(transactions.name, transactions.op)
+      .orderBy(sql`sum(${transactions.duration}) DESC`)
+      .limit(10);
+  } else if (source === "hourly") {
+    endpoints = await db
+      .select({
+        name: transactionAggregatesHourly.name,
+        op: transactionAggregatesHourly.op,
+        count: sql<number>`SUM(${transactionAggregatesHourly.count})`,
+        avgDuration: sql<number>`CASE WHEN SUM(${transactionAggregatesHourly.count}) > 0 THEN SUM(${transactionAggregatesHourly.durationSum}) / SUM(${transactionAggregatesHourly.count}) ELSE 0 END`,
+        totalDuration: sql<number>`SUM(${transactionAggregatesHourly.durationSum})`,
+        errorCount: sql<number>`SUM(${transactionAggregatesHourly.errorCount})`,
+      })
+      .from(transactionAggregatesHourly)
+      .where(
+        and(
+          eq(transactionAggregatesHourly.projectId, projectId),
+          gte(transactionAggregatesHourly.hourBucket, startDate)
+        )
+      )
+      .groupBy(transactionAggregatesHourly.name, transactionAggregatesHourly.op)
+      .orderBy(sql`SUM(${transactionAggregatesHourly.durationSum}) DESC`)
+      .limit(10);
+  } else {
+    endpoints = await db
+      .select({
+        name: transactionAggregatesDaily.name,
+        op: transactionAggregatesDaily.op,
+        count: sql<number>`SUM(${transactionAggregatesDaily.count})`,
+        avgDuration: sql<number>`CASE WHEN SUM(${transactionAggregatesDaily.count}) > 0 THEN SUM(${transactionAggregatesDaily.durationSum}) / SUM(${transactionAggregatesDaily.count}) ELSE 0 END`,
+        totalDuration: sql<number>`SUM(${transactionAggregatesDaily.durationSum})`,
+        errorCount: sql<number>`SUM(${transactionAggregatesDaily.errorCount})`,
+      })
+      .from(transactionAggregatesDaily)
+      .where(
+        and(
+          eq(transactionAggregatesDaily.projectId, projectId),
+          gte(transactionAggregatesDaily.dayBucket, startDate)
+        )
+      )
+      .groupBy(transactionAggregatesDaily.name, transactionAggregatesDaily.op)
+      .orderBy(sql`SUM(${transactionAggregatesDaily.durationSum}) DESC`)
+      .limit(10);
+  }
+
+  // Calculate total time across all endpoints for percentage
+  const totalTime = endpoints.reduce((sum, e) => sum + Number(e.totalDuration), 0);
+
+  return c.json(endpoints.map((e) => ({
+    name: e.name,
+    op: e.op,
+    count: Number(e.count),
+    avgDuration: Math.round(Number(e.avgDuration)),
+    totalDuration: Number(e.totalDuration),
+    errorCount: Number(e.errorCount),
+    percentOfTotal: totalTime > 0 ? Math.round((Number(e.totalDuration) / totalTime) * 10000) / 100 : 0,
+  })));
+};
+
+/**
+ * Get span analysis (breakdown by op, duplicate queries, slow queries)
+ */
+export const getSpanAnalysis = async (c: AuthContext) => {
+  const userId = c.get("userId");
+  const projectId = c.req.query("projectId");
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
+
+  if (!projectId) {
+    return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
+  }
+
+  const hasAccess = await verifyProjectAccess(projectId, userId);
+  if (!hasAccess) {
+    return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
+  }
+
+  // Span analysis always uses raw data (only relevant for recent timeframes)
+  const startDate = getStartDate(dateRange);
+
+  // 1. Breakdown by span op
+  const byOp = await db
     .select({
-      name: transactions.name,
-      op: transactions.op,
-      avgDuration: sql<number>`avg(${transactions.duration})`,
-      maxDuration: sql<number>`max(${transactions.duration})`,
+      op: spans.op,
       count: sql<number>`count(*)`,
+      totalDuration: sql<number>`sum(${spans.duration})`,
+      avgDuration: sql<number>`avg(${spans.duration})`,
     })
-    .from(transactions)
+    .from(spans)
+    .innerJoin(transactions, eq(spans.transactionId, transactions.id))
     .where(
       and(
         eq(transactions.projectId, projectId),
         gte(transactions.startTimestamp, startDate)
       )
     )
-    .groupBy(transactions.name, transactions.op)
-    .orderBy(sql`avg(${transactions.duration}) DESC`)
-    .limit(10)
-    ;
+    .groupBy(spans.op)
+    .orderBy(sql`count(*) DESC`);
+
+  // 2. Duplicate queries (same description >= 5 occurrences)
+  const duplicateQueries = await db
+    .select({
+      description: spans.description,
+      count: sql<number>`count(*)`,
+      totalDuration: sql<number>`sum(${spans.duration})`,
+    })
+    .from(spans)
+    .innerJoin(transactions, eq(spans.transactionId, transactions.id))
+    .where(
+      and(
+        eq(transactions.projectId, projectId),
+        eq(spans.op, "db.sql.query"),
+        gte(transactions.startTimestamp, startDate)
+      )
+    )
+    .groupBy(spans.description)
+    .having(sql`count(*) >= 5`)
+    .orderBy(sql`count(*) DESC`);
+
+  // 3. Top 10 slowest queries
+  const slowQueries = await db
+    .select({
+      description: spans.description,
+      duration: spans.duration,
+      transactionId: spans.transactionId,
+      transactionName: transactions.name,
+    })
+    .from(spans)
+    .innerJoin(transactions, eq(spans.transactionId, transactions.id))
+    .where(
+      and(
+        eq(transactions.projectId, projectId),
+        eq(spans.op, "db.sql.query"),
+        gte(transactions.startTimestamp, startDate)
+      )
+    )
+    .orderBy(desc(spans.duration))
+    .limit(10);
+
+  return c.json({
+    byOp: byOp.map((row) => ({
+      op: row.op,
+      count: Number(row.count),
+      totalDuration: Number(row.totalDuration),
+      avgDuration: Math.round(Number(row.avgDuration)),
+    })),
+    duplicateQueries: duplicateQueries.map((row) => ({
+      description: row.description || "",
+      count: Number(row.count),
+      totalDuration: Number(row.totalDuration),
+    })),
+    slowQueries: slowQueries.map((row) => ({
+      description: row.description || "",
+      duration: row.duration,
+      transactionId: row.transactionId,
+      transactionName: row.transactionName,
+    })),
+  });
+};
+
+/**
+ * Get slowest transactions summary
+ */
+export const getSlowestTransactions = async (c: AuthContext) => {
+  const userId = c.get("userId");
+  const projectId = c.req.query("projectId");
+  const dateRange = c.req.query("dateRange") as ExtendedDateRange | undefined;
+
+  if (!projectId) {
+    return c.json({ error: "projectId required", code: "MISSING_PROJECT_ID" }, 400);
+  }
+
+  const hasAccess = await verifyProjectAccess(projectId, userId);
+  if (!hasAccess) {
+    return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);
+  }
+
+  const startDate = getStartDate(dateRange);
+  const source = getAggregationSource(dateRange);
+
+  let slowest: { name: string; op: string; avgDuration: number; maxDuration: number; count: number }[];
+
+  if (source === "raw") {
+    slowest = await db
+      .select({
+        name: transactions.name,
+        op: transactions.op,
+        avgDuration: sql<number>`avg(${transactions.duration})`,
+        maxDuration: sql<number>`max(${transactions.duration})`,
+        count: sql<number>`count(*)`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.projectId, projectId),
+          gte(transactions.startTimestamp, startDate)
+        )
+      )
+      .groupBy(transactions.name, transactions.op)
+      .orderBy(sql`avg(${transactions.duration}) DESC`)
+      .limit(10);
+  } else if (source === "hourly") {
+    slowest = await db
+      .select({
+        name: transactionAggregatesHourly.name,
+        op: transactionAggregatesHourly.op,
+        avgDuration: sql<number>`CASE WHEN SUM(${transactionAggregatesHourly.count}) > 0 THEN SUM(${transactionAggregatesHourly.durationSum}) / SUM(${transactionAggregatesHourly.count}) ELSE 0 END`,
+        maxDuration: sql<number>`MAX(${transactionAggregatesHourly.durationMax})`,
+        count: sql<number>`SUM(${transactionAggregatesHourly.count})`,
+      })
+      .from(transactionAggregatesHourly)
+      .where(
+        and(
+          eq(transactionAggregatesHourly.projectId, projectId),
+          gte(transactionAggregatesHourly.hourBucket, startDate)
+        )
+      )
+      .groupBy(transactionAggregatesHourly.name, transactionAggregatesHourly.op)
+      .orderBy(sql`CASE WHEN SUM(${transactionAggregatesHourly.count}) > 0 THEN SUM(${transactionAggregatesHourly.durationSum}) / SUM(${transactionAggregatesHourly.count}) ELSE 0 END DESC`)
+      .limit(10);
+  } else {
+    slowest = await db
+      .select({
+        name: transactionAggregatesDaily.name,
+        op: transactionAggregatesDaily.op,
+        avgDuration: sql<number>`CASE WHEN SUM(${transactionAggregatesDaily.count}) > 0 THEN SUM(${transactionAggregatesDaily.durationSum}) / SUM(${transactionAggregatesDaily.count}) ELSE 0 END`,
+        maxDuration: sql<number>`MAX(${transactionAggregatesDaily.durationMax})`,
+        count: sql<number>`SUM(${transactionAggregatesDaily.count})`,
+      })
+      .from(transactionAggregatesDaily)
+      .where(
+        and(
+          eq(transactionAggregatesDaily.projectId, projectId),
+          gte(transactionAggregatesDaily.dayBucket, startDate)
+        )
+      )
+      .groupBy(transactionAggregatesDaily.name, transactionAggregatesDaily.op)
+      .orderBy(sql`CASE WHEN SUM(${transactionAggregatesDaily.count}) > 0 THEN SUM(${transactionAggregatesDaily.durationSum}) / SUM(${transactionAggregatesDaily.count}) ELSE 0 END DESC`)
+      .limit(10);
+  }
 
   return c.json(slowest.map((t) => ({
     name: t.name,
     op: t.op,
-    avgDuration: Math.round(t.avgDuration),
-    maxDuration: t.maxDuration,
-    count: t.count,
+    avgDuration: Math.round(Number(t.avgDuration)),
+    maxDuration: Number(t.maxDuration),
+    count: Number(t.count),
   })));
 };

@@ -1,34 +1,29 @@
-import { OrganizationProvider } from "@/contexts/OrganizationContext";
-import { ProjectProvider } from "@/contexts/ProjectContext";
-import { ErrorWatchSidebar } from "@/components/errorwatch-sidebar";
-import { ErrorWatchHeader } from "@/components/errorwatch-header";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { Toaster } from "@/components/ui/sonner";
-import { SSEProvider } from "@/components/sse-provider";
+import { createSSRHelpers } from "@/server/trpc/router";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { DashboardProviders } from "./providers";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const helpers = await createSSRHelpers();
+
+  await Promise.all([
+    helpers.organizations.getAll.prefetch(),
+    helpers.projects.getAll.prefetch(),
+    helpers.auth.getSession.prefetch(),
+    helpers.organizations.canCreate.prefetch(),
+    helpers.projects.canCreate.prefetch(),
+  ]);
+
+  const dehydratedState = dehydrate(helpers.queryClient);
+
   return (
-    <OrganizationProvider>
-      <ProjectProvider>
-        <SSEProvider>
-          <SidebarProvider>
-            <ErrorWatchSidebar variant="inset" />
-            <SidebarInset>
-              <ErrorWatchHeader />
-              <div className="flex flex-1 flex-col">
-                <div className="@container/main flex flex-1 flex-col">
-                  {children}
-                </div>
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
-          <Toaster />
-        </SSEProvider>
-      </ProjectProvider>
-    </OrganizationProvider>
+    <HydrationBoundary state={dehydratedState}>
+      <DashboardProviders>
+        {children}
+      </DashboardProviders>
+    </HydrationBoundary>
   );
 }

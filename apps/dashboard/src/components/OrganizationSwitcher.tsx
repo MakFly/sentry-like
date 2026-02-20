@@ -28,7 +28,7 @@ export function OrganizationSwitcher() {
   const [orgName, setOrgName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const { organizations, currentOrgSlug, currentOrgId, isLoading, refetch } = useCurrentOrganization();
-  const { data: canCreateResult, isLoading: isCheckingSubscription } = trpc.organizations.canCreate.useQuery();
+  const { data: canCreateResult, isLoading: isCheckingSubscription } = trpc.organizations.canCreate.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
 
   const createMutation = trpc.organizations.create.useMutation({
     onSuccess: (newOrg) => {

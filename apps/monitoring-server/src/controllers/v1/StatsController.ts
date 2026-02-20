@@ -4,6 +4,7 @@ import {
   getTimeline,
   getEnvBreakdown as getEnvBreakdownService,
   getDashboardStats as getDashboardStatsService,
+  getSeverityBreakdown as getSeverityBreakdownService,
 } from "../../services/stats";
 import type { TimelineRange } from "../../types/services";
 import { verifyProjectAccess } from "../../services/project-access";
@@ -75,6 +76,21 @@ export const getEnvBreakdown = async (c: AuthContext) => {
 
   logger.debug("GET /api/v1/stats/env-breakdown", { projectId });
   const breakdown = await getEnvBreakdownService(projectId);
+  return c.json(breakdown);
+};
+
+export const getSeverityBreakdown = async (c: AuthContext) => {
+  const userId = c.get("userId");
+  const projectId = c.req.query("projectId") as string | undefined;
+
+  if (projectId) {
+    const hasAccess = await verifyProjectAccess(projectId, userId);
+    if (!hasAccess) {
+      return c.json({ error: "Forbidden: You don't have access to this project" }, 403);
+    }
+  }
+
+  const breakdown = await getSeverityBreakdownService(projectId);
   return c.json(breakdown);
 };
 

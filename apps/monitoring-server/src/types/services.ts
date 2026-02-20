@@ -43,6 +43,19 @@ export type ErrorAlertEmailData = {
   dashboardUrl: string;
 };
 
+export type RegressionAlertEmailData = {
+  to: string;
+  projectName: string;
+  errorMessage: string;
+  errorFile: string;
+  errorLine: number;
+  eventCount: number;
+  fingerprint: string;
+  environment?: string;
+  resolvedAt?: string;
+  dashboardUrl: string;
+};
+
 export type InvitationEmailData = {
   to: string;
   inviterName: string;

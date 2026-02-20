@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -42,6 +42,19 @@ interface GroupedTransaction {
   latestTimestamp: Date;
   statuses: Record<string, number>;
   transactions: Transaction[];
+}
+
+function parsePerformanceIssues(tags: string | null): string[] {
+  if (!tags) return [];
+  try {
+    const parsed = JSON.parse(tags) as Record<string, unknown>;
+    const issues = parsed["performance.issues"];
+    if (typeof issues === "string") return issues.split(",").map((s) => s.trim());
+    if (Array.isArray(issues)) return issues as string[];
+  } catch {
+    // ignore
+  }
+  return [];
 }
 
 function groupTransactions(transactions: Transaction[]): GroupedTransaction[] {
@@ -98,6 +111,7 @@ export function TransactionsTable({
   baseUrl,
   onPageChange,
 }: TransactionsTableProps) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<"grouped" | "individual">("grouped");
   const groupedTransactions = groupTransactions(transactions);
 
@@ -165,19 +179,31 @@ export function TransactionsTable({
             <TableBody>
               {groupedTransactions.map((g) => {
                 const dominantStatus = Object.entries(g.statuses).sort((a, b) => b[1] - a[1])[0]?.[0] || "ok";
+                const allIssues = g.transactions.flatMap((t) => parsePerformanceIssues(t.tags));
+                const hasN1 = allIssues.includes("n_plus_one");
+                const hasSlow = allIssues.includes("slow_query");
                 return (
-                  <TableRow key={`${g.name}-${g.op}`} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow
+                    key={`${g.name}-${g.op}`}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => router.push(`${baseUrl}/performance/transactions/${g.transactions[0].id}`)}
+                  >
                     <TableCell className="max-w-[250px] truncate font-medium">
-                      <Link
-                        href={`${baseUrl}/performance/${g.transactions[0].id}`}
-                        className="hover:underline"
-                      >
-                        {g.name}
-                      </Link>
+                      <span className="hover:underline">{g.name}</span>
                       {g.count > 1 && (
                         <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                           x{g.count}
                         </span>
+                      )}
+                      {hasN1 && (
+                        <Badge variant="outline" className="ml-2 bg-amber-500/15 text-amber-600 border-amber-500/30 text-[10px] px-1.5 py-0">
+                          N+1
+                        </Badge>
+                      )}
+                      {hasSlow && (
+                        <Badge variant="outline" className="ml-1 bg-red-500/15 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
+                          Slow
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -217,15 +243,28 @@ export function TransactionsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((t) => (
-                <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50">
+              {transactions.map((t) => {
+                const issues = parsePerformanceIssues(t.tags);
+                const hasN1 = issues.includes("n_plus_one");
+                const hasSlow = issues.includes("slow_query");
+                return (
+                <TableRow
+                  key={t.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`${baseUrl}/performance/transactions/${t.id}`)}
+                >
                   <TableCell className="max-w-[250px] truncate font-medium">
-                    <Link
-                      href={`${baseUrl}/performance/${t.id}`}
-                      className="hover:underline"
-                    >
-                      {t.name}
-                    </Link>
+                    <span className="hover:underline">{t.name}</span>
+                    {hasN1 && (
+                      <Badge variant="outline" className="ml-2 bg-amber-500/15 text-amber-600 border-amber-500/30 text-[10px] px-1.5 py-0">
+                        N+1
+                      </Badge>
+                    )}
+                    {hasSlow && (
+                      <Badge variant="outline" className="ml-1 bg-red-500/15 text-red-400 border-red-500/30 text-[10px] px-1.5 py-0">
+                        Slow
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
@@ -247,7 +286,8 @@ export function TransactionsTable({
                     {formatDate(t.startTimestamp)}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}

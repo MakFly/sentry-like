@@ -16,6 +16,9 @@ import type { ErrorLevel } from "@/server/api";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { detectEventSource } from "@/lib/event-source";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { normalizeGroups } from "@/lib/utils/normalize-groups";
+import { Download } from "lucide-react";
 
 type DateRange = "24h" | "7d" | "30d" | "90d" | "all";
 
@@ -25,19 +28,6 @@ interface FiltersState {
   search: string;
   status: string;
   source: string;
-}
-
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  const timeoutRef = useState<ReturnType<typeof setTimeout> | null>(null);
-
-  if (value !== debouncedValue) {
-    if (timeoutRef[0]) clearTimeout(timeoutRef[0]);
-    timeoutRef[1](setTimeout(() => setDebouncedValue(value), delay));
-  }
-
-  return debouncedValue;
 }
 
 export default function IssuesPage() {
@@ -70,12 +60,7 @@ export default function IssuesPage() {
     level: levelFilter === "all" ? undefined : levelFilter,
   });
 
-  // Handle both old format (array) and new format ({ groups, total, ... })
-  const allGroups = useMemo(() => {
-    if (!groupsData) return [];
-    if (Array.isArray(groupsData)) return groupsData;
-    return (groupsData as any).groups || [];
-  }, [groupsData]);
+  const allGroups = useMemo(() => normalizeGroups(groupsData), [groupsData]);
 
   // Client-side source filter
   const groups = useMemo(() => {
@@ -186,23 +171,26 @@ export default function IssuesPage() {
         className="mb-6"
       />
 
-      <FiltersRow
-        search={filters.search}
-        onSearchChange={(value) => setFilters({ ...filters, search: value })}
-        environment={filters.env}
-        onEnvironmentChange={(value) => setFilters({ ...filters, env: value })}
-        dateRange={filters.dateRange}
-        onDateRangeChange={(value) =>
-          setFilters({ ...filters, dateRange: value })
-        }
-        status={filters.status}
-        onStatusChange={(value) => setFilters({ ...filters, status: value })}
-        source={filters.source}
-        onSourceChange={(value) => setFilters({ ...filters, source: value })}
-        onClear={handleClearFilters}
-        hasActiveFilters={hasActiveFilters}
-        className="mb-6"
-      />
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <FiltersRow
+          search={filters.search}
+          onSearchChange={(value) => setFilters({ ...filters, search: value })}
+          environment={filters.env}
+          onEnvironmentChange={(value) => setFilters({ ...filters, env: value })}
+          dateRange={filters.dateRange}
+          onDateRangeChange={(value) =>
+            setFilters({ ...filters, dateRange: value })
+          }
+          status={filters.status}
+          onStatusChange={(value) => setFilters({ ...filters, status: value })}
+          source={filters.source}
+          onSourceChange={(value) => setFilters({ ...filters, source: value })}
+          onClear={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+          className="flex-1"
+        />
+        <ExportDropdown projectId={currentProjectId} dateRange={filters.dateRange} status={filters.status} />
+      </div>
 
       {/* Bulk action toolbar */}
       {selectedFingerprints.length > 0 && (
@@ -260,6 +248,60 @@ export default function IssuesPage() {
             : "No signals detected. Your application is running smoothly."
         }
       />
+    </div>
+  );
+}
+
+const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+
+function ExportDropdown({
+  projectId,
+  dateRange,
+  status,
+}: {
+  projectId: string | null;
+  dateRange: string;
+  status: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const handleExport = (format: "csv" | "json") => {
+    if (!projectId) return;
+    const params = new URLSearchParams({ projectId, format });
+    if (dateRange !== "all") params.set("dateRange", dateRange);
+    if (status !== "all") params.set("status", status);
+    window.open(`${API_URL}/api/v1/export/errors?${params.toString()}`, "_blank");
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-muted/50"
+      >
+        <Download className="size-4" />
+        Export
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-md border bg-popover p-1 shadow-md">
+            <button
+              onClick={() => handleExport("csv")}
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => handleExport("json")}
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+            >
+              Export JSON
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

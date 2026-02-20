@@ -29,7 +29,7 @@ pubClient.on("error", (err) => {
 });
 
 export interface SSEEvent {
-  type: "issue:new" | "issue:updated" | "alert:triggered" | "transaction:new" | "replay:new";
+  type: "issue:new" | "issue:updated" | "issue:regressed" | "alert:triggered" | "transaction:new" | "replay:new";
   projectId: string;
   payload: {
     fingerprint?: string;

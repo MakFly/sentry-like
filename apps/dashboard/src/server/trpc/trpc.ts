@@ -5,6 +5,7 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 /**
  * Session type from BetterAuth
@@ -26,6 +27,22 @@ export interface Context {
 }
 
 /**
+ * Cached session fetch - deduplicates within a single RSC render pass
+ */
+const getSessionFromCookie = cache(async (cookieHeader: string): Promise<Session | null> => {
+  const apiUrl = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+  const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+  if (response.ok) {
+    const data = await response.json();
+    if (data?.user?.id) return { user: data.user } as Session;
+  }
+  return null;
+});
+
+/**
  * Create tRPC context with session from cookies
  */
 export const createTRPCContext = async (): Promise<Context> => {
@@ -35,30 +52,14 @@ export const createTRPCContext = async (): Promise<Context> => {
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
 
-    // Build cookie header for API request
     const cookieHeader = allCookies
       .map((c) => `${c.name}=${c.value}`)
       .join("; ");
 
     if (cookieHeader) {
-      // Fetch session from monitoring server
-      const apiUrl = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
-      const response = await fetch(`${apiUrl}/api/auth/get-session`, {
-        headers: {
-          Cookie: cookieHeader,
-        },
-        cache: "no-store",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.user?.id) {
-          session = { user: data.user };
-        }
-      }
+      session = await getSessionFromCookie(cookieHeader);
     }
   } catch (error) {
-    // Silent fail - user not authenticated
     console.debug("[tRPC] Failed to get session:", error);
   }
 

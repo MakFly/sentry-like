@@ -8,23 +8,13 @@ import {
   HealthStrip,
   StatusTile,
   AttentionQueue,
+  ErrorSeverityChart,
 } from "@/components/dashboard";
 import Sparkline from "@/components/Sparkline";
+import { useStatsQueries } from "@/hooks/useStatsQueries";
+import { normalizeGroups } from "@/lib/utils/normalize-groups";
 import { trpc } from "@/lib/trpc/client";
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
-        <div
-          key={i}
-          className="h-20 animate-pulse rounded-2xl bg-dashboard-surface/50"
-          style={{ animationDelay: `${i * 100}ms` }}
-        />
-      ))}
-    </div>
-  );
-}
+import type { ErrorGroup } from "@/server/api";
 
 function DashboardContent() {
   const { currentProjectId, currentProject, isLoading: projectLoading, orgProjects } = useCurrentProject();
@@ -33,20 +23,7 @@ function DashboardContent() {
   const isLoading = projectLoading || orgLoading;
 
   // Fetch stats when we have a project
-  const { data: stats } = trpc.stats.getDashboardStats.useQuery(
-    { projectId: currentProjectId || undefined },
-    { enabled: !!currentProjectId }
-  );
-
-  const { data: timeline } = trpc.stats.getTimeline.useQuery(
-    { range: "24h", projectId: currentProjectId || undefined },
-    { enabled: !!currentProjectId }
-  );
-
-  const { data: envBreakdown } = trpc.stats.getEnvBreakdown.useQuery(
-    { projectId: currentProjectId || undefined },
-    { enabled: !!currentProjectId }
-  );
+  const { stats, timeline, envBreakdown, severityBreakdown } = useStatsQueries(currentProjectId);
 
   const { data: groups } = trpc.groups.getAll.useQuery(
     { projectId: currentProjectId || undefined, dateRange: "24h" },
@@ -54,7 +31,7 @@ function DashboardContent() {
   );
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return null;
   }
 
   // No projects in this org
@@ -62,12 +39,10 @@ function DashboardContent() {
     return <NoProjectDashboard />;
   }
 
-  const statsData = stats || { totalEvents: 0, todayEvents: 0, totalGroups: 0, avgEventsPerGroup: 0, newIssues24h: 0 };
-  const timelineData = timeline || [];
-  const envBreakdownData = envBreakdown || [];
-  const groupsData = Array.isArray(groups)
-    ? groups
-    : groups?.groups ?? [];
+  const statsData = stats.data || { totalEvents: 0, todayEvents: 0, totalGroups: 0, avgEventsPerGroup: 0, newIssues24h: 0 };
+  const timelineData = timeline.data || [];
+  const envBreakdownData = envBreakdown.data || [];
+  const groupsData = normalizeGroups<ErrorGroup>(groups);
 
   // Calculate health score
   const healthScore = Math.max(
@@ -102,8 +77,7 @@ function DashboardContent() {
       />
 
       {/* Status Tiles */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatusTile type="critical" value={0} delta={0} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatusTile type="unresolved" value={statsData.totalGroups} delta={-3} />
         <StatusTile type="today" value={statsData.todayEvents} delta="+12%" />
         <StatusTile type="new24h" value={statsData.newIssues24h} />
@@ -168,8 +142,13 @@ function DashboardContent() {
         </div>
       </div>
 
+      {/* Error Severity Distribution */}
+      {severityBreakdown.data && severityBreakdown.data.length > 0 && (
+        <ErrorSeverityChart data={severityBreakdown.data} />
+      )}
+
       {/* Attention Queue */}
-      <Suspense fallback={<LoadingSkeleton />}>
+      <Suspense fallback={null}>
         <AttentionQueue
           errors={groupsData.slice(0, 5)}
           orgSlug={currentOrgSlug || ""}
