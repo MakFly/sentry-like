@@ -55,6 +55,14 @@ final class Transaction
         $this->data[$key] = $value;
     }
 
+    /**
+     * @return Span[]
+     */
+    public function getSpans(): array
+    {
+        return $this->spans;
+    }
+
     public function getDurationMs(): int
     {
         if (null === $this->endTimestamp) {

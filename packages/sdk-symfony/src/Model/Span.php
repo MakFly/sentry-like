@@ -36,6 +36,25 @@ final class Span
         $this->data[$key] = $value;
     }
 
+    public function getOp(): string
+    {
+        return $this->op;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function getDurationMs(): float
+    {
+        if (null === $this->endTimestamp) {
+            return (float) ((int) (microtime(true) * 1000) - $this->startTimestamp);
+        }
+
+        return (float) ($this->endTimestamp - $this->startTimestamp);
+    }
+
     /**
      * @return array<string, mixed>
      */

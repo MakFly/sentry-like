@@ -110,6 +110,8 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
         $container->setParameter('error_watch.apm.http_client.enabled', $config['apm']['http_client']['enabled']);
         $container->setParameter('error_watch.apm.http_client.capture_errors_as_breadcrumbs', $config['apm']['http_client']['capture_errors_as_breadcrumbs']);
         $container->setParameter('error_watch.apm.excluded_routes', $config['apm']['excluded_routes']);
+        $container->setParameter('error_watch.apm.n_plus_one_threshold', $config['apm']['n_plus_one_threshold']);
+        $container->setParameter('error_watch.apm.slow_query_threshold_ms', $config['apm']['slow_query_threshold_ms']);
 
         if ($config['apm']['enabled']) {
             $loader->load('apm.yaml');

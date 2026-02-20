@@ -3,7 +3,14 @@ services:
         autowire: true
         autoconfigure: true
 
-    ErrorWatch\Symfony\Service\TransactionCollector: ~
+    ErrorWatch\Symfony\Service\QueryAnalyzer:
+        arguments:
+            $nPlusOneThreshold: '%error_watch.apm.n_plus_one_threshold%'
+            $slowQueryThresholdMs: '%error_watch.apm.slow_query_threshold_ms%'
+
+    ErrorWatch\Symfony\Service\TransactionCollector:
+        calls:
+            - setQueryAnalyzer: ['@ErrorWatch\Symfony\Service\QueryAnalyzer']
 
     ErrorWatch\Symfony\Service\TransactionSender:
         arguments:
