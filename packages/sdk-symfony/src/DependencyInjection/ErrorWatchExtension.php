@@ -21,7 +21,7 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
         $processor = new Processor();
         $resolved = $processor->processConfiguration(new Configuration(), $rawConfigs ?: [[]]);
 
-        if (!$resolved['enabled'] || !$resolved['monolog']['enabled']) {
+        if ($this->isExplicitlyDisabled($resolved['enabled']) || !$resolved['monolog']['enabled']) {
             return;
         }
 
@@ -41,12 +41,17 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('error_watch.enabled', $config['enabled']);
+        $enabled = $config['enabled'];
 
-        // When disabled, register no services at all — zero overhead, zero network
-        if (!$config['enabled']) {
+        // When explicitly disabled (bool false, not an env var), skip all service registration
+        if ($this->isExplicitlyDisabled($enabled)) {
+            $container->setParameter('error_watch.enabled', false);
+
             return;
         }
+
+        // For env var placeholders: store as-is (resolved at runtime), load all services
+        $container->setParameter('error_watch.enabled', $enabled);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../resources/config'));
         $loader->load('services.yaml');
@@ -140,6 +145,22 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
         if ($config['monolog']['enabled'] && class_exists(\Monolog\Handler\AbstractProcessingHandler::class)) {
             $loader->load('monolog.yaml');
         }
+    }
+
+    /**
+     * Check if enabled is explicitly set to false (not an env var placeholder).
+     */
+    private function isExplicitlyDisabled(mixed $enabled): bool
+    {
+        if ($enabled === false) {
+            return true;
+        }
+
+        if (\is_string($enabled) && \in_array(strtolower($enabled), ['false', '0', 'no', ''], true)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

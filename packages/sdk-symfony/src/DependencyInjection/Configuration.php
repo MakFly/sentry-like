@@ -14,7 +14,10 @@ final class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->booleanNode('enabled')->defaultTrue()->end()
+                ->scalarNode('enabled')
+                    ->defaultTrue()
+                    ->info('Enable/disable ErrorWatch. Accepts bool or env var (e.g. %env(bool:ERRORWATCH_ENABLED)%).')
+                ->end()
                 ->scalarNode('endpoint')->defaultValue('')->end()
                 ->scalarNode('api_key')->defaultValue('')->end()
                 ->scalarNode('environment')->defaultNull()->end()
@@ -144,7 +147,12 @@ final class Configuration implements ConfigurationInterface
         $rootNode
             ->validate()
                 ->ifTrue(static function (array $config): bool {
-                    $active = ($config['enabled'] ?? true)
+                    $enabled = $config['enabled'] ?? true;
+                    // Skip validation when enabled is an env var placeholder (resolved at runtime)
+                    if (\is_string($enabled) && str_contains($enabled, '%env(')) {
+                        return false;
+                    }
+                    $active = filter_var($enabled, FILTER_VALIDATE_BOOLEAN)
                         || (($config['replay']['enabled'] ?? false) === true);
 
                     return $active && ($config['endpoint'] ?? '') === '';
@@ -153,7 +161,11 @@ final class Configuration implements ConfigurationInterface
             ->end()
             ->validate()
                 ->ifTrue(static function (array $config): bool {
-                    $active = ($config['enabled'] ?? true)
+                    $enabled = $config['enabled'] ?? true;
+                    if (\is_string($enabled) && str_contains($enabled, '%env(')) {
+                        return false;
+                    }
+                    $active = filter_var($enabled, FILTER_VALIDATE_BOOLEAN)
                         || (($config['replay']['enabled'] ?? false) === true);
 
                     return $active && ($config['api_key'] ?? '') === '';
