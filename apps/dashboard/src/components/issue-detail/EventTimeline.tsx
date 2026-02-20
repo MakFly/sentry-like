@@ -151,8 +151,10 @@ function TimelineItem({
               <span className={cn(
                 "text-sm truncate",
                 isError ? "text-signal-error font-medium" : "text-foreground"
-              )}>
-                {breadcrumb.message || breadcrumb.type || config.label}
+              )} title={breadcrumb.message || breadcrumb.type || config.label}>
+                {(breadcrumb.message || breadcrumb.type || config.label).length > 100 
+                  ? `${(breadcrumb.message || breadcrumb.type || config.label).slice(0, 100).trim()}...` 
+                  : (breadcrumb.message || breadcrumb.type || config.label)}
               </span>
             </div>
 

@@ -65,7 +65,9 @@ function DashboardContent() {
   const statsData = stats || { totalEvents: 0, todayEvents: 0, totalGroups: 0, avgEventsPerGroup: 0, newIssues24h: 0 };
   const timelineData = timeline || [];
   const envBreakdownData = envBreakdown || [];
-  const groupsData = groups || [];
+  const groupsData = Array.isArray(groups)
+    ? groups
+    : groups?.groups ?? [];
 
   // Calculate health score
   const healthScore = Math.max(

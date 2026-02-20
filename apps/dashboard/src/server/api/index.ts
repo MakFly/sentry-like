@@ -19,6 +19,7 @@ import * as alertsApi from './alerts';
 import * as billingApi from './billing';
 import * as replayApi from './replay';
 import * as userApi from './user';
+import * as performanceApi from './performance';
 
 export const api = {
   auth: {
@@ -103,6 +104,12 @@ export const api = {
     revokeSession: userApi.revokeSession,
     revokeAllSessions: userApi.revokeAllSessions,
     canChangePassword: userApi.canChangePassword,
+  },
+  performance: {
+    getWebVitals: performanceApi.getWebVitals,
+    getTransactions: performanceApi.getTransactions,
+    getTransaction: performanceApi.getTransaction,
+    getSlowest: performanceApi.getSlowest,
   },
 };
 

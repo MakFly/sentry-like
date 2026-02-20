@@ -31,24 +31,27 @@ class ErrorSender implements ErrorSenderInterface
         Throwable $throwable,
         ?string $url = null,
         ?string $level = null,
-        ?string $sessionId = null
+        ?string $sessionId = null,
+        array $context = []
     ): void {
         if (!$this->enabled) {
             return;
         }
 
-        $payload = $this->buildPayload($throwable, $url, $level, $sessionId);
+        $payload = $this->buildPayload($throwable, $url, $level, $sessionId, $context);
         $this->client->sendEventAsync($payload);
     }
 
     /**
+     * @param array<string, mixed> $context
      * @return array<string, mixed>
      */
     private function buildPayload(
         Throwable $throwable,
         ?string $url,
         ?string $level,
-        ?string $sessionId
+        ?string $sessionId,
+        array $context = []
     ): array {
         $trace = $throwable->getTraceAsString();
         $file = $throwable->getFile();
@@ -69,7 +72,7 @@ class ErrorSender implements ErrorSenderInterface
             'url' => $url,
             'level' => $resolvedLevel,
             'release' => $this->release,
-            'created_at' => time(),
+            'created_at' => (int) (microtime(true) * 1000),
         ];
 
         // Only include status_code if it's an HTTP exception
@@ -81,6 +84,21 @@ class ErrorSender implements ErrorSenderInterface
         $criticalLevels = [LevelMapper::LEVEL_FATAL, LevelMapper::LEVEL_ERROR];
         if ($sessionId !== null && in_array($resolvedLevel, $criticalLevels, true)) {
             $payload['session_id'] = $sessionId;
+        }
+
+        // Add breadcrumbs from context
+        if (!empty($context['breadcrumbs'])) {
+            $payload['breadcrumbs'] = $context['breadcrumbs'];
+        }
+
+        // Add user context
+        if (!empty($context['user'])) {
+            $payload['user'] = $context['user'];
+        }
+
+        // Add request context
+        if (!empty($context['request'])) {
+            $payload['request'] = $context['request'];
         }
 
         return $payload;

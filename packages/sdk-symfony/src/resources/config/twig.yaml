@@ -1,6 +1,6 @@
 services:
-    Makfly\ErrorMonitoringBundle\Twig\ReplayExtension:
+    Makfly\ErrorWatch\Twig\ReplayExtension:
         arguments:
-            $replayManager: '@Makfly\ErrorMonitoringBundle\Service\SessionReplayManager'
+            $replayManager: '@Makfly\ErrorWatch\Service\SessionReplayManager'
         tags:
             - { name: twig.extension }

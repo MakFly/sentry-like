@@ -710,6 +710,50 @@ const userRouter = router({
 });
 
 /**
+ * Performance router - protected
+ */
+const performanceRouter = router({
+  getWebVitals: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      dateRange: z.enum(["24h", "7d", "30d"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getWebVitals(input.projectId, input.dateRange);
+    }),
+
+  getTransactions: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      op: z.string().optional(),
+      page: z.number().int().positive().optional(),
+      limit: z.number().int().positive().max(100).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getTransactions(input.projectId, {
+        op: input.op,
+        page: input.page,
+        limit: input.limit,
+      });
+    }),
+
+  getTransaction: protectedProcedure
+    .input(z.object({ transactionId: z.string() }))
+    .query(async ({ input }) => {
+      return api.performance.getTransaction(input.transactionId);
+    }),
+
+  getSlowest: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      dateRange: z.enum(["24h", "7d", "30d"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.performance.getSlowest(input.projectId, input.dateRange);
+    }),
+});
+
+/**
  * App router - combines all routers
  */
 export const appRouter = router({
@@ -726,6 +770,7 @@ export const appRouter = router({
   billing: billingRouter,
   replay: replayRouter,
   user: userRouter,
+  performance: performanceRouter,
 });
 
 export type AppRouter = typeof appRouter;

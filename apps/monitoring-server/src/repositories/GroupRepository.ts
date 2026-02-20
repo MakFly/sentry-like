@@ -112,12 +112,12 @@ export const GroupRepository = {
     // This replaces 3 separate queries (lines 102-169 in original)
     const groupsWithReplay = await db.execute(sql`
       SELECT 
-        g.*,
+        error_groups.*,
         replay_data.has_replay,
         replay_data.latest_session_id,
         replay_data.latest_event_id,
         replay_data.latest_created_at
-      FROM error_groups g
+      FROM error_groups
       LEFT JOIN LATERAL (
         SELECT 
           COUNT(e.id) > 0 as has_replay,
@@ -125,8 +125,8 @@ export const GroupRepository = {
           MAX(e.id) FILTER (WHERE e.session_id IS NOT NULL) as latest_event_id,
           MAX(e.created_at) FILTER (WHERE e.session_id IS NOT NULL) as latest_created_at
         FROM error_events e
-        WHERE e.fingerprint = g.fingerprint AND e.session_id IS NOT NULL
-      ) replay_data(true)
+        WHERE e.fingerprint = error_groups.fingerprint AND e.session_id IS NOT NULL
+      ) replay_data ON true
       WHERE ${whereClause}
       ORDER BY ${sortColumn} DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -246,12 +246,12 @@ export const GroupRepository = {
     // Single optimized query with replay data
     const groupsWithReplay = await db.execute(sql`
       SELECT 
-        g.*,
+        error_groups.*,
         replay_data.has_replay,
         replay_data.latest_session_id,
         replay_data.latest_event_id,
         replay_data.latest_created_at
-      FROM error_groups g
+      FROM error_groups
       LEFT JOIN LATERAL (
         SELECT 
           COUNT(e.id) > 0 as has_replay,
@@ -259,10 +259,10 @@ export const GroupRepository = {
           MAX(e.id) FILTER (WHERE e.session_id IS NOT NULL) as latest_event_id,
           MAX(e.created_at) FILTER (WHERE e.session_id IS NOT NULL) as latest_created_at
         FROM error_events e
-        WHERE e.fingerprint = g.fingerprint AND e.session_id IS NOT NULL
-      ) replay_data(true)
+        WHERE e.fingerprint = error_groups.fingerprint AND e.session_id IS NOT NULL
+      ) replay_data ON true
       WHERE ${whereClause}
-      ORDER BY ${sortColumn} DESC, g.fingerprint DESC
+      ORDER BY ${sortColumn} DESC, error_groups.fingerprint DESC
       LIMIT ${limit}
     `);
 
@@ -421,4 +421,3 @@ export const GroupRepository = {
     };
   },
 };
-

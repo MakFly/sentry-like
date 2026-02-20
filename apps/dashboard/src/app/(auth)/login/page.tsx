@@ -8,6 +8,13 @@ import { useRouter } from "next/navigation";
 import { api } from "@/server/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Zap, FlaskConical, Github, Bug, Layers, Shield, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,15 +38,27 @@ const features = [
   { icon: Shield, text: "Smart issue grouping" },
 ];
 
+type DevUser = { email: string; name: string | null };
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState<string | null>(null);
+  const [devUsers, setDevUsers] = useState<DevUser[]>([]);
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
   const router = useRouter();
   const { data: session, isPending } = useSession();
+
+  useEffect(() => {
+    if (isDev) {
+      fetch("/api/dev/users")
+        .then((r) => r.json())
+        .then((data) => (Array.isArray(data) ? setDevUsers(data) : []))
+        .catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (!isPending && session?.user) {
@@ -121,6 +140,29 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
+            {isDev && devUsers.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Dev: Choisir un utilisateur</label>
+                <Select
+                  onValueChange={(email) => {
+                    setEmail(email);
+                    setPassword("password123");
+                  }}
+                  value={email || undefined}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Sélectionner un utilisateur..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {devUsers.map((u) => (
+                      <SelectItem key={u.email} value={u.email}>
+                        {u.name ? `${u.name} (${u.email})` : u.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 Email

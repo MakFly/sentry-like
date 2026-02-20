@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Bug,
   BarChart3,
+  Gauge,
   Settings,
   Film,
   HelpCircle,
@@ -91,6 +92,12 @@ export function ErrorWatchSidebar({
         url: `${baseUrl}/stats`,
         icon: BarChart3,
         isActive: pathname.startsWith(`${baseUrl}/stats`),
+      },
+      {
+        title: "Performance",
+        url: `${baseUrl}/performance`,
+        icon: Gauge,
+        isActive: pathname.startsWith(`${baseUrl}/performance`),
       },
     ];
   }, [currentOrgSlug, currentProjectSlug, pathname]);

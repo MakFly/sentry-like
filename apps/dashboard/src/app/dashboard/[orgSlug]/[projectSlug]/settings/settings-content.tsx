@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   Settings,
   Bell,
@@ -8,8 +9,12 @@ import {
   Database,
   CreditCard,
   Building2,
+  FlaskConical,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useCurrentOrganization } from "@/contexts/OrganizationContext";
+import { useCurrentProject } from "@/contexts/ProjectContext";
 import {
   GeneralSection,
   AlertsSection,
@@ -20,8 +25,24 @@ import {
 } from "./sections";
 
 export function SettingsContent() {
+  const { currentOrgSlug } = useCurrentOrganization();
+  const { currentProject } = useCurrentProject();
+
+  const integrationTestPath =
+    currentOrgSlug && currentProject?.slug
+      ? `/dashboard/${currentOrgSlug}/${currentProject.slug}/settings/integration-test`
+      : "/dashboard";
+
   return (
     <div className="px-4 lg:px-6">
+      <div className="mb-4 flex justify-end">
+        <Button asChild variant="outline">
+          <Link href={integrationTestPath}>
+            <FlaskConical className="mr-2 h-4 w-4" />
+            Integration Test
+          </Link>
+        </Button>
+      </div>
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="mb-6 h-auto flex-wrap gap-1 bg-transparent p-0">
           <TabsTrigger

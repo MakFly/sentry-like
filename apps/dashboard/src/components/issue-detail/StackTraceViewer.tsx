@@ -158,8 +158,8 @@ function FrameItem({
         </span>
 
         {/* File and location */}
-        <div className="flex-1 min-w-0 flex items-center gap-2">
-          <code className="font-mono text-sm truncate">
+        <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-visible">
+          <code className="font-mono text-sm text-foreground whitespace-nowrap">
             <span className={isHighlighted ? "text-signal-warning" : "text-signal-info"}>
               {frame.file.split("/").pop()}
             </span>
@@ -199,8 +199,8 @@ function FrameItem({
       {expanded && (
         <div className="px-4 pb-4">
           {/* Full path */}
-          <div className="flex items-center gap-2 ml-8">
-            <code className="font-mono text-xs text-muted-foreground truncate">
+          <div className="flex items-start gap-2 ml-8 overflow-x-visible">
+            <code className="font-mono text-xs text-muted-foreground break-all">
               {frame.file}
             </code>
             <CopyButton text={`${frame.file}:${frame.line}`} />
@@ -241,7 +241,7 @@ export function StackTraceViewer({
 
   return (
     <div className={cn(
-      "rounded-xl border border-issues-border bg-issues-surface overflow-hidden",
+      "rounded-xl border border-issues-border bg-issues-surface overflow-x-auto",
       className
     )}>
       {/* Header */}

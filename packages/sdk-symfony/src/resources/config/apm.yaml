@@ -1,0 +1,21 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Makfly\ErrorWatch\Service\TransactionCollector: ~
+
+    Makfly\ErrorWatch\Service\TransactionSender:
+        arguments:
+            $client: '@Makfly\ErrorWatch\Http\MonitoringClientInterface'
+            $enabled: '%error_monitoring.apm.enabled%'
+            $environment: '%error_monitoring.environment%'
+
+    Makfly\ErrorWatch\EventSubscriber\RequestSubscriber:
+        arguments:
+            $collector: '@Makfly\ErrorWatch\Service\TransactionCollector'
+            $sender: '@Makfly\ErrorWatch\Service\TransactionSender'
+            $enabled: '%error_monitoring.apm.request_tracking%'
+            $excludedRoutes: '%error_monitoring.apm.excluded_routes%'
+        tags:
+            - { name: kernel.event_subscriber }

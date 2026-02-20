@@ -1,0 +1,7 @@
+services:
+    Makfly\ErrorWatch\Doctrine\TraceMiddleware:
+        arguments:
+            $collector: '@Makfly\ErrorWatch\Service\TransactionCollector'
+            $logQueries: '%error_monitoring.apm.doctrine.log_queries%'
+        tags:
+            - { name: doctrine.middleware }

@@ -39,9 +39,43 @@ class MonitoringClient implements MonitoringClientInterface
     public function sendEventAsync(array $payload): void
     {
         try {
-            $this->sendEvent($payload);
+            $response = $this->sendEvent($payload);
+            // Force the request to be sent (Symfony HttpClient is lazy)
+            $response->getStatusCode();
         } catch (\Throwable $e) {
             // Silently fail to avoid breaking the application
+        }
+    }
+
+    public function sendTransaction(array $payload): void
+    {
+        try {
+            $response = $this->client->request('POST', $this->endpoint . '/api/v1/performance/transaction', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $this->apiKey,
+                ],
+                'body' => json_encode($payload),
+                'timeout' => 2,
+            ]);
+            $response->getStatusCode();
+        } catch (\Throwable) {
+        }
+    }
+
+    public function sendMetrics(array $payload): void
+    {
+        try {
+            $response = $this->client->request('POST', $this->endpoint . '/api/v1/performance/metrics', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $this->apiKey,
+                ],
+                'body' => json_encode($payload),
+                'timeout' => 2,
+            ]);
+            $response->getStatusCode();
+        } catch (\Throwable) {
         }
     }
 }

@@ -926,7 +926,7 @@ export const handleErrorReplay = async (c: Context) => {
     await redis.setex(dedupKey, 10, "1");
 
     // Deterministic jobId for BullMQ dedup (10s window)
-    const jobId = `replay:${projectId}:${dedupFingerprint}:${Math.floor(Date.now() / 10000)}`;
+    const jobId = `replay-${projectId}-${dedupFingerprint}-${Math.floor(Date.now() / 10000)}`;
 
     // Queue replay for async processing
     await replayQueue.add("process-replay", {

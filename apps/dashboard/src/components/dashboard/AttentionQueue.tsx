@@ -135,8 +135,8 @@ export function AttentionQueue({
 
               {/* Error message */}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-mono text-sm text-foreground">
-                  {error.message}
+                <p className="font-mono text-sm text-foreground" title={error.message}>
+                  {error.message.length > 100 ? `${error.message.slice(0, 100).trim()}...` : error.message}
                 </p>
               </div>
 

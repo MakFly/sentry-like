@@ -6,11 +6,17 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Makfly\ErrorWatch\Service\BreadcrumbService;
 use Makfly\ErrorWatch\Service\ErrorSenderInterface;
+use Makfly\ErrorWatch\Service\UserContextService;
 
 final class ExceptionSubscriber implements EventSubscriberInterface
 {
     private ErrorSenderInterface $errorSender;
+    private ?BreadcrumbService $breadcrumbService;
+    private ?UserContextService $userContextService;
+    private bool $breadcrumbsEnabled;
+    private bool $userContextEnabled;
 
     /**
      * URL patterns to ALWAYS ignore (for ALL exception types)
@@ -45,9 +51,18 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         '#/adminer#',
     ];
 
-    public function __construct(ErrorSenderInterface $errorSender)
-    {
+    public function __construct(
+        ErrorSenderInterface $errorSender,
+        ?BreadcrumbService $breadcrumbService = null,
+        ?UserContextService $userContextService = null,
+        bool $breadcrumbsEnabled = true,
+        bool $userContextEnabled = true
+    ) {
         $this->errorSender = $errorSender;
+        $this->breadcrumbService = $breadcrumbService;
+        $this->userContextService = $userContextService;
+        $this->breadcrumbsEnabled = $breadcrumbsEnabled;
+        $this->userContextEnabled = $userContextEnabled;
     }
 
     public static function getSubscribedEvents(): array
@@ -84,6 +99,37 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         $sessionId = $request->headers->get('X-Session-ID')
             ?: $request->attributes->get('error_monitoring_session_id');
 
-        $this->errorSender->send($throwable, $url, null, $sessionId);
+        // Build context with breadcrumbs and user
+        $context = $this->buildContext();
+
+        $this->errorSender->send($throwable, $url, null, $sessionId, $context);
+    }
+
+    /**
+     * Build context array with breadcrumbs and user information
+     *
+     * @return array<string, mixed>
+     */
+    private function buildContext(): array
+    {
+        $context = [];
+
+        // Add breadcrumbs if enabled and service available
+        if ($this->breadcrumbsEnabled && $this->breadcrumbService !== null) {
+            $breadcrumbs = $this->breadcrumbService->all();
+            if (!empty($breadcrumbs)) {
+                $context['breadcrumbs'] = $breadcrumbs;
+            }
+        }
+
+        // Add user context if enabled and service available
+        if ($this->userContextEnabled && $this->userContextService !== null) {
+            $userContext = $this->userContextService->getContext();
+            if ($userContext !== null) {
+                $context['user'] = $userContext;
+            }
+        }
+
+        return $context;
     }
 }

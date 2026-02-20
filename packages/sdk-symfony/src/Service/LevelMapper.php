@@ -41,28 +41,28 @@ class LevelMapper
 
         // Core PHP Errors (most severe)
         if ($throwable instanceof \Error) {
-            if ($throwable instanceof \ParseError ||
-                $throwable instanceof \TypeError ||
-                $throwable instanceof \ArithmeticError ||
-                $throwable instanceof \DivisionByZeroError) {
+            if ($throwable instanceof \ParseError
+                || $throwable instanceof \TypeError
+                || $throwable instanceof \ArithmeticError
+                || $throwable instanceof \DivisionByZeroError) {
                 return self::LEVEL_FATAL;
             }
             return self::LEVEL_ERROR;
         }
 
         // Overflow/Underflow - severe
-        if ($throwable instanceof \OverflowException ||
-            $throwable instanceof \UnderflowException) {
+        if ($throwable instanceof \OverflowException
+            || $throwable instanceof \UnderflowException) {
             return self::LEVEL_ERROR;
         }
 
         // Argument/Range exceptions (validation errors) - warnings
-        if ($throwable instanceof \InvalidArgumentException ||
-            $throwable instanceof \RangeException ||
-            $throwable instanceof \OutOfRangeException ||
-            $throwable instanceof \OutOfBoundsException ||
-            $throwable instanceof \LengthException ||
-            $throwable instanceof \DomainException) {
+        if ($throwable instanceof \InvalidArgumentException
+            || $throwable instanceof \RangeException
+            || $throwable instanceof \OutOfRangeException
+            || $throwable instanceof \OutOfBoundsException
+            || $throwable instanceof \LengthException
+            || $throwable instanceof \DomainException) {
             return self::LEVEL_WARNING;
         }
 

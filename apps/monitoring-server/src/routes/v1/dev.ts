@@ -4,7 +4,7 @@
 import { Hono } from "hono";
 import { auth } from "../../middleware/auth";
 import { db } from "../../db/connection";
-import { errorGroups, errorEvents, replaySessions, sessionEvents } from "../../db/schema";
+import { errorGroups, errorEvents, replaySessions, sessionEvents, users } from "../../db/schema";
 import logger from "../../logger";
 
 const router = new Hono();
@@ -17,14 +17,22 @@ router.use("*", async (c, next) => {
   await next();
 });
 
-// Require authentication
-router.use("*", auth());
+/**
+ * List users (email, name) - no auth, for login page autofill in dev
+ */
+router.get("/users", async (c) => {
+  const rows = await db
+    .select({ email: users.email, name: users.name })
+    .from(users)
+    .orderBy(users.createdAt);
+  return c.json(rows);
+});
 
 /**
  * Reset error tracking tables (dev only)
  * Clears: error_groups, error_events, replay_sessions, session_events
  */
-router.post("/reset-tables", async (c) => {
+router.post("/reset-tables", auth(), async (c) => {
   try {
     logger.warn("DEV: Resetting error tracking tables");
 

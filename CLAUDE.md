@@ -45,8 +45,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 sentry-like/
 ├── apps/
 │   ├── dashboard/                 # Next.js 16 frontend
-│   ├── monitoring-server/         # Hono.js API server
-│   └── worker/                    # BullMQ background worker
+│   ├── monitoring-server/         # Hono.js API server + BullMQ workers
+│   └── worker/                    # (deprecated - workers run in monitoring-server)
 ├── packages/
 │   ├── sdk/                       # Universal SDK (Browser + React + Vue)
 │   ├── shared/                    # Shared types & Zod schemas

@@ -5,9 +5,44 @@ const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:
 const API_VERSION = "v1";
 const FAIL_OPEN = process.env.AUTH_FAIL_OPEN === "true" || process.env.NODE_ENV !== "production";
 
-/**
- * Invalidates session cookie and redirects to login
- */
+const CACHE_TTL = 30000;
+
+type SessionCacheEntry = {
+  userId: string;
+  expires: number;
+};
+
+const sessionCache = new Map<string, SessionCacheEntry>();
+
+function getSessionFromCache(sessionToken: string): string | null {
+  const entry = sessionCache.get(sessionToken);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) {
+    sessionCache.delete(sessionToken);
+    return null;
+  }
+  return entry.userId;
+}
+
+function setSessionCache(sessionToken: string, userId: string) {
+  if (sessionCache.size > 1000) {
+    const oldestKey = sessionCache.keys().next().value;
+    if (oldestKey) sessionCache.delete(oldestKey);
+  }
+  sessionCache.set(sessionToken, { userId, expires: Date.now() + CACHE_TTL });
+}
+
+function invalidateSessionCache(sessionToken: string) {
+  sessionCache.delete(sessionToken);
+}
+
+function getSessionToken(cookieHeader: string): string | null {
+  const match =
+    cookieHeader.match(/better-auth\.session_token=([^;]+)/) ||
+    cookieHeader.match(/__Secure-better-auth\.session_token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 function invalidateSessionAndRedirect(
   request: NextRequest,
   redirectPath?: string,
@@ -28,95 +63,135 @@ function invalidateSessionAndRedirect(
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const cookieHeader = request.headers.get("cookie") ?? "";
 
-  // Public routes (no auth required)
   const publicRoutes = ["/", "/login", "/signup", "/invite"];
   const isPublicRoute = publicRoutes.some(
-    (route) =>
-      pathname === route || (route !== "/" && pathname.startsWith(`${route}/`))
+    (route) => pathname === route || (route !== "/" && pathname.startsWith(`${route}/`))
   );
 
   const isApiRoute = pathname.startsWith("/api");
   const isStaticRoute = pathname.startsWith("/_next");
   const isOnboardingRoute = pathname.startsWith("/onboarding");
 
-  // Get session cookie (support secure prefix in production)
-  const sessionCookie =
-    request.cookies.get("better-auth.session_token") ??
-    request.cookies.get("__Secure-better-auth.session_token");
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const hasSessionCookie =
-    !!sessionCookie ||
-    cookieHeader.includes("better-auth.session_token=") ||
-    cookieHeader.includes("__Secure-better-auth.session_token=");
-
-  // Redirect authenticated users away from auth pages
   const authRoutes = ["/login", "/signup"];
-  const isAuthRoute = authRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
-  let sessionValidationFailed = false;
+  const isAuthRoute = authRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  const sessionToken = getSessionToken(cookieHeader);
+  const hasSessionCookie = sessionToken !== null;
 
   if (hasSessionCookie && isAuthRoute) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Allow public routes, API routes, and static files
   if (isPublicRoute || isApiRoute || isStaticRoute) {
     return NextResponse.next();
   }
 
   if (!hasSessionCookie) {
-    // Redirect to login with return URL
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Validate session with API (cookie exists but may be expired/invalid)
-  try {
-    const sessionRes = await fetch(`${API_URL}/api/auth/get-session`, {
-      headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
-      cache: "no-store",
-    });
+  let sessionValidationFailed = false;
+  let userId: string | null = null;
 
-    if (!sessionRes.ok) {
-      return invalidateSessionAndRedirect(request, pathname);
-    }
+  const cachedUserId = sessionToken ? getSessionFromCache(sessionToken) : null;
+  if (cachedUserId) {
+    userId = cachedUserId;
+  } else {
+    try {
+      const sessionRes = await fetch(`${API_URL}/api/auth/get-session`, {
+        headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+        cache: "no-store",
+      });
 
-    const sessionData = await sessionRes.json();
-    if (!sessionData?.user?.id) {
-      return invalidateSessionAndRedirect(request, pathname);
-    }
-  } catch (error) {
-    // Network error → optionally fail open to avoid blocking users
-    console.error("[Middleware] Failed to validate session:", error);
-    sessionValidationFailed = true;
-    if (!FAIL_OPEN) {
-      return invalidateSessionAndRedirect(request, pathname, "auth_unavailable");
+      if (!sessionRes.ok) {
+        if (sessionToken) invalidateSessionCache(sessionToken);
+        return invalidateSessionAndRedirect(request, pathname);
+      }
+
+      const sessionData = await sessionRes.json();
+      if (!sessionData?.user?.id) {
+        if (sessionToken) invalidateSessionCache(sessionToken);
+        return invalidateSessionAndRedirect(request, pathname);
+      }
+
+      userId = sessionData.user.id;
+      if (sessionToken !== null) {
+        setSessionCache(sessionToken, userId);
+      }
+    } catch (error) {
+      console.error("[Middleware] Failed to validate session:", error);
+      sessionValidationFailed = true;
+      if (!FAIL_OPEN) {
+        return invalidateSessionAndRedirect(request, pathname, "auth_unavailable");
+      }
     }
   }
 
-  // Check if user needs onboarding (only for dashboard routes)
-  if (!sessionValidationFailed && (pathname.startsWith("/dashboard") || isOnboardingRoute)) {
+  if (!pathname.startsWith("/dashboard") && !isOnboardingRoute) {
+    return NextResponse.next();
+  }
+
+  if (pathname === "/dashboard" || pathname === "/dashboard/") {
     try {
-      const statusRes = await fetch(`${API_URL}/api/${API_VERSION}/onboarding/status`, {
-        headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
-      });
+      const [statusRes, orgsRes] = await Promise.all([
+        fetch(`${API_URL}/api/${API_VERSION}/onboarding/status`, {
+          headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+        }),
+        fetch(`${API_URL}/api/${API_VERSION}/organizations`, {
+          headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+        }),
+      ]);
+
+      let needsOnboarding = false;
+      if (statusRes.ok) {
+        const status = await statusRes.json();
+        needsOnboarding = status.needsOnboarding ?? false;
+      }
+
+      if (needsOnboarding) {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+
+      if (orgsRes.ok) {
+        const organizations = await orgsRes.json();
+        if (organizations && organizations.length > 0) {
+          return NextResponse.redirect(
+            new URL(`/dashboard/${organizations[0].slug}`, request.url)
+          );
+        }
+      }
+
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    } catch (error) {
+      console.error("Failed to fetch organizations:", error);
+      if (!FAIL_OPEN) {
+        return new NextResponse("Service unavailable", { status: 503 });
+      }
+    }
+  }
+
+  if (!sessionValidationFailed && isOnboardingRoute) {
+    try {
+      const statusRes = await fetch(
+        `${API_URL}/api/${API_VERSION}/onboarding/status`,
+        {
+          headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+        }
+      );
 
       if (statusRes.ok) {
         const status = await statusRes.json();
-
-        // Redirect to onboarding if needed (mandatory)
-        if (status.needsOnboarding && !isOnboardingRoute) {
-          return NextResponse.redirect(new URL("/onboarding", request.url));
-        }
-
-        // Redirect to dashboard if already onboarded
-        if (!status.needsOnboarding && isOnboardingRoute) {
+        if (!status.needsOnboarding) {
           return NextResponse.redirect(new URL("/dashboard", request.url));
         }
       }
     } catch (error) {
-      // If onboarding check fails, optionally fail open
       console.error("Failed to check onboarding status:", error);
       if (!FAIL_OPEN) {
         return new NextResponse("Service unavailable", { status: 503 });
@@ -124,30 +199,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Smart redirect: /dashboard → /dashboard/[first-org-slug]
-  if (pathname === "/dashboard" || pathname === "/dashboard/") {
-    try {
-      const orgsRes = await fetch(`${API_URL}/api/${API_VERSION}/organizations`, {
-        headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
-      });
-
-      if (orgsRes.ok) {
-        const organizations = await orgsRes.json();
-        if (organizations && organizations.length > 0) {
-          return NextResponse.redirect(new URL(`/dashboard/${organizations[0].slug}`, request.url));
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch organizations:", error);
-    }
-
-    // Fallback: redirect to onboarding if no orgs found
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|_next/webpack).*)"],
+  matcher: [
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|_next/webpack|.*\\.(?:ico|png|jpg|jpeg|svg|css|js|woff2?)$).*)",
+  ],
 };

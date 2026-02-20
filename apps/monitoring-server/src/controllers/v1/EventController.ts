@@ -142,7 +142,7 @@ export const submit = async (c: Context) => {
     const shouldLinkReplay = ['fatal', 'error'].includes(input.level);
 
     // Deterministic jobId for BullMQ dedup (10s window)
-    const jobId = `evt:${projectId}:${dedupFingerprint}:${Math.floor(Date.now() / 10000)}`;
+    const jobId = `evt-${projectId}-${dedupFingerprint}-${Math.floor(Date.now() / 10000)}`;
 
     // Queue event for async processing (< 5ms)
     await eventQueue.add("process-event", {

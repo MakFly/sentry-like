@@ -96,4 +96,79 @@ final class ErrorSenderTest extends TestCase
 
         $this->sender->send($exception, $url);
     }
+
+    public function testIncludesBreadcrumbsInPayload(): void
+    {
+        $exception = new RuntimeException('Test error');
+
+        $breadcrumbs = [
+            ['category' => 'http', 'message' => 'GET /api/test'],
+            ['category' => 'user', 'message' => 'Click submit'],
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('sendEventAsync')
+            ->with($this->callback(function ($payload) use ($breadcrumbs) {
+                return isset($payload['breadcrumbs'])
+                    && $payload['breadcrumbs'] === $breadcrumbs;
+            }));
+
+        $this->sender->send($exception, '/test', null, null, ['breadcrumbs' => $breadcrumbs]);
+    }
+
+    public function testIncludesUserContextInPayload(): void
+    {
+        $exception = new RuntimeException('Test error');
+
+        $userContext = [
+            'id' => 'user123',
+            'email' => 'test@example.com',
+            'ip_address' => '192.168.1.1',
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('sendEventAsync')
+            ->with($this->callback(function ($payload) use ($userContext) {
+                return isset($payload['user'])
+                    && $payload['user'] === $userContext;
+            }));
+
+        $this->sender->send($exception, '/test', null, null, ['user' => $userContext]);
+    }
+
+    public function testIncludesFullContextInPayload(): void
+    {
+        $exception = new RuntimeException('Test error');
+
+        $context = [
+            'breadcrumbs' => [['category' => 'http', 'message' => 'GET /api/test']],
+            'user' => ['id' => 'user123'],
+            'request' => ['method' => 'POST', 'url' => '/api/submit'],
+        ];
+
+        $this->mockClient->expects($this->once())
+            ->method('sendEventAsync')
+            ->with($this->callback(function ($payload) use ($context) {
+                return $payload['breadcrumbs'] === $context['breadcrumbs']
+                    && $payload['user'] === $context['user']
+                    && $payload['request'] === $context['request'];
+            }));
+
+        $this->sender->send($exception, '/test', null, null, $context);
+    }
+
+    public function testEmptyContextDoesNotAddFields(): void
+    {
+        $exception = new RuntimeException('Test error');
+
+        $this->mockClient->expects($this->once())
+            ->method('sendEventAsync')
+            ->with($this->callback(function ($payload) {
+                return !isset($payload['breadcrumbs'])
+                    && !isset($payload['user'])
+                    && !isset($payload['request']);
+            }));
+
+        $this->sender->send($exception, '/test', null, null, []);
+    }
 }

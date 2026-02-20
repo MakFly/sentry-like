@@ -4,6 +4,10 @@
   "workspaces": {
     "": {
       "name": "errorwatch",
+      "dependencies": {
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+      },
       "devDependencies": {
         "turbo": "^2.3.0",
       },
