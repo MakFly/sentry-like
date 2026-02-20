@@ -1,17 +1,17 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\EventSubscriber;
+namespace ErrorWatch\Symfony\Tests\Unit\EventSubscriber;
 
+use ErrorWatch\Symfony\EventSubscriber\RequestSubscriber;
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Service\TransactionCollector;
+use ErrorWatch\Symfony\Service\TransactionSender;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Makfly\ErrorWatch\EventSubscriber\RequestSubscriber;
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
-use Makfly\ErrorWatch\Service\TransactionCollector;
-use Makfly\ErrorWatch\Service\TransactionSender;
 
 final class RequestSubscriberTest extends TestCase
 {
@@ -112,8 +112,8 @@ final class RequestSubscriberTest extends TestCase
         $this->mockClient->expects($this->once())
             ->method('sendTransaction')
             ->with($this->callback(function ($payload) {
-                return $payload['transaction']['status'] === 'ok'
-                    && $payload['transaction']['tags']['http.status_code'] === '200';
+                return 'ok' === $payload['transaction']['status']
+                    && '200' === $payload['transaction']['tags']['http.status_code'];
             }));
 
         $subscriber->onTerminate($terminateEvent);
@@ -133,7 +133,7 @@ final class RequestSubscriberTest extends TestCase
         $this->mockClient->expects($this->once())
             ->method('sendTransaction')
             ->with($this->callback(function ($payload) {
-                return $payload['transaction']['status'] === 'error';
+                return 'error' === $payload['transaction']['status'];
             }));
 
         $subscriber->onTerminate($terminateEvent);

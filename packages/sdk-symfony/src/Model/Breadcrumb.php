@@ -1,6 +1,6 @@
 <?php
 
-namespace Makfly\ErrorWatch\Model;
+namespace ErrorWatch\Symfony\Model;
 
 /**
  * Represents a single breadcrumb for error tracking.
@@ -33,16 +33,17 @@ final class Breadcrumb
         public readonly ?string $level = null,
         public readonly ?string $message = null,
         public readonly array $data = [],
-    ) {}
+    ) {
+    }
 
     /**
-     * Create a breadcrumb for an HTTP request
+     * Create a breadcrumb for an HTTP request.
      */
     public static function http(
         string $method,
         string $url,
         int $statusCode = 0,
-        ?string $message = null
+        ?string $message = null,
     ): self {
         return new self(
             category: self::CATEGORY_HTTP,
@@ -58,7 +59,7 @@ final class Breadcrumb
     }
 
     /**
-     * Create a breadcrumb for a navigation event
+     * Create a breadcrumb for a navigation event.
      */
     public static function navigation(string $from, string $to, ?string $message = null): self
     {
@@ -75,7 +76,7 @@ final class Breadcrumb
     }
 
     /**
-     * Create a breadcrumb for a user action
+     * Create a breadcrumb for a user action.
      *
      * @param array<string, mixed> $data
      */
@@ -91,24 +92,43 @@ final class Breadcrumb
     }
 
     /**
-     * Create a breadcrumb for a log entry
+     * Create a breadcrumb for a log entry.
      *
      * @param array<string, mixed> $data
+     */
+    /**
+     * Uses CATEGORY_CONSOLE because the server only accepts: ui, navigation, console, http, user.
      */
     public static function log(string $level, string $message, array $data = []): self
     {
         return new self(
-            category: self::CATEGORY_LOG,
+            category: self::CATEGORY_CONSOLE,
             timestamp: time(),
             type: self::TYPE_INFO,
             level: $level,
+            message: $message,
+            data: $data,
+        );
+    }
+
+    /**
+     * Create a breadcrumb for a console command.
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function console(string $message, array $data = []): self
+    {
+        return new self(
+            category: self::CATEGORY_CONSOLE,
+            timestamp: time(),
+            type: self::TYPE_DEFAULT,
             message: $message,
             data: $data
         );
     }
 
     /**
-     * Create a breadcrumb for a UI interaction
+     * Create a breadcrumb for a UI interaction.
      */
     public static function ui(string $element, string $action, ?string $message = null): self
     {
@@ -125,7 +145,7 @@ final class Breadcrumb
     }
 
     /**
-     * Convert to array for serialization
+     * Convert to array for serialization.
      *
      * @return array<string, mixed>
      */
@@ -138,6 +158,6 @@ final class Breadcrumb
             'level' => $this->level,
             'message' => $this->message,
             'data' => $this->data ?: null,
-        ], fn($v) => $v !== null);
+        ], fn ($v) => null !== $v);
     }
 }

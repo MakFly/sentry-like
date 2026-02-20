@@ -1,6 +1,6 @@
 <?php
 
-namespace Makfly\ErrorWatch\Http;
+namespace ErrorWatch\Symfony\Http;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -23,7 +23,7 @@ class MonitoringClient implements MonitoringClientInterface
      */
     public function sendEvent(array $payload): ResponseInterface
     {
-        return $this->client->request('POST', $this->endpoint . '/api/v1/event', [
+        return $this->client->request('POST', $this->endpoint.'/api/v1/event', [
             'headers' => [
                 'Content-Type' => 'application/json',
                 'X-API-Key' => $this->apiKey,
@@ -50,7 +50,7 @@ class MonitoringClient implements MonitoringClientInterface
     public function sendTransaction(array $payload): void
     {
         try {
-            $response = $this->client->request('POST', $this->endpoint . '/api/v1/performance/transaction', [
+            $response = $this->client->request('POST', $this->endpoint.'/api/v1/performance/transaction', [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'X-API-Key' => $this->apiKey,
@@ -66,7 +66,7 @@ class MonitoringClient implements MonitoringClientInterface
     public function sendMetrics(array $payload): void
     {
         try {
-            $response = $this->client->request('POST', $this->endpoint . '/api/v1/performance/metrics', [
+            $response = $this->client->request('POST', $this->endpoint.'/api/v1/performance/metrics', [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'X-API-Key' => $this->apiKey,

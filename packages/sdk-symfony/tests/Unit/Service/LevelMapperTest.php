@@ -1,16 +1,13 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Service\LevelMapper;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Service\LevelMapper;
 use Psr\Log\LogLevel;
-use RuntimeException;
-use InvalidArgumentException;
-use TypeError;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class LevelMapperTest extends TestCase
 {
@@ -121,7 +118,7 @@ final class LevelMapperTest extends TestCase
 
     public function testMapInvalidArgumentExceptionReturnsWarning(): void
     {
-        $exception = new InvalidArgumentException('Invalid argument');
+        $exception = new \InvalidArgumentException('Invalid argument');
 
         $this->assertSame(LevelMapper::LEVEL_WARNING, $this->mapper->mapException($exception));
     }
@@ -163,7 +160,7 @@ final class LevelMapperTest extends TestCase
 
     public function testMapRuntimeExceptionReturnsError(): void
     {
-        $exception = new RuntimeException('Runtime error');
+        $exception = new \RuntimeException('Runtime error');
 
         $this->assertSame(LevelMapper::LEVEL_ERROR, $this->mapper->mapException($exception));
     }

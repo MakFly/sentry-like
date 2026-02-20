@@ -1,14 +1,14 @@
 <?php
 
-namespace Makfly\ErrorWatch\EventSubscriber;
+namespace ErrorWatch\Symfony\EventSubscriber;
 
+use ErrorWatch\Symfony\Service\BreadcrumbService;
+use ErrorWatch\Symfony\Service\ErrorSenderInterface;
+use ErrorWatch\Symfony\Service\UserContextService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Makfly\ErrorWatch\Service\BreadcrumbService;
-use Makfly\ErrorWatch\Service\ErrorSenderInterface;
-use Makfly\ErrorWatch\Service\UserContextService;
 
 final class ExceptionSubscriber implements EventSubscriberInterface
 {
@@ -20,7 +20,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
 
     /**
      * URL patterns to ALWAYS ignore (for ALL exception types)
-     * These are browser/tool noise that should never be reported
+     * These are browser/tool noise that should never be reported.
      */
     private const ALWAYS_IGNORED_PATTERNS = [
         // Chrome DevTools
@@ -30,7 +30,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
 
     /**
      * URL patterns to ignore only for 404 errors
-     * These are common missing resources, not real application errors
+     * These are common missing resources, not real application errors.
      */
     private const IGNORED_404_PATTERNS = [
         // Common browser requests
@@ -56,7 +56,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         ?BreadcrumbService $breadcrumbService = null,
         ?UserContextService $userContextService = null,
         bool $breadcrumbsEnabled = true,
-        bool $userContextEnabled = true
+        bool $userContextEnabled = true,
     ) {
         $this->errorSender = $errorSender;
         $this->breadcrumbService = $breadcrumbService;
@@ -97,7 +97,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         // Priority: 1. X-Session-ID header (from JS fetch interceptor)
         //           2. Request attributes (from SessionReplayManager on page load)
         $sessionId = $request->headers->get('X-Session-ID')
-            ?: $request->attributes->get('error_monitoring_session_id');
+            ?: $request->attributes->get('error_watch_session_id');
 
         // Build context with breadcrumbs and user
         $context = $this->buildContext();
@@ -106,7 +106,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * Build context array with breadcrumbs and user information
+     * Build context array with breadcrumbs and user information.
      *
      * @return array<string, mixed>
      */
@@ -115,7 +115,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         $context = [];
 
         // Add breadcrumbs if enabled and service available
-        if ($this->breadcrumbsEnabled && $this->breadcrumbService !== null) {
+        if ($this->breadcrumbsEnabled && null !== $this->breadcrumbService) {
             $breadcrumbs = $this->breadcrumbService->all();
             if (!empty($breadcrumbs)) {
                 $context['breadcrumbs'] = $breadcrumbs;
@@ -123,9 +123,9 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         }
 
         // Add user context if enabled and service available
-        if ($this->userContextEnabled && $this->userContextService !== null) {
+        if ($this->userContextEnabled && null !== $this->userContextService) {
             $userContext = $this->userContextService->getContext();
-            if ($userContext !== null) {
+            if (null !== $userContext) {
                 $context['user'] = $userContext;
             }
         }

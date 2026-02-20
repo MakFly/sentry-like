@@ -1,13 +1,13 @@
 <?php
 
-namespace Makfly\ErrorWatch\Twig;
+namespace ErrorWatch\Symfony\Twig;
 
+use ErrorWatch\Symfony\Service\SessionReplayManager;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
-use Makfly\ErrorWatch\Service\SessionReplayManager;
 
 /**
- * Twig extension for injecting rrweb session replay script
+ * Twig extension for injecting rrweb session replay script.
  */
 class ReplayExtension extends AbstractExtension
 {
@@ -28,14 +28,14 @@ class ReplayExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('error_monitoring_replay_script', [$this, 'getReplayScript'], ['is_safe' => ['html']]),
-            new TwigFunction('error_monitoring_session_id', [$this, 'getSessionId']),
+            new TwigFunction('error_watch_replay_script', [$this, 'getReplayScript'], ['is_safe' => ['html']]),
+            new TwigFunction('error_watch_session_id', [$this, 'getSessionId']),
         ];
     }
 
     /**
      * Returns the HTML script tags for rrweb session replay
-     * Include this in your base template before </body>
+     * Include this in your base template before </body>.
      */
     public function getReplayScript(): string
     {
@@ -45,7 +45,7 @@ class ReplayExtension extends AbstractExtension
 
         $config = $this->replayManager->getJsConfig();
 
-        if ($config['sessionId'] === null) {
+        if (null === $config['sessionId']) {
             return '';
         }
 
@@ -308,7 +308,7 @@ class ReplayExtension extends AbstractExtension
               }
 
               // === Public API ===
-              window.ErrorMonitoringReplay = {
+              window.ErrorWatchReplay = {
                 stop: function() { if (stopFn) stopFn(); },
                 flush: function(errorContext) { flushOnError(errorContext || { message: 'Manual flush' }); },
                 getSessionId: function() { return config.sessionId; },
@@ -320,7 +320,7 @@ class ReplayExtension extends AbstractExtension
     }
 
     /**
-     * Returns the current session ID (useful for debugging)
+     * Returns the current session ID (useful for debugging).
      */
     public function getSessionId(): ?string
     {

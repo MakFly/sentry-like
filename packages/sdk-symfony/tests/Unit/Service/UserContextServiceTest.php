@@ -1,12 +1,12 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Service\UserContextService;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Service\UserContextService;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 final class UserContextServiceTest extends TestCase
@@ -62,11 +62,16 @@ final class UserContextServiceTest extends TestCase
             {
                 return [];
             }
-            public function eraseCredentials(): void {}
+
+            public function eraseCredentials(): void
+            {
+            }
+
             public function getUserIdentifier(): string
             {
                 return 'user123';
             }
+
             public function getEmail(): string
             {
                 return 'test@example.com';
@@ -94,7 +99,11 @@ final class UserContextServiceTest extends TestCase
             {
                 return [];
             }
-            public function eraseCredentials(): void {}
+
+            public function eraseCredentials(): void
+            {
+            }
+
             public function getUserIdentifier(): string
             {
                 return 'user@example.com';
@@ -165,11 +174,16 @@ final class UserContextServiceTest extends TestCase
             {
                 return [];
             }
-            public function eraseCredentials(): void {}
+
+            public function eraseCredentials(): void
+            {
+            }
+
             public function getUserIdentifier(): string
             {
                 return 'user456';
             }
+
             public function getUsername(): string
             {
                 return 'testuser';

@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Model;
+namespace ErrorWatch\Symfony\Tests\Unit\Model;
 
+use ErrorWatch\Symfony\Model\Span;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Model\Span;
 
 final class SpanTest extends TestCase
 {

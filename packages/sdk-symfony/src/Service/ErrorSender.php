@@ -1,9 +1,8 @@
 <?php
 
-namespace Makfly\ErrorWatch\Service;
+namespace ErrorWatch\Symfony\Service;
 
-use Throwable;
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
 
 class ErrorSender implements ErrorSenderInterface
 {
@@ -18,7 +17,7 @@ class ErrorSender implements ErrorSenderInterface
         string $environment,
         ?string $release,
         MonitoringClientInterface $client,
-        LevelMapper $levelMapper
+        LevelMapper $levelMapper,
     ) {
         $this->enabled = $enabled;
         $this->environment = $environment;
@@ -28,11 +27,11 @@ class ErrorSender implements ErrorSenderInterface
     }
 
     public function send(
-        Throwable $throwable,
+        \Throwable $throwable,
         ?string $url = null,
         ?string $level = null,
         ?string $sessionId = null,
-        array $context = []
+        array $context = [],
     ): void {
         if (!$this->enabled) {
             return;
@@ -44,14 +43,15 @@ class ErrorSender implements ErrorSenderInterface
 
     /**
      * @param array<string, mixed> $context
+     *
      * @return array<string, mixed>
      */
     private function buildPayload(
-        Throwable $throwable,
+        \Throwable $throwable,
         ?string $url,
         ?string $level,
         ?string $sessionId,
-        array $context = []
+        array $context = [],
     ): array {
         $trace = $throwable->getTraceAsString();
         $file = $throwable->getFile();
@@ -59,7 +59,7 @@ class ErrorSender implements ErrorSenderInterface
 
         // Auto-detect level from exception if not provided
         $resolvedLevel = $level;
-        if ($resolvedLevel === null || !LevelMapper::isValidLevel($resolvedLevel)) {
+        if (null === $resolvedLevel || !LevelMapper::isValidLevel($resolvedLevel)) {
             $resolvedLevel = $this->levelMapper->mapException($throwable);
         }
 
@@ -82,7 +82,7 @@ class ErrorSender implements ErrorSenderInterface
 
         // Include session_id for replay linking (only for critical errors)
         $criticalLevels = [LevelMapper::LEVEL_FATAL, LevelMapper::LEVEL_ERROR];
-        if ($sessionId !== null && in_array($resolvedLevel, $criticalLevels, true)) {
+        if (null !== $sessionId && in_array($resolvedLevel, $criticalLevels, true)) {
             $payload['session_id'] = $sessionId;
         }
 

@@ -1,13 +1,15 @@
 <?php
 
-namespace Makfly\ErrorWatch\EventSubscriber;
+namespace ErrorWatch\Symfony\EventSubscriber;
 
+use ErrorWatch\Symfony\Model\Breadcrumb;
+use ErrorWatch\Symfony\Service\BreadcrumbService;
+use ErrorWatch\Symfony\Service\TransactionCollector;
+use ErrorWatch\Symfony\Service\TransactionSender;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Makfly\ErrorWatch\Service\TransactionCollector;
-use Makfly\ErrorWatch\Service\TransactionSender;
 
 final class RequestSubscriber implements EventSubscriberInterface
 {
@@ -19,12 +21,14 @@ final class RequestSubscriber implements EventSubscriberInterface
         private readonly TransactionSender $sender,
         private readonly bool $enabled,
         private readonly array $excludedRoutes = [],
-    ) {}
+        private readonly ?BreadcrumbService $breadcrumbService = null,
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST   => ['onRequest', 4096],
+            KernelEvents::REQUEST => ['onRequest', 4096],
             KernelEvents::TERMINATE => ['onTerminate', -4096],
         ];
     }
@@ -42,10 +46,15 @@ final class RequestSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $name = $request->getMethod() . ' ' . ($route ?: $request->getPathInfo());
+        $method = $request->getMethod();
+        $pathInfo = $request->getPathInfo();
+
+        $this->breadcrumbService?->add(Breadcrumb::http($method, $pathInfo));
+
+        $name = $method.' '.($route ?: $pathInfo);
         $txn = $this->collector->startTransaction($name, 'http.server');
-        $txn->setTag('http.method', $request->getMethod());
-        $txn->setData('http.url', $request->getPathInfo());
+        $txn->setTag('http.method', $method);
+        $txn->setData('http.url', $pathInfo);
     }
 
     public function onTerminate(TerminateEvent $event): void
@@ -60,7 +69,7 @@ final class RequestSubscriber implements EventSubscriberInterface
         $status = $statusCode >= 500 ? 'error' : 'ok';
         $txn = $this->collector->finishTransaction($status);
 
-        if ($txn === null) {
+        if (null === $txn) {
             return;
         }
 

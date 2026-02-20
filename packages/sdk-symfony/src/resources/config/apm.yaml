@@ -3,19 +3,20 @@ services:
         autowire: true
         autoconfigure: true
 
-    Makfly\ErrorWatch\Service\TransactionCollector: ~
+    ErrorWatch\Symfony\Service\TransactionCollector: ~
 
-    Makfly\ErrorWatch\Service\TransactionSender:
+    ErrorWatch\Symfony\Service\TransactionSender:
         arguments:
-            $client: '@Makfly\ErrorWatch\Http\MonitoringClientInterface'
-            $enabled: '%error_monitoring.apm.enabled%'
-            $environment: '%error_monitoring.environment%'
+            $client: '@ErrorWatch\Symfony\Http\MonitoringClientInterface'
+            $enabled: '%error_watch.apm.enabled%'
+            $environment: '%error_watch.environment%'
 
-    Makfly\ErrorWatch\EventSubscriber\RequestSubscriber:
+    ErrorWatch\Symfony\EventSubscriber\RequestSubscriber:
         arguments:
-            $collector: '@Makfly\ErrorWatch\Service\TransactionCollector'
-            $sender: '@Makfly\ErrorWatch\Service\TransactionSender'
-            $enabled: '%error_monitoring.apm.request_tracking%'
-            $excludedRoutes: '%error_monitoring.apm.excluded_routes%'
+            $collector: '@ErrorWatch\Symfony\Service\TransactionCollector'
+            $sender: '@ErrorWatch\Symfony\Service\TransactionSender'
+            $enabled: '%error_watch.apm.request_tracking%'
+            $excludedRoutes: '%error_watch.apm.excluded_routes%'
+            $breadcrumbService: '@ErrorWatch\Symfony\Service\BreadcrumbService'
         tags:
             - { name: kernel.event_subscriber }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Makfly\ErrorWatch\Http;
+namespace ErrorWatch\Symfony\Http;
 
 use Symfony\Contracts\HttpClient\ResponseInterface;
 

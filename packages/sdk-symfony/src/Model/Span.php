@@ -1,6 +1,6 @@
 <?php
 
-namespace Makfly\ErrorWatch\Model;
+namespace ErrorWatch\Symfony\Model;
 
 final class Span
 {

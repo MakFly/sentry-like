@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\DependencyInjection;
+namespace ErrorWatch\Symfony\Tests\Unit\DependencyInjection;
 
+use ErrorWatch\Symfony\DependencyInjection\Configuration;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\DependencyInjection\Configuration;
 use Symfony\Component\Config\Definition\Processor;
 
 final class ConfigurationTest extends TestCase
@@ -19,15 +19,16 @@ final class ConfigurationTest extends TestCase
 
     public function testDefaultConfiguration(): void
     {
-        // api_key is required when enabled=true (default)
+        // api_key and endpoint are required when enabled=true (default)
         $inputConfig = [
+            'endpoint' => 'https://api.errorwatch.io',
             'api_key' => 'test-api-key',
         ];
 
         $config = $this->processor->processConfiguration($this->configuration, [$inputConfig]);
 
         $this->assertTrue($config['enabled']);
-        $this->assertSame('http://localhost:8000', $config['endpoint']);
+        $this->assertSame('https://api.errorwatch.io', $config['endpoint']);
         $this->assertSame('test-api-key', $config['api_key']);
         $this->assertNull($config['environment']);
         $this->assertNull($config['release']);
@@ -44,6 +45,25 @@ final class ConfigurationTest extends TestCase
         // User context defaults
         $this->assertTrue($config['user_context']['enabled']);
         $this->assertTrue($config['user_context']['capture_ip']);
+
+        // Console defaults
+        $this->assertTrue($config['console']['enabled']);
+        $this->assertTrue($config['console']['capture_exit_codes']);
+
+        // Messenger defaults
+        $this->assertTrue($config['messenger']['enabled']);
+        $this->assertFalse($config['messenger']['capture_retries']);
+
+        // Deprecations defaults
+        $this->assertFalse($config['deprecations']['enabled']);
+
+        // Security defaults
+        $this->assertTrue($config['security']['enabled']);
+        $this->assertFalse($config['security']['capture_login_success']);
+
+        // APM defaults (including http_client)
+        $this->assertTrue($config['apm']['http_client']['enabled']);
+        $this->assertTrue($config['apm']['http_client']['capture_errors_as_breadcrumbs']);
 
         // Monolog defaults
         $this->assertTrue($config['monolog']['enabled']);
@@ -108,12 +128,26 @@ final class ConfigurationTest extends TestCase
         $this->assertFalse($config['monolog']['capture_extra']);
     }
 
+    public function testRequiresEndpointWhenEnabled(): void
+    {
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+
+        $inputConfig = [
+            'enabled' => true,
+            'api_key' => 'test-key',
+            'endpoint' => '',
+        ];
+
+        $this->processor->processConfiguration($this->configuration, [$inputConfig]);
+    }
+
     public function testRequiresApiKeyWhenEnabled(): void
     {
         $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
 
         $inputConfig = [
             'enabled' => true,
+            'endpoint' => 'https://api.errorwatch.io',
             'api_key' => '',
         ];
 
@@ -126,6 +160,7 @@ final class ConfigurationTest extends TestCase
 
         $inputConfig = [
             'enabled' => false,
+            'endpoint' => 'https://api.errorwatch.io',
             'api_key' => '',
             'replay' => [
                 'enabled' => true,
@@ -154,9 +189,9 @@ final class ConfigurationTest extends TestCase
     {
         // Valid range: 0.0 to 1.0
         $validConfigs = [
-            ['api_key' => 'test', 'replay' => ['sample_rate' => 0.0]],
-            ['api_key' => 'test', 'replay' => ['sample_rate' => 0.5]],
-            ['api_key' => 'test', 'replay' => ['sample_rate' => 1.0]],
+            ['endpoint' => 'https://api.errorwatch.io', 'api_key' => 'test', 'replay' => ['sample_rate' => 0.0]],
+            ['endpoint' => 'https://api.errorwatch.io', 'api_key' => 'test', 'replay' => ['sample_rate' => 0.5]],
+            ['endpoint' => 'https://api.errorwatch.io', 'api_key' => 'test', 'replay' => ['sample_rate' => 1.0]],
         ];
 
         foreach ($validConfigs as $inputConfig) {
@@ -168,6 +203,7 @@ final class ConfigurationTest extends TestCase
     public function testBreadcrumbsMaxCountValidation(): void
     {
         $inputConfig = [
+            'endpoint' => 'https://api.errorwatch.io',
             'api_key' => 'test',
             'breadcrumbs' => [
                 'max_count' => 250,
@@ -181,7 +217,7 @@ final class ConfigurationTest extends TestCase
     public function testMultipleConfigsAreMerged(): void
     {
         $configs = [
-            ['api_key' => 'test', 'environment' => 'dev'],
+            ['endpoint' => 'https://api.errorwatch.io', 'api_key' => 'test', 'environment' => 'dev'],
             ['environment' => 'prod', 'release' => '2.0.0'],
         ];
 

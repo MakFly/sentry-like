@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Monolog;
+namespace ErrorWatch\Symfony\Tests\Unit\Monolog;
 
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
-use Makfly\ErrorWatch\Monolog\ErrorMonitoringHandler;
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Monolog\ErrorMonitoringHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -31,10 +31,10 @@ final class ErrorMonitoringHandlerTest extends TestCase
             ->expects($this->once())
             ->method('sendEventAsync')
             ->with($this->callback(static function (array $payload): bool {
-                return $payload['message'] === 'warning test'
-                    && $payload['level'] === 'warning'
-                    && $payload['env'] === 'dev'
-                    && $payload['release'] === '1.2.3';
+                return 'warning test' === $payload['message']
+                    && 'warning' === $payload['level']
+                    && 'dev' === $payload['env']
+                    && '1.2.3' === $payload['release'];
             }));
 
         $record = new LogRecord(
@@ -88,7 +88,7 @@ final class ErrorMonitoringHandlerTest extends TestCase
             ->expects($this->once())
             ->method('sendEventAsync')
             ->with($this->callback(static function (array $payload): bool {
-                return $payload['message'] === 'boom'
+                return 'boom' === $payload['message']
                     && is_string($payload['file'])
                     && is_int($payload['line'])
                     && is_string($payload['stack']);
@@ -106,4 +106,3 @@ final class ErrorMonitoringHandlerTest extends TestCase
         $handler->handle($record);
     }
 }
-

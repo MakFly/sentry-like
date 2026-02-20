@@ -1,12 +1,11 @@
 <?php
 
-namespace Makfly\ErrorWatch\Monolog;
+namespace ErrorWatch\Symfony\Monolog;
 
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Throwable;
 
 final class ErrorMonitoringHandler extends AbstractProcessingHandler
 {
@@ -22,7 +21,7 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
         private readonly bool $captureContext = true,
         private readonly bool $captureExtra = true,
         int|string|Level $level = Level::Warning,
-        bool $bubble = true
+        bool $bubble = true,
     ) {
         parent::__construct($level, $bubble);
     }
@@ -39,12 +38,12 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
         $message = $record->message;
         $file = 'monolog';
         $line = 1;
-        $stack = $record->channel . '.' . $record->level->name . ': ' . $record->message;
+        $stack = $record->channel.'.'.$record->level->name.': '.$record->message;
 
-        if (($record->context['exception'] ?? null) instanceof Throwable) {
-            /** @var Throwable $exception */
+        if (($record->context['exception'] ?? null) instanceof \Throwable) {
+            /** @var \Throwable $exception */
             $exception = $record->context['exception'];
-            $message = $exception->getMessage() !== '' ? $exception->getMessage() : $message;
+            $message = '' !== $exception->getMessage() ? $exception->getMessage() : $message;
             $file = $exception->getFile();
             $line = $exception->getLine();
             $stack = $exception->getTraceAsString();
@@ -58,7 +57,7 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
             'env' => $this->environment,
             'level' => $this->mapLevel($record->level),
             'release' => $this->release,
-            'created_at' => (int) ($record->datetime->format('Uv')),
+            'created_at' => (int) $record->datetime->format('Uv'),
         ];
 
         if (!empty($context) || !empty($extra)) {
@@ -71,7 +70,7 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
 
         try {
             $this->client->sendEventAsync($payload);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // Never break request lifecycle if remote logging fails.
         }
     }
@@ -89,13 +88,14 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
 
     /**
      * @param array<string, mixed> $data
+     *
      * @return array<string, mixed>
      */
     private function normalize(array $data): array
     {
         $normalized = [];
         foreach ($data as $key => $value) {
-            if (is_scalar($value) || $value === null) {
+            if (is_scalar($value) || null === $value) {
                 $normalized[$key] = $value;
                 continue;
             }
@@ -110,7 +110,7 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
                 continue;
             }
 
-            if ($value instanceof Throwable) {
+            if ($value instanceof \Throwable) {
                 $normalized[$key] = [
                     'class' => $value::class,
                     'message' => $value->getMessage(),
@@ -131,4 +131,3 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
         return $normalized;
     }
 }
-

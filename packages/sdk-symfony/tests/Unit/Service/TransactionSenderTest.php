@@ -1,11 +1,11 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Model\Transaction;
+use ErrorWatch\Symfony\Service\TransactionSender;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
-use Makfly\ErrorWatch\Model\Transaction;
-use Makfly\ErrorWatch\Service\TransactionSender;
 
 final class TransactionSenderTest extends TestCase
 {
@@ -32,9 +32,9 @@ final class TransactionSenderTest extends TestCase
             ->with($this->callback(function ($payload) {
                 return isset($payload['transaction'])
                     && isset($payload['env'])
-                    && $payload['env'] === 'production'
-                    && $payload['transaction']['name'] === 'GET /users'
-                    && $payload['transaction']['op'] === 'http.server';
+                    && 'production' === $payload['env']
+                    && 'GET /users' === $payload['transaction']['name']
+                    && 'http.server' === $payload['transaction']['op'];
             }));
 
         $sender->send($txn);

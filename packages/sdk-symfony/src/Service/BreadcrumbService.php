@@ -1,8 +1,8 @@
 <?php
 
-namespace Makfly\ErrorWatch\Service;
+namespace ErrorWatch\Symfony\Service;
 
-use Makfly\ErrorWatch\Model\Breadcrumb;
+use ErrorWatch\Symfony\Model\Breadcrumb;
 
 /**
  * Service for managing breadcrumbs (user action trail leading to errors).
@@ -22,7 +22,7 @@ final class BreadcrumbService
     }
 
     /**
-     * Add a breadcrumb to the trail
+     * Add a breadcrumb to the trail.
      */
     public function add(Breadcrumb $breadcrumb): void
     {
@@ -35,7 +35,7 @@ final class BreadcrumbService
     }
 
     /**
-     * Add a raw breadcrumb array
+     * Add a raw breadcrumb array.
      *
      * @param array<string, mixed> $breadcrumb
      */
@@ -49,7 +49,7 @@ final class BreadcrumbService
     }
 
     /**
-     * Get all breadcrumbs
+     * Get all breadcrumbs.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -59,7 +59,7 @@ final class BreadcrumbService
     }
 
     /**
-     * Get breadcrumb count
+     * Get breadcrumb count.
      */
     public function count(): int
     {
@@ -67,7 +67,7 @@ final class BreadcrumbService
     }
 
     /**
-     * Clear all breadcrumbs
+     * Clear all breadcrumbs.
      */
     public function clear(): void
     {
@@ -75,7 +75,7 @@ final class BreadcrumbService
     }
 
     /**
-     * Check if breadcrumbs is empty
+     * Check if breadcrumbs is empty.
      */
     public function isEmpty(): bool
     {

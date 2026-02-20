@@ -1,16 +1,16 @@
 <?php
 
-namespace Makfly\ErrorWatch\Service;
+namespace ErrorWatch\Symfony\Service;
 
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Manages session replay functionality
- * Generates and stores session IDs for linking errors to replay sessions
+ * Generates and stores session IDs for linking errors to replay sessions.
  */
 class SessionReplayManager
 {
-    private const SESSION_KEY = 'error_monitoring_session_id';
+    private const SESSION_KEY = 'error_watch_session_id';
 
     private RequestStack $requestStack;
     private string $endpoint;
@@ -27,7 +27,7 @@ class SessionReplayManager
         bool $enabled = false,
         bool $debug = false,
         float $sampleRate = 0.1,
-        ?string $release = null
+        ?string $release = null,
     ) {
         $this->requestStack = $requestStack;
         $this->endpoint = $endpoint;
@@ -40,7 +40,7 @@ class SessionReplayManager
 
     /**
      * Get or create session ID for replay linking
-     * Returns null if replay is disabled or if request doesn't pass sample rate
+     * Returns null if replay is disabled or if request doesn't pass sample rate.
      *
      * Note: SessionId is scoped to the current HTTP request (page load),
      * not the browser session. Each page load gets a new sessionId.
@@ -60,7 +60,7 @@ class SessionReplayManager
         // This ensures a new sessionId per page load, not per browser session
         $sessionId = $request->attributes->get(self::SESSION_KEY);
 
-        if ($sessionId === null) {
+        if (null === $sessionId) {
             // Check sample rate - only create session for sampled requests
             if (!$this->shouldSample()) {
                 return null;
@@ -74,7 +74,7 @@ class SessionReplayManager
     }
 
     /**
-     * Check if replay is enabled
+     * Check if replay is enabled.
      */
     public function isEnabled(): bool
     {
@@ -82,7 +82,7 @@ class SessionReplayManager
     }
 
     /**
-     * Get endpoint URL
+     * Get endpoint URL.
      */
     public function getEndpoint(): string
     {
@@ -90,7 +90,7 @@ class SessionReplayManager
     }
 
     /**
-     * Get API key
+     * Get API key.
      */
     public function getApiKey(): string
     {
@@ -98,7 +98,7 @@ class SessionReplayManager
     }
 
     /**
-     * Get sample rate
+     * Get sample rate.
      */
     public function getSampleRate(): float
     {
@@ -106,7 +106,7 @@ class SessionReplayManager
     }
 
     /**
-     * Get JavaScript configuration for the replay script
+     * Get JavaScript configuration for the replay script.
      *
      * @return array<string, mixed>
      */
@@ -124,7 +124,7 @@ class SessionReplayManager
     }
 
     /**
-     * Check if this request should be sampled based on sample rate
+     * Check if this request should be sampled based on sample rate.
      */
     private function shouldSample(): bool
     {
@@ -139,20 +139,20 @@ class SessionReplayManager
     }
 
     /**
-     * Generate a UUID v4
+     * Generate a UUID v4.
      */
     private function generateUuid(): string
     {
         return sprintf(
             '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff)
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0x0FFF) | 0x4000,
+            mt_rand(0, 0x3FFF) | 0x8000,
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF)
         );
     }
 }

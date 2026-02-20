@@ -1,10 +1,10 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Model;
+namespace ErrorWatch\Symfony\Tests\Unit\Model;
 
+use ErrorWatch\Symfony\Model\Span;
+use ErrorWatch\Symfony\Model\Transaction;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Model\Span;
-use Makfly\ErrorWatch\Model\Transaction;
 
 final class TransactionTest extends TestCase
 {
@@ -58,7 +58,7 @@ final class TransactionTest extends TestCase
     {
         $txn = new Transaction('GET /users');
 
-        for ($i = 0; $i < 210; $i++) {
+        for ($i = 0; $i < 210; ++$i) {
             $span = new Span('db.sql.query');
             $span->finish();
             $txn->addSpan($span);

@@ -3,65 +3,54 @@ services:
         autowire: true
         autoconfigure: true
 
-    Makfly\ErrorWatch\Http\MonitoringClient:
+    ErrorWatch\Symfony\Http\MonitoringClient:
         arguments:
-            $endpoint: '%error_monitoring.endpoint%'
-            $apiKey: '%error_monitoring.api_key%'
+            $endpoint: '%error_watch.endpoint%'
+            $apiKey: '%error_watch.api_key%'
 
-    Makfly\ErrorWatch\Http\MonitoringClientInterface:
-        alias: Makfly\ErrorWatch\Http\MonitoringClient
+    ErrorWatch\Symfony\Http\MonitoringClientInterface:
+        alias: ErrorWatch\Symfony\Http\MonitoringClient
 
-    Makfly\ErrorWatch\Service\FingerprintGenerator: ~
+    ErrorWatch\Symfony\Service\FingerprintGenerator: ~
 
-    Makfly\ErrorWatch\Service\LevelMapper: ~
+    ErrorWatch\Symfony\Service\LevelMapper: ~
 
-    Makfly\ErrorWatch\Service\BreadcrumbService:
+    ErrorWatch\Symfony\Service\BreadcrumbService:
         arguments:
-            $maxBreadcrumbs: '%error_monitoring.breadcrumbs.max_count%'
+            $maxBreadcrumbs: '%error_watch.breadcrumbs.max_count%'
 
-    Makfly\ErrorWatch\Service\UserContextService:
+    ErrorWatch\Symfony\Service\UserContextService:
         arguments:
-            $security: '@?Symfony\Component\Security\Core\Security'
+            $security: '@?Symfony\Bundle\SecurityBundle\Security'
             $requestStack: '@request_stack'
-            $captureIp: '%error_monitoring.user_context.capture_ip%'
+            $captureIp: '%error_watch.user_context.capture_ip%'
 
-    Makfly\ErrorWatch\Service\SessionReplayManager:
+    ErrorWatch\Symfony\Service\SessionReplayManager:
         arguments:
-            $endpoint: '%error_monitoring.endpoint%'
-            $apiKey: '%error_monitoring.api_key%'
-            $enabled: '%error_monitoring.replay.enabled%'
-            $debug: '%error_monitoring.replay.debug%'
-            $sampleRate: '%error_monitoring.replay.sample_rate%'
-            $release: '%error_monitoring.release%'
+            $endpoint: '%error_watch.endpoint%'
+            $apiKey: '%error_watch.api_key%'
+            $enabled: '%error_watch.replay.enabled%'
+            $debug: '%error_watch.replay.debug%'
+            $sampleRate: '%error_watch.replay.sample_rate%'
+            $release: '%error_watch.release%'
 
-    Makfly\ErrorWatch\Service\ErrorSender:
+    ErrorWatch\Symfony\Service\ErrorSender:
         arguments:
-            $enabled: '%error_monitoring.enabled%'
-            $environment: '%error_monitoring.environment%'
-            $release: '%error_monitoring.release%'
-            $client: '@Makfly\ErrorWatch\Http\MonitoringClientInterface'
-            $levelMapper: '@Makfly\ErrorWatch\Service\LevelMapper'
+            $enabled: '%error_watch.enabled%'
+            $environment: '%error_watch.environment%'
+            $release: '%error_watch.release%'
+            $client: '@ErrorWatch\Symfony\Http\MonitoringClientInterface'
+            $levelMapper: '@ErrorWatch\Symfony\Service\LevelMapper'
 
-    Makfly\ErrorWatch\Service\ErrorSenderInterface:
-        alias: Makfly\ErrorWatch\Service\ErrorSender
+    ErrorWatch\Symfony\Service\ErrorSenderInterface:
+        alias: ErrorWatch\Symfony\Service\ErrorSender
 
-    Makfly\ErrorWatch\Monolog\ErrorMonitoringHandler:
+    ErrorWatch\Symfony\EventSubscriber\ExceptionSubscriber:
         arguments:
-            $client: '@Makfly\ErrorWatch\Http\MonitoringClientInterface'
-            $enabled: '%error_monitoring.enabled%'
-            $environment: '%error_monitoring.environment%'
-            $release: '%error_monitoring.release%'
-            $excludedChannels: '%error_monitoring.monolog.excluded_channels%'
-            $captureContext: '%error_monitoring.monolog.capture_context%'
-            $captureExtra: '%error_monitoring.monolog.capture_extra%'
-            $level: '%error_monitoring.monolog.level%'
-
-    Makfly\ErrorWatch\EventSubscriber\ExceptionSubscriber:
-        arguments:
-            $errorSender: '@Makfly\ErrorWatch\Service\ErrorSenderInterface'
-            $breadcrumbService: '@Makfly\ErrorWatch\Service\BreadcrumbService'
-            $userContextService: '@Makfly\ErrorWatch\Service\UserContextService'
-            $breadcrumbsEnabled: '%error_monitoring.breadcrumbs.enabled%'
-            $userContextEnabled: '%error_monitoring.user_context.enabled%'
+            $errorSender: '@ErrorWatch\Symfony\Service\ErrorSenderInterface'
+            $breadcrumbService: '@ErrorWatch\Symfony\Service\BreadcrumbService'
+            $userContextService: '@ErrorWatch\Symfony\Service\UserContextService'
+            $breadcrumbsEnabled: '%error_watch.breadcrumbs.enabled%'
+            $userContextEnabled: '%error_watch.user_context.enabled%'
         tags:
             - { name: kernel.event_subscriber }

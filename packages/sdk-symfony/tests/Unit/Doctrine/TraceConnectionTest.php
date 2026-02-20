@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Doctrine;
+namespace ErrorWatch\Symfony\Tests\Unit\Doctrine;
 
+use ErrorWatch\Symfony\Doctrine\TraceConnection;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Doctrine\TraceConnection;
 
 final class TraceConnectionTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Makfly\ErrorWatch\DependencyInjection;
+namespace ErrorWatch\Symfony\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -9,13 +9,13 @@ final class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('error_monitoring');
+        $treeBuilder = new TreeBuilder('error_watch');
         $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
             ->children()
                 ->booleanNode('enabled')->defaultTrue()->end()
-                ->scalarNode('endpoint')->defaultValue('http://localhost:8000')->end()
+                ->scalarNode('endpoint')->defaultValue('')->end()
                 ->scalarNode('api_key')->defaultValue('')->end()
                 ->scalarNode('environment')->defaultNull()->end()
                 ->scalarNode('release')
@@ -56,6 +56,37 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('console')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultTrue()->end()
+                        ->booleanNode('capture_exit_codes')->defaultTrue()
+                            ->info('Capture non-zero exit codes even without exceptions')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('messenger')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultTrue()->end()
+                        ->booleanNode('capture_retries')->defaultFalse()
+                            ->info('Also capture failures that will be retried (noisy)')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('deprecations')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()
+                            ->info('Capture PHP deprecations (opt-in, can be noisy)')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('security')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultTrue()->end()
+                        ->booleanNode('capture_login_success')->defaultFalse()
+                            ->info('Add breadcrumbs for successful logins')->end()
+                    ->end()
+                ->end()
                 ->arrayNode('apm')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -66,6 +97,13 @@ final class Configuration implements ConfigurationInterface
                             ->children()
                                 ->booleanNode('enabled')->defaultTrue()->end()
                                 ->booleanNode('log_queries')->defaultTrue()->info('Log sanitized SQL in span descriptions')->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('http_client')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->booleanNode('enabled')->defaultTrue()->end()
+                                ->booleanNode('capture_errors_as_breadcrumbs')->defaultTrue()->end()
                             ->end()
                         ->end()
                         ->arrayNode('excluded_routes')
@@ -96,12 +134,21 @@ final class Configuration implements ConfigurationInterface
         $rootNode
             ->validate()
                 ->ifTrue(static function (array $config): bool {
-                    $requiresKey = ($config['enabled'] ?? true)
+                    $active = ($config['enabled'] ?? true)
                         || (($config['replay']['enabled'] ?? false) === true);
 
-                    return $requiresKey && ($config['api_key'] ?? '') === '';
+                    return $active && ($config['endpoint'] ?? '') === '';
                 })
-                ->thenInvalid('error_monitoring.api_key is required when error monitoring or replay is enabled.')
+                ->thenInvalid('error_watch.endpoint is required when error_watch is enabled.')
+            ->end()
+            ->validate()
+                ->ifTrue(static function (array $config): bool {
+                    $active = ($config['enabled'] ?? true)
+                        || (($config['replay']['enabled'] ?? false) === true);
+
+                    return $active && ($config['api_key'] ?? '') === '';
+                })
+                ->thenInvalid('error_watch.api_key is required when error_watch is enabled.')
             ->end();
 
         return $treeBuilder;

@@ -1,12 +1,14 @@
 <?php
 
-namespace Makfly\ErrorWatch\Doctrine;
+namespace ErrorWatch\Symfony\Doctrine;
 
 use Doctrine\DBAL\Driver\Middleware\AbstractConnectionMiddleware;
 use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
-use Makfly\ErrorWatch\Model\Span;
-use Makfly\ErrorWatch\Service\TransactionCollector;
+use ErrorWatch\Symfony\Model\Breadcrumb;
+use ErrorWatch\Symfony\Model\Span;
+use ErrorWatch\Symfony\Service\BreadcrumbService;
+use ErrorWatch\Symfony\Service\TransactionCollector;
 
 final class TraceConnection extends AbstractConnectionMiddleware
 {
@@ -14,13 +16,14 @@ final class TraceConnection extends AbstractConnectionMiddleware
         \Doctrine\DBAL\Driver\Connection $connection,
         private readonly TransactionCollector $collector,
         private readonly bool $logQueries,
+        private readonly ?BreadcrumbService $breadcrumbService = null,
     ) {
         parent::__construct($connection);
     }
 
     public function prepare(string $sql): StatementInterface
     {
-        return new TraceStatement(parent::prepare($sql), $this->collector, $sql, $this->logQueries);
+        return new TraceStatement(parent::prepare($sql), $this->collector, $sql, $this->logQueries, $this->breadcrumbService);
     }
 
     public function query(string $sql): Result
@@ -38,6 +41,9 @@ final class TraceConnection extends AbstractConnectionMiddleware
         } finally {
             $span->finish();
             $this->collector->addSpan($span);
+            $this->breadcrumbService?->add(Breadcrumb::console(
+                sprintf('SQL: %s', self::sanitize($sql)),
+            ));
         }
     }
 

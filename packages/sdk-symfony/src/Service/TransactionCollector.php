@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Service;
+namespace ErrorWatch\Symfony\Service;
 
-use Makfly\ErrorWatch\Model\Span;
-use Makfly\ErrorWatch\Model\Transaction;
+use ErrorWatch\Symfony\Model\Span;
+use ErrorWatch\Symfony\Model\Transaction;
 
 final class TransactionCollector
 {
@@ -23,7 +23,7 @@ final class TransactionCollector
 
     public function addSpan(Span $span): void
     {
-        if ($this->current === null) {
+        if (null === $this->current) {
             return;
         }
 
@@ -32,7 +32,7 @@ final class TransactionCollector
 
     public function finishTransaction(string $status = 'ok'): ?Transaction
     {
-        if ($this->current === null) {
+        if (null === $this->current) {
             return null;
         }
 
@@ -46,7 +46,7 @@ final class TransactionCollector
 
     public function hasTransaction(): bool
     {
-        return $this->current !== null;
+        return null !== $this->current;
     }
 
     public function reset(): void

@@ -1,6 +1,6 @@
 <?php
 
-namespace Makfly\ErrorWatch\Model;
+namespace ErrorWatch\Symfony\Model;
 
 final class Transaction
 {
@@ -57,7 +57,7 @@ final class Transaction
 
     public function getDurationMs(): int
     {
-        if ($this->endTimestamp === null) {
+        if (null === $this->endTimestamp) {
             return (int) (microtime(true) * 1000) - $this->startTimestamp;
         }
 
@@ -77,7 +77,7 @@ final class Transaction
             'startTimestamp' => $this->startTimestamp,
             'endTimestamp' => $this->endTimestamp,
             'duration' => $this->getDurationMs(),
-            'spans' => array_map(fn(Span $span) => $span->toArray(), $this->spans),
+            'spans' => array_map(fn (Span $span) => $span->toArray(), $this->spans),
             'tags' => $this->tags,
             'data' => $this->data,
         ];

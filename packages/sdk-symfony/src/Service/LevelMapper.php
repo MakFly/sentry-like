@@ -1,13 +1,12 @@
 <?php
 
-namespace Makfly\ErrorWatch\Service;
+namespace ErrorWatch\Symfony\Service;
 
-use Throwable;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Psr\Log\LogLevel;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
- * Maps exceptions and PSR-3 log levels to error monitoring levels
+ * Maps exceptions and PSR-3 log levels to error monitoring levels.
  */
 class LevelMapper
 {
@@ -18,9 +17,9 @@ class LevelMapper
     public const LEVEL_DEBUG = 'debug';
 
     /**
-     * Map exception to error level
+     * Map exception to error level.
      */
-    public function mapException(Throwable $throwable): string
+    public function mapException(\Throwable $throwable): string
     {
         // HTTP Exceptions - map by status code
         if ($throwable instanceof HttpExceptionInterface) {
@@ -30,12 +29,13 @@ class LevelMapper
                 return self::LEVEL_FATAL;
             }
             // 404 Not Found is informational (expected condition)
-            if ($statusCode === 404) {
+            if (404 === $statusCode) {
                 return self::LEVEL_INFO;
             }
             if ($statusCode >= 400) {
                 return self::LEVEL_WARNING;
             }
+
             return self::LEVEL_INFO;
         }
 
@@ -47,6 +47,7 @@ class LevelMapper
                 || $throwable instanceof \DivisionByZeroError) {
                 return self::LEVEL_FATAL;
             }
+
             return self::LEVEL_ERROR;
         }
 
@@ -81,7 +82,7 @@ class LevelMapper
     }
 
     /**
-     * Map PSR-3 log level to error level
+     * Map PSR-3 log level to error level.
      */
     public function mapPsr3Level(string $psr3Level): string
     {
@@ -96,7 +97,7 @@ class LevelMapper
     }
 
     /**
-     * Get all valid levels
+     * Get all valid levels.
      *
      * @return array<int, string>
      */
@@ -112,7 +113,7 @@ class LevelMapper
     }
 
     /**
-     * Check if a level is valid
+     * Check if a level is valid.
      */
     public static function isValidLevel(string $level): bool
     {

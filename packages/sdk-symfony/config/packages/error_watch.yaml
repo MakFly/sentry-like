@@ -1,5 +1,5 @@
-error_monitoring:
+error_watch:
   enabled: true
-  endpoint: 'http://localhost:8000'
+  endpoint: 'http://localhost:3333'
   api_key: 'changeme'
   environment: '%env(APP_ENV)%'

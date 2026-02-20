@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Service\FingerprintGenerator;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Service\FingerprintGenerator;
 
 final class FingerprintGeneratorTest extends TestCase
 {

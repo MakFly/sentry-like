@@ -1,10 +1,10 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Model\Span;
+use ErrorWatch\Symfony\Service\TransactionCollector;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Model\Span;
-use Makfly\ErrorWatch\Service\TransactionCollector;
 
 final class TransactionCollectorTest extends TestCase
 {

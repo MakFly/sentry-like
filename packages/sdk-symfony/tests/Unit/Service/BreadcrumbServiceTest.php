@@ -1,10 +1,10 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Model\Breadcrumb;
+use ErrorWatch\Symfony\Service\BreadcrumbService;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Service\BreadcrumbService;
-use Makfly\ErrorWatch\Model\Breadcrumb;
 
 final class BreadcrumbServiceTest extends TestCase
 {
@@ -39,7 +39,7 @@ final class BreadcrumbServiceTest extends TestCase
 
     public function testMaxBreadcrumbsLimit(): void
     {
-        for ($i = 0; $i < 7; $i++) {
+        for ($i = 0; $i < 7; ++$i) {
             $this->service->add(new Breadcrumb('user', time(), message: "Action $i"));
         }
 
@@ -91,7 +91,7 @@ final class BreadcrumbServiceTest extends TestCase
         $service = new BreadcrumbService();
 
         // Add more than default (100)
-        for ($i = 0; $i < 150; $i++) {
+        for ($i = 0; $i < 150; ++$i) {
             $service->add(new Breadcrumb('user', time()));
         }
 

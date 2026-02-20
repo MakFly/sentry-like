@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Service;
+namespace ErrorWatch\Symfony\Service;
 
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
-use Makfly\ErrorWatch\Model\Transaction;
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Model\Transaction;
 
 final class TransactionSender
 {
@@ -11,7 +11,8 @@ final class TransactionSender
         private readonly MonitoringClientInterface $client,
         private readonly bool $enabled,
         private readonly string $environment,
-    ) {}
+    ) {
+    }
 
     public function send(Transaction $transaction): void
     {

@@ -1,21 +1,21 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Functional;
+namespace ErrorWatch\Symfony\Tests\Functional;
 
+use ErrorWatch\Symfony\EventSubscriber\ExceptionSubscriber;
+use ErrorWatch\Symfony\Model\Breadcrumb;
+use ErrorWatch\Symfony\Service\BreadcrumbService;
+use ErrorWatch\Symfony\Service\ErrorSenderInterface;
+use ErrorWatch\Symfony\Service\UserContextService;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Makfly\ErrorWatch\EventSubscriber\ExceptionSubscriber;
-use Makfly\ErrorWatch\Service\ErrorSenderInterface;
-use Makfly\ErrorWatch\Service\BreadcrumbService;
-use Makfly\ErrorWatch\Service\UserContextService;
-use Makfly\ErrorWatch\Model\Breadcrumb;
-use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 final class ExceptionSubscriberTest extends TestCase
 {
@@ -77,8 +77,8 @@ final class ExceptionSubscriberTest extends TestCase
                 $this->isNull(),
                 $this->callback(function (array $context) {
                     return isset($context['breadcrumbs'])
-                        && count($context['breadcrumbs']) === 2
-                        && $context['breadcrumbs'][0]['category'] === 'http';
+                        && 2 === count($context['breadcrumbs'])
+                        && 'http' === $context['breadcrumbs'][0]['category'];
                 })
             );
 
@@ -112,11 +112,16 @@ final class ExceptionSubscriberTest extends TestCase
             {
                 return [];
             }
-            public function eraseCredentials(): void {}
+
+            public function eraseCredentials(): void
+            {
+            }
+
             public function getUserIdentifier(): string
             {
                 return 'user123';
             }
+
             public function getEmail(): string
             {
                 return 'test@example.com';
@@ -142,9 +147,9 @@ final class ExceptionSubscriberTest extends TestCase
                 $this->isNull(),
                 $this->callback(function (array $context) {
                     return isset($context['user'])
-                        && $context['user']['id'] === 'user123'
-                        && $context['user']['email'] === 'test@example.com'
-                        && $context['user']['ip_address'] === '192.168.1.1';
+                        && 'user123' === $context['user']['id']
+                        && 'test@example.com' === $context['user']['email']
+                        && '192.168.1.1' === $context['user']['ip_address'];
                 })
             );
 
@@ -182,7 +187,11 @@ final class ExceptionSubscriberTest extends TestCase
             {
                 return [];
             }
-            public function eraseCredentials(): void {}
+
+            public function eraseCredentials(): void
+            {
+            }
+
             public function getUserIdentifier(): string
             {
                 return 'user456';
@@ -208,8 +217,8 @@ final class ExceptionSubscriberTest extends TestCase
                 $this->callback(function (array $context) {
                     return isset($context['breadcrumbs'])
                         && isset($context['user'])
-                        && $context['user']['id'] === 'user456'
-                        && count($context['breadcrumbs']) === 1;
+                        && 'user456' === $context['user']['id']
+                        && 1 === count($context['breadcrumbs']);
                 })
             );
 

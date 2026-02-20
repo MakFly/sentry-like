@@ -1,12 +1,11 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Service;
+namespace ErrorWatch\Symfony\Tests\Unit\Service;
 
+use ErrorWatch\Symfony\Http\MonitoringClientInterface;
+use ErrorWatch\Symfony\Service\ErrorSender;
+use ErrorWatch\Symfony\Service\LevelMapper;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Service\ErrorSender;
-use Makfly\ErrorWatch\Service\LevelMapper;
-use Makfly\ErrorWatch\Http\MonitoringClientInterface;
-use RuntimeException;
 
 final class ErrorSenderTest extends TestCase
 {
@@ -27,14 +26,14 @@ final class ErrorSenderTest extends TestCase
 
     public function testSendsErrorToMonitoringServer(): void
     {
-        $exception = new RuntimeException('Test error message');
+        $exception = new \RuntimeException('Test error message');
 
         $this->mockClient->expects($this->once())
             ->method('sendEventAsync')
             ->with($this->callback(function ($payload) {
                 return isset($payload['message'])
-                    && $payload['message'] === 'Test error message'
-                    && $payload['env'] === 'test';
+                    && 'Test error message' === $payload['message']
+                    && 'test' === $payload['env'];
             }));
 
         $this->sender->send($exception);
@@ -53,12 +52,12 @@ final class ErrorSenderTest extends TestCase
         $this->mockClient->expects($this->never())
             ->method('sendEventAsync');
 
-        $senderDisabled->send(new RuntimeException('Test'));
+        $senderDisabled->send(new \RuntimeException('Test'));
     }
 
     public function testCallsSendEventAsync(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
 
         // Verify that sendEventAsync is called (error handling is in MonitoringClient)
         $this->mockClient->expects($this->once())
@@ -69,13 +68,13 @@ final class ErrorSenderTest extends TestCase
 
     public function testBuildsCorrectPayload(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
 
         $this->mockClient->expects($this->once())
             ->method('sendEventAsync')
             ->with($this->callback(function ($payload) {
-                return $payload['message'] === 'Test error'
-                    && $payload['env'] === 'test'
+                return 'Test error' === $payload['message']
+                    && 'test' === $payload['env']
                     && isset($payload['stack'])
                     && isset($payload['created_at']);
             }));
@@ -85,7 +84,7 @@ final class ErrorSenderTest extends TestCase
 
     public function testIncludesUrlInPayload(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
         $url = '/test/endpoint';
 
         $this->mockClient->expects($this->once())
@@ -99,7 +98,7 @@ final class ErrorSenderTest extends TestCase
 
     public function testIncludesBreadcrumbsInPayload(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
 
         $breadcrumbs = [
             ['category' => 'http', 'message' => 'GET /api/test'],
@@ -118,7 +117,7 @@ final class ErrorSenderTest extends TestCase
 
     public function testIncludesUserContextInPayload(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
 
         $userContext = [
             'id' => 'user123',
@@ -138,7 +137,7 @@ final class ErrorSenderTest extends TestCase
 
     public function testIncludesFullContextInPayload(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
 
         $context = [
             'breadcrumbs' => [['category' => 'http', 'message' => 'GET /api/test']],
@@ -159,7 +158,7 @@ final class ErrorSenderTest extends TestCase
 
     public function testEmptyContextDoesNotAddFields(): void
     {
-        $exception = new RuntimeException('Test error');
+        $exception = new \RuntimeException('Test error');
 
         $this->mockClient->expects($this->once())
             ->method('sendEventAsync')

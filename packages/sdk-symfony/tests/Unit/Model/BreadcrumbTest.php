@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Model;
+namespace ErrorWatch\Symfony\Tests\Unit\Model;
 
+use ErrorWatch\Symfony\Model\Breadcrumb;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Model\Breadcrumb;
 
 final class BreadcrumbTest extends TestCase
 {
@@ -120,7 +120,7 @@ final class BreadcrumbTest extends TestCase
     {
         $breadcrumb = Breadcrumb::log('error', 'Database connection failed', ['host' => 'localhost']);
 
-        $this->assertSame(Breadcrumb::CATEGORY_LOG, $breadcrumb->category);
+        $this->assertSame(Breadcrumb::CATEGORY_CONSOLE, $breadcrumb->category);
         $this->assertSame(Breadcrumb::TYPE_INFO, $breadcrumb->type);
         $this->assertSame('error', $breadcrumb->level);
         $this->assertSame('Database connection failed', $breadcrumb->message);

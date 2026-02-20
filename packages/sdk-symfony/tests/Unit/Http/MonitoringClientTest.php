@@ -1,9 +1,9 @@
 <?php
 
-namespace Makfly\ErrorWatch\Tests\Unit\Http;
+namespace ErrorWatch\Symfony\Tests\Unit\Http;
 
+use ErrorWatch\Symfony\Http\MonitoringClient;
 use PHPUnit\Framework\TestCase;
-use Makfly\ErrorWatch\Http\MonitoringClient;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
