@@ -261,6 +261,13 @@ npm install @errorwatch/sdk
 - Breadcrumbs: automatic for HTTP requests, SQL queries, console commands, security events
 - Session replay (Twig), user context
 
+### Versioning
+
+Pre-1.0 semver : `0.MINOR.PATCH`
+- **Patch** (bug fix, small tweak) : `0.1.0` → `0.1.1` → ... → `0.1.9`
+- **Minor** (new feature, breaking change) : `0.1.9` → `0.2.0`
+- Once stable : `1.0.0` then standard semver
+
 ### Subtree Split Workflow (release to Packagist)
 
 The SDK source lives in this monorepo at `packages/sdk-symfony/`. To publish a new version:
@@ -275,9 +282,9 @@ git subtree split --prefix=packages/sdk-symfony -b sdk-symfony-release
 # 3. Push to standalone repo
 git push sdk-symfony sdk-symfony-release:main
 
-# 4. Tag and push
-git tag v0.X.0 sdk-symfony-release
-git push sdk-symfony v0.X.0
+# 4. Tag and push (increment version following rules above)
+git tag v0.1.X sdk-symfony-release
+git push sdk-symfony v0.1.X
 ```
 
 Remote `sdk-symfony` is already configured → `git@github.com:MakFly/errorwatch-sdk-symfony.git`
