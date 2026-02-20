@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | SDK React | `packages/sdk/` (via exports) | - | React 18+ / 19+ |
 | SDK Vue | `packages/sdk/` (via exports) | - | Vue 3+ |
 | Shared Types | `packages/shared/` | - | TypeScript, Zod |
-| Symfony Bundle | `packages/sdk-symfony/` | - | PHP 8.1+, Symfony 6.0+ |
+| Symfony Bundle | `packages/sdk-symfony/` | - | PHP 8.1+, Symfony 6.0+ ([standalone repo](https://github.com/MakFly/errorwatch-sdk-symfony)) |
 
 ### Local URLs
 
@@ -250,11 +250,37 @@ npm install @errorwatch/sdk
 
 ---
 
-## Symfony Bundle (`packages/errorwatch-sdk-symfony/`)
+## Symfony Bundle (`packages/sdk-symfony/`)
 
-- Namespace: `Makfly\ErrorMonitoringBundle\`
-- Listens to `KernelEvents::EXCEPTION`
-- Non-blocking async error sending (1s timeout)
+- **Package**: `errorwatch/sdk-symfony`
+- **Namespace**: `ErrorWatch\Symfony\`
+- **Standalone repo**: https://github.com/MakFly/errorwatch-sdk-symfony (public, for Packagist)
+- **Current version**: `v0.1.0`
+- Captures: exceptions, console commands, Messenger failures, security events, deprecations, outgoing HTTP, Monolog
+- APM: request tracing, Doctrine query spans, HTTP client spans
+- Breadcrumbs: automatic for HTTP requests, SQL queries, console commands, security events
+- Session replay (Twig), user context
+
+### Subtree Split Workflow (release to Packagist)
+
+The SDK source lives in this monorepo at `packages/sdk-symfony/`. To publish a new version:
+
+```bash
+# 1. Commit changes in monorepo as usual
+git add packages/sdk-symfony/ && git commit -m "feat(sdk-symfony): ..."
+
+# 2. Split subtree into release branch
+git subtree split --prefix=packages/sdk-symfony -b sdk-symfony-release
+
+# 3. Push to standalone repo
+git push sdk-symfony sdk-symfony-release:main
+
+# 4. Tag and push
+git tag v0.X.0 sdk-symfony-release
+git push sdk-symfony v0.X.0
+```
+
+Remote `sdk-symfony` is already configured → `git@github.com:MakFly/errorwatch-sdk-symfony.git`
 
 ---
 
