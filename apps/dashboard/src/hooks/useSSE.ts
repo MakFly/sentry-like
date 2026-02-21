@@ -50,9 +50,11 @@ export function useSSE(orgId: string | undefined) {
             break;
           case "alert:triggered":
             queryClient.invalidateQueries({ queryKey: [["alerts"]] });
-            toast.info(`Alert: ${event.payload.message}`, {
-              description: "A new alert was triggered",
-            });
+            if (!(window as Window & { __errorwatchLogsFocused?: boolean }).__errorwatchLogsFocused) {
+              toast.info(`Alert: ${event.payload.message}`, {
+                description: "A new alert was triggered",
+              });
+            }
             break;
           case "transaction:new":
             queryClient.invalidateQueries({ queryKey: [["performance"]] });

@@ -815,6 +815,21 @@ const logsRouter = router({
 });
 
 /**
+ * Attention router - protected
+ * Returns prioritized error groups based on composite score
+ */
+const attentionRouter = router({
+  getTop: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid().optional(),
+      limit: z.number().int().min(1).max(20).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      return api.attention.getTop(input?.projectId, input?.limit ?? 8);
+    }),
+});
+
+/**
  * App router - combines all routers
  */
 export const appRouter = router({
@@ -833,6 +848,7 @@ export const appRouter = router({
   user: userRouter,
   performance: performanceRouter,
   logs: logsRouter,
+  attention: attentionRouter,
 });
 
 export type AppRouter = typeof appRouter;

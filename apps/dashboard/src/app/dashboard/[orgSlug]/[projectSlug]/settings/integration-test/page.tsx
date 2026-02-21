@@ -16,7 +16,13 @@ type Scenario =
   | "throw"
   | "http500"
   | "breadcrumbs"
-  | "timeout";
+  | "timeout"
+  | "authFailed"
+  | "paymentFailed"
+  | "dbSlowQuery"
+  | "messengerRetry"
+  | "importPartialFailure"
+  | "burst";
 
 const scenarios: Array<{ id: Scenario; label: string; description: string }> = [
   { id: "ping", label: "Ping config", description: "Vérifie endpoint/API key côté iautos/api." },
@@ -27,6 +33,12 @@ const scenarios: Array<{ id: Scenario; label: string; description: string }> = [
   { id: "http500", label: "HTTP 500", description: "Retourne une erreur HTTP 500 contrôlée." },
   { id: "breadcrumbs", label: "Breadcrumb sequence", description: "Émet une séquence info/warn/error." },
   { id: "timeout", label: "Timeout simulation", description: "Simule une latence puis log error." },
+  { id: "authFailed", label: "Auth failed (real)", description: "Simule un échec login + throttling." },
+  { id: "paymentFailed", label: "Payment failed (real)", description: "Simule une panne provider paiement." },
+  { id: "dbSlowQuery", label: "DB slow query (real)", description: "Exécute une sonde SQL lente (pg_sleep)." },
+  { id: "messengerRetry", label: "Messenger retry (real)", description: "Simule retry/failure d'un worker." },
+  { id: "importPartialFailure", label: "Import partial failure (real)", description: "Import partiel avec erreurs métier." },
+  { id: "burst", label: "Burst logs (real)", description: "Envoie une rafale de logs multi-level/canaux." },
 ];
 
 export default function IntegrationTestPage() {
@@ -48,6 +60,7 @@ export default function IntegrationTestPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           scenario,
+          ...(scenario === "burst" ? { count: 20 } : {}),
           metadata: {
             orgSlug: currentOrgSlug,
             projectSlug: currentProject?.slug,
@@ -125,4 +138,3 @@ export default function IntegrationTestPage() {
     </div>
   );
 }
-

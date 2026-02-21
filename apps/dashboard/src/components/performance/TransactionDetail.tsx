@@ -15,6 +15,11 @@ function formatDate(date: Date | string): string {
   return d.toLocaleString();
 }
 
+function getTicks(count: number): number[] {
+  if (count <= 0) return [0, 100];
+  return Array.from({ length: count + 1 }, (_, i) => (i / count) * 100);
+}
+
 const statusColors: Record<string, string> = {
   ok: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   error: "bg-red-500/15 text-red-400 border-red-500/30",
@@ -103,10 +108,14 @@ function SpanBar({ span, totalDuration, transactionStart, repetition }: {
 }) {
   const spanStart = new Date(span.startTimestamp).getTime();
   const offsetMs = spanStart - transactionStart;
+  const safeOffsetMs = Math.max(offsetMs, 0);
+  const spanEndOffsetMs = safeOffsetMs + span.duration;
   const leftPercent = totalDuration > 0 ? (offsetMs / totalDuration) * 100 : 0;
   const widthPercent = totalDuration > 0
     ? Math.max((span.duration / totalDuration) * 100, 0.5)
     : 100;
+  const clampedLeftPercent = Math.max(Math.min(leftPercent, 99), 0);
+  const clampedWidthPercent = Math.max(Math.min(widthPercent, 100 - clampedLeftPercent), 0.5);
 
   const isRepeated = repetition && repetition.total >= 2;
   const isN1Suspect = isRepeated && repetition.total >= 5;
@@ -133,30 +142,35 @@ function SpanBar({ span, totalDuration, transactionStart, repetition }: {
 
   return (
     <div className={`flex items-center gap-3 py-1.5 text-sm ${rowBg}`}>
-      <div className="w-[140px] shrink-0 truncate text-xs text-muted-foreground font-mono flex items-center gap-1">
+      <div className="w-[170px] shrink-0 truncate text-xs text-muted-foreground font-mono flex items-center gap-1">
         {isRepeated && <Copy className="h-3 w-3 text-amber-500 flex-shrink-0" />}
         <span className="truncate">{span.op}</span>
       </div>
       <div className="flex-1 relative h-6 rounded bg-muted/30">
+        {getTicks(4).map((tick, i) => (
+          <div
+            key={tick}
+            className={`absolute top-0 h-full w-px bg-border/45 ${i === 0 || i === 4 ? "hidden" : ""}`}
+            style={{ left: `${tick}%` }}
+          />
+        ))}
         <div
           className={`absolute h-full rounded ${barColor} opacity-80`}
           style={{
-            left: `${Math.min(leftPercent, 99)}%`,
-            width: `${Math.min(widthPercent, 100 - leftPercent)}%`,
+            left: `${clampedLeftPercent}%`,
+            width: `${clampedWidthPercent}%`,
           }}
         />
-        <div
-          className="absolute h-full flex items-center px-1"
-          style={{ left: `${Math.min(leftPercent, 99)}%` }}
-        >
-          <span className="text-[10px] font-mono text-foreground whitespace-nowrap ml-1">
-            {formatDuration(span.duration)}
-          </span>
-        </div>
       </div>
-      <div className="w-[180px] shrink-0 flex items-center gap-1">
+      <div className="w-[300px] shrink-0 flex items-center gap-2">
+        <span className="w-[64px] shrink-0 text-right text-[10px] font-mono text-foreground">
+          {formatDuration(span.duration)}
+        </span>
         <span className="truncate text-xs text-muted-foreground flex-1">
           {span.description || "—"}
+        </span>
+        <span className="text-[10px] font-mono text-muted-foreground/80 flex-shrink-0">
+          +{formatDuration(safeOffsetMs)} to +{formatDuration(spanEndOffsetMs)}
         </span>
         {isRepeated && (
           <Badge
@@ -253,32 +267,51 @@ function WaterfallGrid({ spans, totalDuration, transactionStart }: {
   totalDuration: number;
   transactionStart: number;
 }) {
-  const enrichedSpans = enrichSpansWithRepetitions(spans);
+  const sortedSpans = [...spans].sort((a, b) => {
+    const diff = new Date(a.startTimestamp).getTime() - new Date(b.startTimestamp).getTime();
+    if (diff !== 0) return diff;
+    return b.duration - a.duration;
+  });
+  const enrichedSpans = enrichSpansWithRepetitions(sortedSpans);
+  const ticks = getTicks(4);
 
   return (
-    <div className="space-y-0.5">
-      {/* Header row */}
-      <div className="flex items-center gap-3 py-2 border-b border-border/50 mb-2">
-        <div className="w-[140px] shrink-0 text-xs font-medium text-muted-foreground">
-          Operation
+    <div className="overflow-x-auto">
+      <div className="min-w-[1060px] space-y-0.5">
+        {/* Header row */}
+        <div className="flex items-start gap-3 py-2 border-b border-border/50 mb-2">
+          <div className="w-[170px] shrink-0 text-xs font-medium text-muted-foreground">
+            Operation
+          </div>
+          <div className="flex-1 text-xs font-medium text-muted-foreground">
+            <div className="mb-1">Timeline</div>
+            <div className="relative h-4 text-[10px] font-mono text-muted-foreground/80">
+              {ticks.map((tick, i) => (
+                <div
+                  key={tick}
+                  className={`absolute top-0 ${i === 0 ? "left-0 -translate-x-0" : i === ticks.length - 1 ? "right-0 translate-x-0" : "-translate-x-1/2"}`}
+                  style={i === ticks.length - 1 ? undefined : { left: `${tick}%` }}
+                >
+                  +{formatDuration((totalDuration * tick) / 100)}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="w-[300px] shrink-0 text-xs font-medium text-muted-foreground">
+            Duration / Description / Relative time
+          </div>
         </div>
-        <div className="flex-1 text-xs font-medium text-muted-foreground">
-          Timeline
-        </div>
-        <div className="w-[180px] shrink-0 text-xs font-medium text-muted-foreground">
-          Description
-        </div>
+        {/* Span rows */}
+        {enrichedSpans.map(({ span, repetition }) => (
+          <SpanBar
+            key={span.id}
+            span={span}
+            totalDuration={totalDuration}
+            transactionStart={transactionStart}
+            repetition={repetition}
+          />
+        ))}
       </div>
-      {/* Span rows */}
-      {enrichedSpans.map(({ span, repetition }) => (
-        <SpanBar
-          key={span.id}
-          span={span}
-          totalDuration={totalDuration}
-          transactionStart={transactionStart}
-          repetition={repetition}
-        />
-      ))}
     </div>
   );
 }

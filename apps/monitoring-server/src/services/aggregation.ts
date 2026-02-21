@@ -45,7 +45,7 @@ export async function aggregateHourlyMetrics(targetDate: Date): Promise<number> 
         type,
         name,
         env,
-        ${hourStart}::timestamptz AS hour_bucket,
+        ${hourStart.toISOString()}::timestamptz AS hour_bucket,
         count(*)::int,
         sum(value)::real,
         avg(value)::real,
@@ -57,8 +57,8 @@ export async function aggregateHourlyMetrics(targetDate: Date): Promise<number> 
         COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY value), 0)::real,
         COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY value), 0)::real
       FROM performance_metrics
-      WHERE timestamp >= ${hourStart}::timestamptz
-        AND timestamp < ${hourEnd}::timestamptz
+      WHERE timestamp >= ${hourStart.toISOString()}::timestamptz
+        AND timestamp < ${hourEnd.toISOString()}::timestamptz
       GROUP BY project_id, type, name, env
       ON CONFLICT (project_id, type, name, env, hour_bucket) DO UPDATE SET
         count = EXCLUDED.count,
@@ -113,7 +113,7 @@ export async function aggregateHourlyTransactions(targetDate: Date): Promise<num
         name,
         op,
         env,
-        ${hourStart}::timestamptz AS hour_bucket,
+        ${hourStart.toISOString()}::timestamptz AS hour_bucket,
         count(*)::int,
         count(*) FILTER (WHERE status = 'error')::int,
         sum(duration)::real,
@@ -129,8 +129,8 @@ export async function aggregateHourlyTransactions(targetDate: Date): Promise<num
         count(*) FILTER (WHERE duration >= ${APDEX_SATISFIED} AND duration < ${APDEX_TOLERATING})::int,
         count(*) FILTER (WHERE duration >= ${APDEX_TOLERATING})::int
       FROM transactions
-      WHERE start_timestamp >= ${hourStart}::timestamptz
-        AND start_timestamp < ${hourEnd}::timestamptz
+      WHERE start_timestamp >= ${hourStart.toISOString()}::timestamptz
+        AND start_timestamp < ${hourEnd.toISOString()}::timestamptz
       GROUP BY project_id, name, op, env
       ON CONFLICT (project_id, name, op, env, hour_bucket) DO UPDATE SET
         count = EXCLUDED.count,
@@ -182,7 +182,7 @@ export async function aggregateDailyFromHourly(targetDate: Date): Promise<{ metr
       type,
       name,
       env,
-      ${dayStart}::timestamptz AS day_bucket,
+      ${dayStart.toISOString()}::timestamptz AS day_bucket,
       sum(count)::int,
       sum(sum)::real,
       CASE WHEN sum(count) > 0 THEN (sum(sum) / sum(count))::real ELSE 0 END,
@@ -195,8 +195,8 @@ export async function aggregateDailyFromHourly(targetDate: Date): Promise<{ metr
       CASE WHEN sum(count) > 0 THEN (sum(p95 * count) / sum(count))::real ELSE 0 END,
       CASE WHEN sum(count) > 0 THEN (sum(p99 * count) / sum(count))::real ELSE 0 END
     FROM performance_metrics_hourly
-    WHERE hour_bucket >= ${dayStart}::timestamptz
-      AND hour_bucket < ${dayEnd}::timestamptz
+    WHERE hour_bucket >= ${dayStart.toISOString()}::timestamptz
+      AND hour_bucket < ${dayEnd.toISOString()}::timestamptz
     GROUP BY project_id, type, name, env
     ON CONFLICT (project_id, type, name, env, day_bucket) DO UPDATE SET
       count = EXCLUDED.count,
@@ -225,7 +225,7 @@ export async function aggregateDailyFromHourly(targetDate: Date): Promise<{ metr
       name,
       op,
       env,
-      ${dayStart}::timestamptz AS day_bucket,
+      ${dayStart.toISOString()}::timestamptz AS day_bucket,
       sum(count)::int,
       sum(error_count)::int,
       sum(duration_sum)::real,
@@ -241,8 +241,8 @@ export async function aggregateDailyFromHourly(targetDate: Date): Promise<{ metr
       sum(apdex_tolerating)::int,
       sum(apdex_frustrated)::int
     FROM transaction_aggregates_hourly
-    WHERE hour_bucket >= ${dayStart}::timestamptz
-      AND hour_bucket < ${dayEnd}::timestamptz
+    WHERE hour_bucket >= ${dayStart.toISOString()}::timestamptz
+      AND hour_bucket < ${dayEnd.toISOString()}::timestamptz
     GROUP BY project_id, name, op, env
     ON CONFLICT (project_id, name, op, env, day_bucket) DO UPDATE SET
       count = EXCLUDED.count,
@@ -285,18 +285,18 @@ export async function cleanupExpiredPerformanceData(retentionDays: number = 30):
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
 
   const metricsResult = await db.execute(sql`
-    DELETE FROM performance_metrics WHERE timestamp < ${cutoff}::timestamptz
+    DELETE FROM performance_metrics WHERE timestamp < ${cutoff.toISOString()}::timestamptz
   `);
 
   // Delete spans first (FK constraint on transactions)
   const spansResult = await db.execute(sql`
     DELETE FROM spans WHERE transaction_id IN (
-      SELECT id FROM transactions WHERE start_timestamp < ${cutoff}::timestamptz
+      SELECT id FROM transactions WHERE start_timestamp < ${cutoff.toISOString()}::timestamptz
     )
   `);
 
   const transResult = await db.execute(sql`
-    DELETE FROM transactions WHERE start_timestamp < ${cutoff}::timestamptz
+    DELETE FROM transactions WHERE start_timestamp < ${cutoff.toISOString()}::timestamptz
   `);
 
   const result = {
@@ -325,11 +325,11 @@ export async function cleanupOldAggregates(retentionMonths: number = 12): Promis
   cutoff.setUTCMonth(cutoff.getUTCMonth() - retentionMonths);
 
   const metricsResult = await db.execute(sql`
-    DELETE FROM performance_metrics_hourly WHERE hour_bucket < ${cutoff}::timestamptz
+    DELETE FROM performance_metrics_hourly WHERE hour_bucket < ${cutoff.toISOString()}::timestamptz
   `);
 
   const transResult = await db.execute(sql`
-    DELETE FROM transaction_aggregates_hourly WHERE hour_bucket < ${cutoff}::timestamptz
+    DELETE FROM transaction_aggregates_hourly WHERE hour_bucket < ${cutoff.toISOString()}::timestamptz
   `);
 
   const result = {

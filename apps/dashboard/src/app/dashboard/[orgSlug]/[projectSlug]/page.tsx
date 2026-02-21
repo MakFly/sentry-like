@@ -12,9 +12,7 @@ import {
 } from "@/components/dashboard";
 import Sparkline from "@/components/Sparkline";
 import { useStatsQueries } from "@/hooks/useStatsQueries";
-import { normalizeGroups } from "@/lib/utils/normalize-groups";
 import { trpc } from "@/lib/trpc/client";
-import type { ErrorGroup } from "@/server/api";
 
 function DashboardContent() {
   const { currentProjectId, currentProject, isLoading: projectLoading, orgProjects } = useCurrentProject();
@@ -25,8 +23,9 @@ function DashboardContent() {
   // Fetch stats when we have a project
   const { stats, timeline, envBreakdown, severityBreakdown } = useStatsQueries(currentProjectId);
 
-  const { data: groups } = trpc.groups.getAll.useQuery(
-    { projectId: currentProjectId || undefined, dateRange: "24h" },
+  // Fetch attention items with composite scoring
+  const { data: attentionItems } = trpc.attention.getTop.useQuery(
+    { projectId: currentProjectId || undefined, limit: 8 },
     { enabled: !!currentProjectId }
   );
 
@@ -42,7 +41,6 @@ function DashboardContent() {
   const statsData = stats.data || { totalEvents: 0, todayEvents: 0, totalGroups: 0, avgEventsPerGroup: 0, newIssues24h: 0 };
   const timelineData = timeline.data || [];
   const envBreakdownData = envBreakdown.data || [];
-  const groupsData = normalizeGroups<ErrorGroup>(groups);
 
   // Calculate health score
   const healthScore = Math.max(
@@ -150,7 +148,7 @@ function DashboardContent() {
       {/* Attention Queue */}
       <Suspense fallback={null}>
         <AttentionQueue
-          errors={groupsData.slice(0, 5)}
+          errors={attentionItems ?? []}
           orgSlug={currentOrgSlug || ""}
           projectSlug={currentProject?.slug || ""}
         />

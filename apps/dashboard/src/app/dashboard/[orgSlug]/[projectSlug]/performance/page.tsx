@@ -9,12 +9,6 @@ import { ApdexGauge } from "@/components/performance/ApdexGauge";
 import { SpanBreakdownOverview, WebVitalsCards } from "@/components/performance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -40,12 +34,10 @@ function ServerPerformanceSummary({
   durations,
   throughput,
   errorRate,
-  avgDuration,
 }: {
   durations: number[];
   throughput?: number;
   errorRate?: number;
-  avgDuration?: number;
 }) {
   const stats = useMemo(() => {
     const sorted = [...durations].sort((a, b) => a - b);
@@ -155,15 +147,6 @@ export default function PerformancePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Performance</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Performance Overview</h1>
@@ -193,7 +176,6 @@ export default function PerformancePage() {
               durations={transactionsData.data.transactions.map((t) => t.duration)}
               throughput={serverStats.data?.throughput}
               errorRate={serverStats.data?.errorRate}
-              avgDuration={serverStats.data?.avgDuration}
             />
           )}
 

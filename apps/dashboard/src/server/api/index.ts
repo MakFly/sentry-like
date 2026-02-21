@@ -21,6 +21,7 @@ import * as replayApi from './replay';
 import * as userApi from './user';
 import * as performanceApi from './performance';
 import * as logsApi from './logs';
+import * as attentionApi from './attention';
 
 export const api = {
   auth: {
@@ -119,5 +120,8 @@ export const api = {
   },
   logs: {
     tail: logsApi.tail,
+  },
+  attention: {
+    getTop: attentionApi.getTop,
   },
 };

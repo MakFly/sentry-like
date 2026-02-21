@@ -59,8 +59,8 @@ start-api: ## Start monitoring server (port 3333)
 	@echo "$(GREEN)Starting API server on port 3333...$(RESET)"
 	@cd apps/monitoring-server && bun run dev:standalone
 
-start-dashboard: ## Start dashboard (port 3001)
-	@echo "$(GREEN)Starting dashboard on port 3001...$(RESET)"
+start-dashboard: ## Start dashboard (port 4001)
+	@echo "$(GREEN)Starting dashboard on port 4001...$(RESET)"
 	@cd apps/dashboard && bun run dev:standalone
 
 stop: ## Stop all apps (kill processes)
@@ -76,8 +76,8 @@ restart: stop dev ## Restart
 status: ## Check all services status
 	@echo "$(CYAN)=== ErrorWatch Services Status ===$(RESET)"
 	@echo ""
-	@echo "$(CYAN)Dashboard (3001):$(RESET)"
-	@curl -s -o /dev/null -w "  HTTP %{http_code}\n" http://localhost:3001 || echo "  $(RED)Not running$(RESET)"
+	@echo "$(CYAN)Dashboard (4001):$(RESET)"
+	@curl -s -o /dev/null -w "  HTTP %{http_code}\n" http://localhost:4001 || echo "  $(RED)Not running$(RESET)"
 	@echo ""
 	@echo "$(CYAN)Monitoring Server (3333):$(RESET)"
 	@curl -s -o /dev/null -w "  HTTP %{http_code}\n" http://localhost:3333/health || echo "  $(RED)Not running$(RESET)"
