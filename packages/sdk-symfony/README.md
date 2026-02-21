@@ -11,26 +11,64 @@ Symfony bundle for error monitoring, APM, and session replay with [ErrorWatch](h
 
 ```bash
 composer require errorwatch/sdk-symfony
+
+# Initialize configuration
+php bin/console errorwatch:setup
 ```
 
-Register the bundle (if not using Symfony Flex):
+The `errorwatch:setup` command:
+- Creates `config/packages/error_watch.yaml` with all default settings
+- Appends environment variables to `.env` (and `.env.local` if it exists)
+- Is idempotent: safe to run multiple times
+
+Configure your API key in `.env.local`:
+
+```bash
+ERRORWATCH_ENDPOINT=https://acme.errorwatch.io
+ERRORWATCH_API_KEY=your_api_key_here
+```
+
+### Without Symfony Flex
+
+1. Register the bundle in `config/bundles.php`:
 
 ```php
-// config/bundles.php
 return [
     // ...
     ErrorWatch\Symfony\ErrorWatchBundle::class => ['all' => true],
 ];
 ```
 
-## Configuration
+2. Create `config/packages/error_watch.yaml`:
 
 ```yaml
-# config/packages/error_watch.yaml
 error_watch:
-  endpoint: 'https://api.errorwatch.io'
-  api_key: 'your-api-key'
+    enabled: '%env(bool:ERRORWATCH_ENABLED)%'
+    endpoint: '%env(default::ERRORWATCH_ENDPOINT)%'
+    api_key: '%env(default::ERRORWATCH_API_KEY)%'
+    environment: '%env(default::ERRORWATCH_ENV)%'
+    release: '%env(default::ERRORWATCH_RELEASE)%'
 ```
+
+3. Add environment variables to `.env`:
+
+```bash
+ERRORWATCH_ENABLED=true
+ERRORWATCH_ENDPOINT=https://api.errorwatch.io
+ERRORWATCH_API_KEY=your_api_key_here
+```
+
+## Configuration
+
+Environment variables (supported by both Flex and manual installation):
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ERRORWATCH_ENABLED` | Enable/disable the bundle | `true` |
+| `ERRORWATCH_ENDPOINT` | API endpoint URL | (empty) |
+| `ERRORWATCH_API_KEY` | Your ErrorWatch API key | (empty) |
+| `ERRORWATCH_ENV` | Environment name | `kernel.environment` |
+| `ERRORWATCH_RELEASE` | Release version | (auto-detected from git) |
 
 ## Features
 

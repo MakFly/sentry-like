@@ -43,6 +43,10 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
 
         $enabled = $config['enabled'];
 
+        // Always load setup command (must be available even when bundle is disabled)
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../resources/config'));
+        $loader->load('setup.yaml');
+
         // When explicitly disabled (bool false, not an env var), skip all service registration
         if ($this->isExplicitlyDisabled($enabled)) {
             $container->setParameter('error_watch.enabled', false);
@@ -52,8 +56,6 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
 
         // For env var placeholders: store as-is (resolved at runtime), load all services
         $container->setParameter('error_watch.enabled', $enabled);
-
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../resources/config'));
         $loader->load('services.yaml');
         if (class_exists(\Twig\Extension\AbstractExtension::class)) {
             $loader->load('twig.yaml');
@@ -168,13 +170,19 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
      */
     private function detectRelease(ContainerBuilder $container): ?string
     {
-        // 1. Check APP_VERSION environment variable
+        // 1. Check ERRORWATCH_RELEASE first (from recipe env)
+        $release = $_ENV['ERRORWATCH_RELEASE'] ?? $_SERVER['ERRORWATCH_RELEASE'] ?? null;
+        if ($release && '' !== $release) {
+            return $release;
+        }
+
+        // 2. Check APP_VERSION environment variable
         $appVersion = $_ENV['APP_VERSION'] ?? $_SERVER['APP_VERSION'] ?? getenv('APP_VERSION');
         if ($appVersion && '' !== $appVersion) {
             return $appVersion;
         }
 
-        // 2. Try to get git commit hash (check current dir and parent dirs)
+        // 3. Try to get git commit hash (check current dir and parent dirs)
         $projectDir = $container->getParameter('kernel.project_dir');
         $gitDir = $this->findGitDir($projectDir);
 
