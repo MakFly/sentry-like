@@ -15,7 +15,7 @@ final class ErrorMonitoringHandler extends AbstractProcessingHandler
     public function __construct(
         private readonly MonitoringClientInterface $client,
         private readonly bool $enabled,
-        private readonly string $environment,
+        private readonly ?string $environment,
         private readonly ?string $release,
         private readonly array $excludedChannels = ['event', 'doctrine', 'http_client'],
         private readonly bool $captureContext = true,

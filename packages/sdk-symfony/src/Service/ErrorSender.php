@@ -7,14 +7,14 @@ use ErrorWatch\Symfony\Http\MonitoringClientInterface;
 class ErrorSender implements ErrorSenderInterface
 {
     private bool $enabled;
-    private string $environment;
+    private ?string $environment;
     private ?string $release;
     private MonitoringClientInterface $client;
     private LevelMapper $levelMapper;
 
     public function __construct(
         bool $enabled,
-        string $environment,
+        ?string $environment,
         ?string $release,
         MonitoringClientInterface $client,
         LevelMapper $levelMapper,

@@ -10,7 +10,7 @@ final class TransactionSender
     public function __construct(
         private readonly MonitoringClientInterface $client,
         private readonly bool $enabled,
-        private readonly string $environment,
+        private readonly ?string $environment,
     ) {
     }
 

@@ -11,7 +11,7 @@ final class DeprecationHandler
 
     public function __construct(
         private readonly MonitoringClientInterface $client,
-        private readonly string $environment,
+        private readonly ?string $environment,
         private readonly ?string $release = null,
     ) {
         set_error_handler([$this, 'handleDeprecation'], \E_DEPRECATED | \E_USER_DEPRECATED);
