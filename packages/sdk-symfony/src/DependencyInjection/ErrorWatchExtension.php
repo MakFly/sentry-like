@@ -64,7 +64,7 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
         $container->setParameter('error_watch.endpoint', $config['endpoint']);
         $container->setParameter('error_watch.api_key', $config['api_key']);
         // Use kernel.environment by default if not explicitly configured
-        $environment = $config['environment'] ?? $container->getParameter('kernel.environment');
+        $environment = $config['environment'] ?: $container->getParameter('kernel.environment');
         $container->setParameter('error_watch.environment', $environment);
 
         // Release: use config, or auto-detect from env/git
