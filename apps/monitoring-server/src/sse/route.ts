@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { Redis } from "ioredis";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/connection";
 import { organizationMembers } from "../db/schema";
 import logger from "../logger";
@@ -15,6 +15,7 @@ sse.get("/:orgId", async (c) => {
   if (!session?.user) {
     return c.json({ error: "Unauthorized" }, 401);
   }
+  const userId = session.user.id;
 
   const orgId = c.req.param("orgId");
 
@@ -22,7 +23,12 @@ sse.get("/:orgId", async (c) => {
   const membership = await db
     .select({ id: organizationMembers.id })
     .from(organizationMembers)
-    .where(eq(organizationMembers.organizationId, orgId))
+    .where(
+      and(
+        eq(organizationMembers.organizationId, orgId),
+        eq(organizationMembers.userId, userId)
+      )
+    )
     .limit(1);
 
   if (membership.length === 0) {

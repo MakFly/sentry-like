@@ -78,4 +78,20 @@ class MonitoringClient implements MonitoringClientInterface
         } catch (\Throwable) {
         }
     }
+
+    public function sendLog(array $payload): void
+    {
+        try {
+            $response = $this->client->request('POST', $this->endpoint.'/api/v1/logs', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $this->apiKey,
+                ],
+                'body' => json_encode($payload),
+                'timeout' => 1,
+            ]);
+            $response->getStatusCode();
+        } catch (\Throwable) {
+        }
+    }
 }

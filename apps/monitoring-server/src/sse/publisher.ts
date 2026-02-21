@@ -29,7 +29,7 @@ pubClient.on("error", (err) => {
 });
 
 export interface SSEEvent {
-  type: "issue:new" | "issue:updated" | "issue:regressed" | "alert:triggered" | "transaction:new" | "replay:new";
+  type: "issue:new" | "issue:updated" | "issue:regressed" | "alert:triggered" | "transaction:new" | "replay:new" | "log:new";
   projectId: string;
   payload: {
     fingerprint?: string;
@@ -37,6 +37,17 @@ export interface SSEEvent {
     level?: string;
     sessionId?: string;
     transactionId?: string;
+    log?: {
+      id: string;
+      timestamp: string;
+      level: string;
+      channel: string;
+      message: string;
+      source: string;
+      env?: string | null;
+      release?: string | null;
+    };
+    sampled?: boolean;
   };
   timestamp: number;
 }

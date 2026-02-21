@@ -1,5 +1,5 @@
 import { db } from "../db/connection";
-import { errorEvents, errorGroups, notifications } from "../db/schema";
+import { applicationLogs, errorEvents, errorGroups, notifications } from "../db/schema";
 import { lt, eq, and, sql } from "drizzle-orm";
 import logger from "../logger";
 import type { RetentionStats } from "../types/services";
@@ -73,6 +73,24 @@ export async function cleanupOldNotifications(retentionDays: number = DEFAULT_NO
   const deletedCount = (result as { changes?: number }).changes || 0;
 
   logger.info("Notification cleanup completed", { deletedCount });
+  return deletedCount;
+}
+
+/**
+ * Clean up old live application logs (short retention buffer)
+ */
+export async function cleanupOldApplicationLogs(retentionHours: number = 24): Promise<number> {
+  const cutoffDate = new Date(Date.now() - retentionHours * 60 * 60 * 1000);
+
+  logger.info("Starting application logs cleanup", { retentionHours, cutoffDate: cutoffDate.toISOString() });
+
+  const result = await db
+    .delete(applicationLogs)
+    .where(lt(applicationLogs.createdAt, cutoffDate));
+
+  const deletedCount = (result as { changes?: number }).changes || 0;
+  logger.info("Application logs cleanup completed", { deletedCount });
+
   return deletedCount;
 }
 

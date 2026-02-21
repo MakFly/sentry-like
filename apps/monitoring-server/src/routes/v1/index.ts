@@ -18,6 +18,7 @@ import replay from "./replay";
 import user from "./user";
 import dev from "./dev";
 import export_ from "./export";
+import logs from "./logs";
 
 const v1 = new Hono();
  
@@ -40,6 +41,6 @@ v1.route("/replay", replay);
 v1.route("/user", user);
 v1.route("/dev", dev);
 v1.route("/export", export_);
+v1.route("/logs", logs);
 
 export default v1;
-

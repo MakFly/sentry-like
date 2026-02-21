@@ -238,3 +238,30 @@ export const useReplaySessionEvents = (
     errorTime,
   });
 };
+
+export const useLogsTail = (
+  projectId: string,
+  options?: {
+    limit?: number;
+    cursor?: string;
+    level?: "debug" | "info" | "warning" | "error";
+    channel?: string;
+    search?: string;
+    enabled?: boolean;
+  }
+) => {
+  return trpc.logs.tail.useQuery(
+    {
+      projectId,
+      limit: options?.limit ?? 100,
+      cursor: options?.cursor,
+      level: options?.level,
+      channel: options?.channel,
+      search: options?.search,
+    },
+    {
+      enabled: options?.enabled ?? !!projectId,
+      refetchInterval: 120000,
+    }
+  );
+};

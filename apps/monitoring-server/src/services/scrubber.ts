@@ -19,3 +19,24 @@ export function scrubPII(text: string): string {
   }
   return result;
 }
+
+export function scrubPIIValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    return scrubPII(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => scrubPIIValue(entry));
+  }
+
+  if (value && typeof value === "object") {
+    const output: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) {
+      const scrubbedKey = scrubPII(key);
+      output[scrubbedKey] = scrubPIIValue(entry);
+    }
+    return output;
+  }
+
+  return value;
+}

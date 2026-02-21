@@ -3,10 +3,30 @@
   "description": "Symfony bundle for error monitoring with ErrorWatch",
   "type": "symfony-bundle",
   "license": "MIT",
-  "authors": [{"name": "ErrorWatch", "homepage": "https://errorwatch.io"}],
-  "keywords": ["symfony", "error-monitoring", "errorwatch", "bundle", "apm", "exception"],
-  "autoload": {"psr-4": {"ErrorWatch\\Symfony\\": "src/"}},
-  "autoload-dev": {"psr-4": {"ErrorWatch\\Symfony\\Tests\\": "tests/"}},
+  "authors": [
+    {
+      "name": "ErrorWatch",
+      "homepage": "https://errorwatch.io"
+    }
+  ],
+  "keywords": [
+    "symfony",
+    "error-monitoring",
+    "errorwatch",
+    "bundle",
+    "apm",
+    "exception"
+  ],
+  "autoload": {
+    "psr-4": {
+      "ErrorWatch\\Symfony\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ErrorWatch\\Symfony\\Tests\\": "tests/"
+    }
+  },
   "require": {
     "php": ">=8.1",
     "symfony/framework-bundle": "^6.0|^7.0|^8.0",
@@ -37,5 +57,10 @@
     "stan": "./vendor/bin/phpstan analyse",
     "lint": "./vendor/bin/php-cs-fixer fix --dry-run --diff",
     "cs:fix": "./vendor/bin/php-cs-fixer fix"
+  },
+  "extra": {
+    "symfony": {
+      "require": "6.4.*"
+    }
   }
 }

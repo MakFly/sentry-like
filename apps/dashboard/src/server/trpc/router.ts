@@ -797,6 +797,24 @@ const performanceRouter = router({
 });
 
 /**
+ * Logs router - protected
+ */
+const logsRouter = router({
+  tail: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      limit: z.number().int().positive().max(500).optional(),
+      cursor: z.string().optional(),
+      level: z.enum(["debug", "info", "warning", "error"]).optional(),
+      channel: z.string().max(100).optional(),
+      search: z.string().max(200).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.logs.tail(input);
+    }),
+});
+
+/**
  * App router - combines all routers
  */
 export const appRouter = router({
@@ -814,6 +832,7 @@ export const appRouter = router({
   replay: replayRouter,
   user: userRouter,
   performance: performanceRouter,
+  logs: logsRouter,
 });
 
 export type AppRouter = typeof appRouter;

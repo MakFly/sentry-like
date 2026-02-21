@@ -81,6 +81,34 @@ export const errorEvents = pgTable("error_events", {
 }));
 
 // ============================================
+// Application Logs (Live Terminal)
+// ============================================
+
+export const applicationLogs = pgTable("application_logs", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  level: text("level").notNull(), // debug, info, warning, error
+  channel: text("channel").notNull(),
+  message: text("message").notNull(),
+  context: jsonb("context"),
+  extra: jsonb("extra"),
+  env: text("env"),
+  release: text("release"),
+  source: text("source").notNull().default("app"), // http, cli, messenger, deprecation, app
+  url: text("url"),
+  requestId: text("request_id"),
+  userId: text("user_id"),
+  ingestedAt: timestamp("ingested_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  projectCreatedIdx: index("idx_application_logs_project_created").on(table.projectId, table.createdAt),
+  projectLevelCreatedIdx: index("idx_application_logs_project_level_created").on(table.projectId, table.level, table.createdAt),
+  projectChannelCreatedIdx: index("idx_application_logs_project_channel_created").on(table.projectId, table.channel, table.createdAt),
+}));
+
+// ============================================
 // Authentication Tables (BetterAuth managed)
 // ============================================
 

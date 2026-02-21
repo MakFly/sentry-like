@@ -9,4 +9,4 @@ export * from './alerts';
 export * from './apiKey';
 export * from './common';
 export * from './performance';
-
+export * from './logs';

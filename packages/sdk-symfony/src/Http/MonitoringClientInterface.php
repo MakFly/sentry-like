@@ -25,4 +25,9 @@ interface MonitoringClientInterface
      * @param array<string, mixed> $payload
      */
     public function sendMetrics(array $payload): void;
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function sendLog(array $payload): void;
 }

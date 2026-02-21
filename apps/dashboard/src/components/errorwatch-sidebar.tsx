@@ -13,6 +13,7 @@ import {
   Zap,
   LayoutDashboard,
   Wrench,
+  Terminal,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -86,6 +87,12 @@ export function ErrorWatchSidebar({
         url: `${baseUrl}/issues`,
         icon: Bug,
         isActive: pathname.startsWith(`${baseUrl}/issues`),
+      },
+      {
+        title: "Logs",
+        url: `${baseUrl}/logs`,
+        icon: Terminal,
+        isActive: pathname.startsWith(`${baseUrl}/logs`),
       },
       {
         title: "Replays",

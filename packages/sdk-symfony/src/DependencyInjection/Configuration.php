@@ -151,6 +151,23 @@ final class Configuration implements ConfigurationInterface
                         ->booleanNode('capture_extra')->defaultTrue()->info('Include Monolog extra data in payload')->end()
                     ->end()
                 ->end()
+                ->arrayNode('logs')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultTrue()->info('Enable live log streaming to /api/v1/logs')->end()
+                        ->enumNode('level')
+                            ->values(['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'])
+                            ->defaultValue('debug')
+                        ->end()
+                        ->arrayNode('excluded_channels')
+                            ->scalarPrototype()->end()
+                            ->defaultValue(['event', 'doctrine', 'http_client'])
+                            ->info('Monolog channels ignored by the live logs handler')
+                        ->end()
+                        ->booleanNode('capture_context')->defaultTrue()->info('Include Monolog context in live logs payload')->end()
+                        ->booleanNode('capture_extra')->defaultTrue()->info('Include Monolog extra data in live logs payload')->end()
+                    ->end()
+                ->end()
             ->end();
 
         $rootNode

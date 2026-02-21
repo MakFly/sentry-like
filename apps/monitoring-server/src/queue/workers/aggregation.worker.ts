@@ -12,7 +12,7 @@ import {
   cleanupExpiredPerformanceData,
   cleanupOldAggregates,
 } from "../../services/aggregation";
-import { cleanupOldEvents, cleanupOrphanedGroups } from "../../services/retention";
+import { cleanupOldApplicationLogs, cleanupOldEvents, cleanupOrphanedGroups } from "../../services/retention";
 import logger from "../../logger";
 
 /**
@@ -45,12 +45,14 @@ async function processAggregation(job: Job<AggregationJobData>): Promise<Record<
       const aggregateCleanup = await cleanupOldAggregates(12);
       const eventsDeleted = await cleanupOldEvents(30);
       const groupsDeleted = await cleanupOrphanedGroups();
+      const logsDeleted = await cleanupOldApplicationLogs(24);
       return {
         type,
         performance: perfCleanup,
         aggregates: aggregateCleanup,
         eventsDeleted,
         groupsDeleted,
+        logsDeleted,
       };
     }
 

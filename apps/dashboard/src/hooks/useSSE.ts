@@ -5,6 +5,24 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export type SSEStatus = "connected" | "connecting" | "disconnected";
+export type LiveLogEvent = {
+  type: "log:new";
+  projectId: string;
+  payload: {
+    log: {
+      id: string;
+      timestamp: string;
+      level: "debug" | "info" | "warning" | "error";
+      channel: string;
+      message: string;
+      source: "http" | "cli" | "messenger" | "deprecation" | "app";
+      env?: string | null;
+      release?: string | null;
+    };
+    sampled?: boolean;
+  };
+  timestamp: number;
+};
 
 export function useSSE(orgId: string | undefined) {
   const queryClient = useQueryClient();
@@ -41,6 +59,9 @@ export function useSSE(orgId: string | undefined) {
             break;
           case "replay:new":
             queryClient.invalidateQueries({ queryKey: [["replay"]] });
+            break;
+          case "log:new":
+            window.dispatchEvent(new CustomEvent<LiveLogEvent>("errorwatch:log:new", { detail: event }));
             break;
         }
       } catch {

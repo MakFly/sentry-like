@@ -20,6 +20,7 @@ import * as billingApi from './billing';
 import * as replayApi from './replay';
 import * as userApi from './user';
 import * as performanceApi from './performance';
+import * as logsApi from './logs';
 
 export const api = {
   auth: {
@@ -116,5 +117,7 @@ export const api = {
     getServerStats: performanceApi.getServerStats,
     getTopEndpoints: performanceApi.getTopEndpoints,
   },
+  logs: {
+    tail: logsApi.tail,
+  },
 };
-

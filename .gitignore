@@ -4,6 +4,8 @@ node_modules/
 # Logs
 logs/
 *.log
+!apps/dashboard/src/app/dashboard/**/logs/
+!apps/dashboard/src/app/dashboard/**/logs/*.tsx
 
 # Dev PID files
 .dev-pids

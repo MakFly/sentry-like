@@ -32,6 +32,11 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
                     'id' => 'ErrorWatch\Symfony\Monolog\ErrorMonitoringHandler',
                     'level' => $resolved['monolog']['level'],
                 ],
+                'errorwatch_logs' => [
+                    'type' => 'service',
+                    'id' => 'ErrorWatch\Symfony\Monolog\LogStreamHandler',
+                    'level' => $resolved['logs']['level'],
+                ],
             ],
         ]);
     }
@@ -142,6 +147,12 @@ final class ErrorWatchExtension extends Extension implements PrependExtensionInt
         $container->setParameter('error_watch.monolog.excluded_channels', $config['monolog']['excluded_channels']);
         $container->setParameter('error_watch.monolog.capture_context', $config['monolog']['capture_context']);
         $container->setParameter('error_watch.monolog.capture_extra', $config['monolog']['capture_extra']);
+
+        $container->setParameter('error_watch.logs.enabled', $config['logs']['enabled']);
+        $container->setParameter('error_watch.logs.level', $config['logs']['level']);
+        $container->setParameter('error_watch.logs.excluded_channels', $config['logs']['excluded_channels']);
+        $container->setParameter('error_watch.logs.capture_context', $config['logs']['capture_context']);
+        $container->setParameter('error_watch.logs.capture_extra', $config['logs']['capture_extra']);
 
         // Load monolog handler conditionally
         if ($config['monolog']['enabled'] && class_exists(\Monolog\Handler\AbstractProcessingHandler::class)) {
