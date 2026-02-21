@@ -11,10 +11,10 @@ class MonitoringClient implements MonitoringClientInterface
     private string $apiKey;
     private HttpClientInterface $client;
 
-    public function __construct(string $endpoint, string $apiKey, ?HttpClientInterface $client = null)
+    public function __construct(?string $endpoint, ?string $apiKey, ?HttpClientInterface $client = null)
     {
-        $this->endpoint = $endpoint;
-        $this->apiKey = $apiKey;
+        $this->endpoint = $endpoint ?? '';
+        $this->apiKey = $apiKey ?? '';
         $this->client = $client ?? \Symfony\Component\HttpClient\HttpClient::create();
     }
 
