@@ -30,9 +30,9 @@ ROOT_DIR := $(shell pwd)
 LOG_DIR := $(ROOT_DIR)/logs
 
 # Infra Docker credentials
-POSTGRES_HOST := infra-postgres
-POSTGRES_USER := test
-POSTGRES_PASS := test
+POSTGRES_HOST := postgres
+POSTGRES_USER := errorwatch
+POSTGRES_PASS := errorwatch
 POSTGRES_DB := errorwatch
 
 help: ## Show this help
