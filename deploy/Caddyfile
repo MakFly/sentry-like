@@ -1,0 +1,25 @@
+# ===========================================
+# ErrorWatch Caddy Configuration
+# Copy content to /etc/caddy/Caddyfile on VPS
+# ===========================================
+
+# Replace with your actual domain
+your-domain.com {
+    # API Monitoring Server (/api/*)
+    handle /api/* {
+        reverse_proxy localhost:3333
+    }
+
+    # Dashboard Next.js (catch-all)
+    handle {
+        reverse_proxy localhost:3001
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/errorwatch.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}

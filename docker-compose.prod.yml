@@ -1,0 +1,115 @@
+# ===========================================
+# ErrorWatch Production Docker Compose
+# Self-hosted VPS deployment
+# ===========================================
+
+services:
+  # ===========================================
+  # Dashboard (Next.js)
+  # ===========================================
+  dashboard:
+    build:
+      context: ./apps/dashboard
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+    container_name: errorwatch-dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      # API URL for server-side calls
+      - API_URL=http://api:3333
+    networks:
+      - errorwatch-net
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ===========================================
+  # Monitoring Server (API)
+  # ===========================================
+  api:
+    build:
+      context: ./apps/monitoring-server
+      dockerfile: Dockerfile
+    container_name: errorwatch-api
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    environment:
+      - NODE_ENV=production
+      - PORT=3333
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-errorwatch}
+      - REDIS_URL=redis://redis:6379
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET required}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001}
+    networks:
+      - errorwatch-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3333/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: errorwatch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-errorwatch}
+      POSTGRES_USER: ${POSTGRES_USER:-errorwatch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - errorwatch-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-errorwatch} -d ${POSTGRES_DB:-errorwatch}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===========================================
+  # Redis (Queue & Caching)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: errorwatch-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - errorwatch-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  errorwatch-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
