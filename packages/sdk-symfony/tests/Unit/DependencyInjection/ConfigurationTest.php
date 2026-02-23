@@ -19,8 +19,10 @@ final class ConfigurationTest extends TestCase
 
     public function testDefaultConfiguration(): void
     {
-        // api_key and endpoint are required when enabled=true (default)
+        // api_key and endpoint are required when enabled=true
+        // Note: enabled defaults to false, so we explicitly set it to test the enabled path
         $inputConfig = [
+            'enabled' => true,
             'endpoint' => 'https://api.errorwatch.io',
             'api_key' => 'test-api-key',
         ];
@@ -30,7 +32,7 @@ final class ConfigurationTest extends TestCase
         $this->assertTrue($config['enabled']);
         $this->assertSame('https://api.errorwatch.io', $config['endpoint']);
         $this->assertSame('test-api-key', $config['api_key']);
-        $this->assertNull($config['environment']);
+        $this->assertSame('', $config['environment']);
         $this->assertNull($config['release']);
 
         // Replay defaults

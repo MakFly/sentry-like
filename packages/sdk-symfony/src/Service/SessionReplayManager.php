@@ -22,16 +22,16 @@ class SessionReplayManager
 
     public function __construct(
         RequestStack $requestStack,
-        string $endpoint,
-        string $apiKey,
+        ?string $endpoint,
+        ?string $apiKey,
         bool $enabled = false,
         bool $debug = false,
         float $sampleRate = 0.1,
         ?string $release = null,
     ) {
         $this->requestStack = $requestStack;
-        $this->endpoint = $endpoint;
-        $this->apiKey = $apiKey;
+        $this->endpoint = $endpoint ?? '';
+        $this->apiKey = $apiKey ?? '';
         $this->enabled = $enabled;
         $this->debug = $debug;
         $this->sampleRate = max(0.0, min(1.0, $sampleRate)); // Clamp between 0 and 1
