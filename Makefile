@@ -10,6 +10,9 @@
 .PHONY: infra-check infra-up infra-down
 .PHONY: db-push db-migrate db-reset db-create
 .PHONY: redis-flush
+# Production
+.PHONY: prod-up prod-down prod-build prod-logs prod-status prod-restart
+.PHONY: prod-db-migrate prod-db-backup prod-db-restore
 
 # Colors
 GREEN  := \033[0;32m
@@ -183,3 +186,85 @@ test-api: ## Test API endpoints
 	@echo ""
 	@echo "Auth session:"
 	@curl -s http://localhost:3333/api/auth/get-session | jq . || echo "API not running"
+
+# =============================================================================
+# PRODUCTION (docker-compose.prod.yml)
+# =============================================================================
+
+# Production compose file
+COMPOSE_PROD := docker-compose.prod.yml
+
+prod-build: ## Build production Docker images
+	@echo "$(GREEN)Building production images...$(RESET)"
+	@docker compose -f $(COMPOSE_PROD) build --no-cache
+	@echo "$(GREEN)Build complete.$(RESET)"
+
+prod-up: ## Start production stack (all services)
+	@echo "$(GREEN)Starting production stack...$(RESET)"
+	@docker compose -f $(COMPOSE_PROD) up -d
+	@echo ""
+	@echo "$(CYAN)Waiting for services to be healthy...$(RESET)"
+	@sleep 5
+	@$(MAKE) prod-status
+
+prod-down: ## Stop production stack
+	@echo "$(YELLOW)Stopping production stack...$(RESET)"
+	@docker compose -f $(COMPOSE_PROD) down
+	@echo "$(GREEN)Done.$(RESET)"
+
+prod-restart: ## Restart production stack
+	@echo "$(YELLOW)Restarting production stack...$(RESET)"
+	@docker compose -f $(COMPOSE_PROD) restart
+	@echo "$(GREEN)Done.$(RESET)"
+
+prod-status: ## Check production services status
+	@echo "$(CYAN)=== ErrorWatch Production Status ===$(RESET)"
+	@echo ""
+	@docker compose -f $(COMPOSE_PROD) ps
+	@echo ""
+	@echo "$(CYAN)Health checks:$(RESET)"
+	@echo "  $(CYAN)Dashboard (3001):$(RESET)"
+	@curl -s -o /dev/null -w "    HTTP %{http_code}\n" http://localhost:3001 || echo "    $(RED)Not responding$(RESET)"
+	@echo "  $(CYAN)API (3333):$(RESET)"
+	@curl -s -o /dev/null -w "    HTTP %{http_code}\n" http://localhost:3333/health/live || echo "    $(RED)Not responding$(RESET)"
+
+prod-logs: ## Show production logs (all services)
+	@docker compose -f $(COMPOSE_PROD) logs -f
+
+prod-logs-api: ## Show API logs only
+	@docker compose -f $(COMPOSE_PROD) logs -f api
+
+prod-logs-dashboard: ## Show dashboard logs only
+	@docker compose -f $(COMPOSE_PROD) logs -f dashboard
+
+prod-db-migrate: ## Run production migrations
+	@echo "$(GREEN)Running production migrations...$(RESET)"
+	@docker compose -f $(COMPOSE_PROD) exec api bun run db:migrate
+
+prod-db-shell: ## Open PostgreSQL shell in production
+	@docker compose -f $(COMPOSE_PROD) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+
+prod-db-backup: ## Backup production database
+	@echo "$(GREEN)Creating database backup...$(RESET)"
+	@mkdir -p backups
+	@docker compose -f $(COMPOSE_PROD) exec postgres pg_dump -U $(POSTGRES_USER) $(POSTGRES_DB) > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+	@echo "$(GREEN)Backup created in backups/$(RESET)"
+
+prod-db-restore: ## Restore database from backup (requires BACKUP_FILE=path)
+ifndef BACKUP_FILE
+	@echo "$(RED)Error: BACKUP_FILE is required$(RESET)"
+	@echo "Usage: make prod-db-restore BACKUP_FILE=backups/backup_20240101_120000.sql"
+	@exit 1
+endif
+	@echo "$(YELLOW)Restoring database from $(BACKUP_FILE)...$(RESET)"
+	@cat $(BACKUP_FILE) | docker compose -f $(COMPOSE_PROD) exec -T postgres psql -U $(POSTGRES_USER) $(POSTGRES_DB)
+	@echo "$(GREEN)Restore complete.$(RESET)"
+
+prod-redis-cli: ## Open Redis CLI in production
+	@docker compose -f $(COMPOSE_PROD) exec redis redis-cli
+
+prod-shell-api: ## Open shell in API container
+	@docker compose -f $(COMPOSE_PROD) exec api /bin/sh
+
+prod-shell-dashboard: ## Open shell in dashboard container
+	@docker compose -f $(COMPOSE_PROD) exec dashboard /bin/sh
