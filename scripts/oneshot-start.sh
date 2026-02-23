@@ -22,6 +22,7 @@ docker compose -f docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_U
 
 echo "=== Running migrations ==="
 cd apps/monitoring-server
+bun add drizzle-orm@latest drizzle-kit@latest
 bun run db:migrate
 cd ../..
 
