@@ -57,7 +57,7 @@ export default function ErrorList({ filters = {}, limit, projectSlug }: ErrorLis
     );
   }
 
-  if (!groups || groups.length === 0) {
+  if (!groups || groups.groups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <h3 className="mt-6 text-lg font-semibold">No issues found</h3>
@@ -88,7 +88,7 @@ export default function ErrorList({ filters = {}, limit, projectSlug }: ErrorLis
           </tr>
         </thead>
         <tbody className="stagger-children">
-          {(limit ? groups.slice(0, limit) : groups).map((group, index) => {
+          {(limit ? groups.groups.slice(0, limit) : groups.groups).map((group, index) => {
             const level = group.level;
             const config = SEVERITY_CONFIG[level];
             const sparkData = generateSparklineData(group.count);

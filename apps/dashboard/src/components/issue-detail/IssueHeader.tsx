@@ -69,17 +69,18 @@ const statusConfig: Record<IssueStatus, { label: string; class: string }> = {
   open: { label: "OPEN", class: "bg-pulse-primary/20 text-pulse-primary border-pulse-primary/40" },
   resolved: { label: "RESOLVED", class: "bg-signal-info/20 text-signal-info border-signal-info/40" },
   ignored: { label: "IGNORED", class: "bg-muted/20 text-muted-foreground border-muted" },
+  snoozed: { label: "SNOOZED", class: "bg-yellow-500/20 text-yellow-600 border-yellow-500/40" },
 };
 
 // Parse exception type from message (e.g., "TypeError: Cannot read property 'x'")
 function parseExceptionType(message: string): { type: string | null; cleanMessage: string } {
   // Match common exception patterns: TypeError, Error, Exception, etc.
-  const match = message.match(/^(\w+(?:Error|Exception|Fault)):\s*(.+)$/s);
+  const match = message.match(/^(\w+(?:Error|Exception|Fault)):\s*([\s\S]*)$/);
   if (match) {
     return { type: match[1], cleanMessage: match[2] };
   }
   // Also match PHP-style: "Uncaught TypeError: ..."
-  const uncaughtMatch = message.match(/^(?:Uncaught\s+)?(\w+(?:Error|Exception)):\s*(.+)$/s);
+  const uncaughtMatch = message.match(/^(?:Uncaught\s+)?(\w+(?:Error|Exception)):\s*([\s\S]*)$/);
   if (uncaughtMatch) {
     return { type: uncaughtMatch[1], cleanMessage: uncaughtMatch[2] };
   }

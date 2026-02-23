@@ -1,42 +1,46 @@
 # ===========================================
-# ErrorWatch Production Caddyfile
+# ErrorWatch Production Caddyfile (Oneshot - Direct Install)
 # ===========================================
+# Copy to /etc/caddy/Caddyfile
+# Usage: caddy reload --config /etc/caddy/Caddyfile
 
-# Dashboard
-{$DOMAIN:errorwatch.io} {
-    reverse_proxy dashboard:3000
+# Global options
+{
+    admin off
+    log {
+        output file /var/log/caddy/errorwatch.log
+    }
+}
+
+# Dashboard (main domain) - REPLACE {$DOMAIN} with your actual domain
+errorwatch.io {
+    reverse_proxy localhost:3001
 
     tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     }
 
+    encode gzip zstd
+
     header {
-        X-Frame-Options "DENY"
+        X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
     }
+}
+
+# API subdomain - REPLACE {$DOMAIN} with your actual domain  
+api.errorwatch.io {
+    reverse_proxy localhost:3333
+
+    tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
 
     encode gzip zstd
-}
-
-# www redirect
-www.{$DOMAIN:errorwatch.io} {
-    tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-    }
-    redir https://{$DOMAIN:errorwatch.io}{uri} permanent
-}
-
-# API
-api.{$DOMAIN:errorwatch.io} {
-    reverse_proxy monitoring-server:3333
-
-    tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-    }
 
     header {
         X-Frame-Options "DENY"
@@ -45,6 +49,4 @@ api.{$DOMAIN:errorwatch.io} {
         Referrer-Policy "strict-origin-when-cross-origin"
         -Server
     }
-
-    encode gzip zstd
 }

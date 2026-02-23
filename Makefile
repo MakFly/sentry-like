@@ -13,6 +13,10 @@
 # Production
 .PHONY: prod-up prod-down prod-build prod-logs prod-status prod-restart
 .PHONY: prod-db-migrate prod-db-backup prod-db-restore
+# Oneshot Production (VPS - direct install)
+.PHONY: oneshot-install oneshot-build oneshot-setup oneshot-start oneshot-stop oneshot-restart oneshot-status oneshot-logs oneshot-logs-api oneshot-logs-dashboard oneshot-mon
+.PHONY: oneshot-db-create oneshot-db-push oneshot-db-migrate oneshot-db-reset
+.PHONY: oneshot-redis-cli oneshot-db-shell
 
 # Colors
 GREEN  := \033[0;32m
@@ -34,7 +38,7 @@ POSTGRES_DB := errorwatch
 help: ## Show this help
 	@echo "$(CYAN)ErrorWatch Development Commands$(RESET)"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-18s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(RESET) %s\n", $$1, $$2}'
 
 # =============================================================================
 # DEVELOPMENT
@@ -268,3 +272,115 @@ prod-shell-api: ## Open shell in API container
 
 prod-shell-dashboard: ## Open shell in dashboard container
 	@docker compose -f $(COMPOSE_PROD) exec dashboard /bin/sh
+
+# =============================================================================
+# ONESHOT PRODUCTION (VPS - Direct Install + PM2)
+# =============================================================================
+
+ONESHOT_ENV_FILE := .env.production
+ONESHOT_PORT_API := 3333
+ONESHOT_PORT_DASHBOARD := 3001
+ONESHOT_PM2_NAME := errorwatch
+
+oneshot-install: ## Install dependencies and build
+	@echo "$(GREEN)Installing dependencies...$(RESET)"
+	@bun install
+	@echo ""
+	@echo "$(GREEN)Building applications...$(RESET)"
+	@bun run build
+	@echo ""
+	@echo "$(GREEN)Done. Run 'make oneshot-start' to launch services.$(RESET)"
+
+oneshot-build: ## Build applications only
+	@echo "$(GREEN)Building applications...$(RESET)"
+	@bun run build
+
+oneshot-setup: ## Setup infrastructure (PostgreSQL, Redis, Caddy, PM2)
+	@echo "$(GREEN)Setting up infrastructure...$(RESET)"
+	@chmod +x scripts/install-infra.sh
+	@./scripts/install-infra.sh
+
+oneshot-start: ## Start all services via PM2
+	@echo "$(GREEN)Starting ErrorWatch services...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)Checking PostgreSQL...$(RESET)"
+	@pg_isready -h localhost -p 5432 > /dev/null 2>&1 && echo "  $(GREEN)PostgreSQL ready$(RESET)" || (echo "  $(RED)PostgreSQL not ready - run 'make oneshot-setup' first$(RESET)" && exit 1)
+	@echo ""
+	@echo "$(CYAN)Checking Redis...$(RESET)"
+	@redis-cli ping > /dev/null 2>&1 && echo "  $(GREEN)Redis ready$(RESET)" || (echo "  $(RED)Redis not ready - run 'make oneshot-setup' first$(RESET)" && exit 1)
+	@echo ""
+	@echo "$(CYAN)Checking environment file...$(RESET)"
+	@if [ -f $(ONESHOT_ENV_FILE) ]; then \
+		echo "  $(GREEN)$(ONESHOT_ENV_FILE) found$(RESET)"; \
+	else \
+		echo "  $(YELLOW)$(ONESHOT_ENV_FILE) not found - copying from example$(RESET)"; \
+		cp .env.production.example $(ONESHOT_ENV_FILE); \
+		echo "  $(YELLOW)Please edit $(ONESHOT_ENV_FILE) before starting!$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(CYAN)Starting services via PM2...$(RESET)"
+	@chmod +x scripts/oneshot-start.sh
+	@./scripts/oneshot-start.sh
+	@echo ""
+	@echo "$(GREEN)All services started!$(RESET)"
+	@echo ""
+	@$(MAKE) oneshot-status
+
+oneshot-stop: ## Stop all services via PM2
+	@echo "$(YELLOW)Stopping ErrorWatch services...$(RESET)"
+	@bunx pm2 stop $(ONESHOT_PM2_NAME) 2>/dev/null || true
+	@echo "$(GREEN)All services stopped.$(RESET)"
+
+oneshot-restart: oneshot-stop oneshot-start ## Restart all services
+
+oneshot-status: ## Check services status
+	@echo "$(CYAN)=== ErrorWatch Oneshot Status ===$(RESET)"
+	@echo ""
+	@echo "$(CYAN)PM2 Processes:$(RESET)"
+	@bunx pm2 status $(ONESHOT_PM2_NAME) 2>/dev/null || echo "  $(YELLOW)No PM2 processes running$(RESET)"
+	@echo ""
+	@echo "$(CYAN)Health Checks:$(RESET)"
+	@curl -s -o /dev/null -w "  Dashboard: HTTP %{http_code}\n" http://localhost:$(ONESHOT_PORT_DASHBOARD) 2>/dev/null || echo "  Dashboard: $(RED)Not responding$(RESET)"
+	@curl -s -o /dev/null -w "  API:       HTTP %{http_code}\n" http://localhost:$(ONESHOT_PORT_API)/health/live 2>/dev/null || echo "  API:       $(RED)Not responding$(RESET)"
+	@echo ""
+	@echo "$(CYAN)Infrastructure:$(RESET)"
+	@pg_isready -h localhost -p 5432 > /dev/null 2>&1 && echo "  PostgreSQL: $(GREEN)ready$(RESET)" || echo "  PostgreSQL: $(RED)not ready$(RESET)"
+	@redis-cli ping > /dev/null 2>&1 && echo "  Redis:      $(GREEN)ready$(RESET)" || echo "  Redis:      $(RED)not ready$(RESET)"
+
+oneshot-logs: ## Show PM2 logs
+	@bunx pm2 logs $(ONESHOT_PM2_NAME)
+
+oneshot-logs-api: ## Show API logs
+	@bunx pm2 logs $(ONESHOT_PM2_NAME)-api
+
+oneshot-logs-dashboard: ## Show dashboard logs
+	@bunx pm2 logs $(ONESHOT_PM2_NAME)-dashboard
+
+oneshot-mon: ## Monitor PM2 processes
+	@bunx pm2 monit
+
+oneshot-db-create: ## Create database
+	@echo "$(GREEN)Creating database...$(RESET)"
+	@sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'errorwatch'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE errorwatch;"
+	@sudo -u postgres psql -c "SELECT 1 FROM pg_roles WHERE rolname = 'errorwatch'" | grep -q 1 || sudo -u postgres psql -c "CREATE USER errorwatch WITH PASSWORD '$$POSTGRES_PASSWORD';"
+	@sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE errorwatch TO errorwatch;"
+	@echo "$(GREEN)Database created.$(RESET)"
+
+oneshot-db-push: ## Push database schema
+	@echo "$(GREEN)Pushing database schema...$(RESET)"
+	@cd apps/monitoring-server && bun run db:push
+
+oneshot-db-migrate: ## Run database migrations
+	@echo "$(GREEN)Running migrations...$(RESET)"
+	@cd apps/monitoring-server && bun run db:migrate
+
+oneshot-db-reset: ## Reset database
+	@echo "$(YELLOW)Resetting database...$(RESET)"
+	@sudo -u postgres psql -d errorwatch -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
+	@$(MAKE) oneshot-db-push
+
+oneshot-db-shell: ## Open PostgreSQL shell
+	@sudo -u postgres psql -d errorwatch
+
+oneshot-redis-cli: ## Open Redis CLI
+	@redis-cli

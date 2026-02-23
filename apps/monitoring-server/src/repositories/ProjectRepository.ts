@@ -51,7 +51,11 @@ export const ProjectRepository = {
     environment?: string | null;
     platform?: string | null;
     createdAt: Date;
-  }) => db.insert(projects).values(data).returning().then(rows => rows[0]),
+  }) => db.insert(projects).values({
+    ...data,
+    environment: data.environment ?? undefined,
+    platform: data.platform ?? undefined,
+  }).returning().then(rows => rows[0]),
 
   update: (id: string, data: Partial<{ name: string; slug: string }>) =>
     db.update(projects).set(data).where(eq(projects.id, id)),

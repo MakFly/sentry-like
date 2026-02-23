@@ -3,6 +3,8 @@
 
 Use CodeLens MCP tools BEFORE built-in grep/glob/read. Rule: regex query → codelens_grep, natural language → codelens_search.
 
+**CRITICAL:** "Find weaknesses", "project issues", "technical debt" = semantic → codelens_search or codelens_agentic_search. Do NOT use batch_grep for open-ended analysis. batch_grep = explicit regex patterns only.
+
 ## Syntactic (patterns, regex)
 
 | Task | Tool | Fallback |

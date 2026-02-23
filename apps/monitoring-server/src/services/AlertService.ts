@@ -26,7 +26,7 @@ export const AlertService = {
     const rules = await listRules(projectId);
     return rules.map((rule) => ({
       ...rule,
-      config: rule.config ? JSON.parse(rule.config) : {},
+      config: rule.config ?? {},
     }));
   },
 

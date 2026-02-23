@@ -107,7 +107,7 @@ export async function triggerAlertsForNewError(
 
   for (const rule of rules) {
     try {
-      const config: AlertRuleConfig = rule.config ? JSON.parse(rule.config) : {};
+      const config: AlertRuleConfig = rule.config ?? {};
 
       // Check if rule should trigger
       let shouldTrigger = false;

@@ -294,6 +294,9 @@ export const getSession = async (c: AuthContext) => {
       if (referencingError) {
         // Session is referenced but replay data not yet received
         // Verify access via the error's project
+        if (!referencingError.projectId) {
+          return c.json({ error: "Project not found", code: "NOT_FOUND" }, 404);
+        }
         const hasAccess = await verifyProjectAccess(referencingError.projectId, userId);
         if (!hasAccess) {
           return c.json({ error: "Access denied", code: "FORBIDDEN" }, 403);

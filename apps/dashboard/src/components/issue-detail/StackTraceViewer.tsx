@@ -31,7 +31,7 @@ function parseStackTrace(stack: string): StackFrame[] {
   const frames: StackFrame[] = [];
 
   // Multiple patterns for different stack trace formats
-  const patterns: Array<{ regex: RegExp; groups: { fn: number; file: number; line: number; col?: number } }> = [
+  const patterns: Array<{ regex: RegExp; groups: { fn?: number; file: number; line: number; col?: number } }> = [
     // Node.js/V8: "at functionName (file:line:col)" or "at file:line:col"
     { regex: /at\s+(?:(.+?)\s+)?\(?(.+?):(\d+):?(\d+)?\)?/, groups: { fn: 1, file: 2, line: 3, col: 4 } },
     // Firefox: "functionName@file:line:col"

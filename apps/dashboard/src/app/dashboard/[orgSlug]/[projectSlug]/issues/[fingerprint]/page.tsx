@@ -150,7 +150,7 @@ export default function IssueDetailPage() {
         statusCode={group.statusCode}
         orgSlug={currentOrgSlug || ""}
         onStatusChange={(status) =>
-          updateStatusMutation.mutate({ fingerprint, status })
+          updateStatusMutation.mutate({ fingerprint, status: status as "open" | "resolved" | "ignored" })
         }
         isUpdating={updateStatusMutation.isPending}
         assignedTo={group.assignedTo}

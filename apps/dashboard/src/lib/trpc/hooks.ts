@@ -11,6 +11,7 @@ const REFETCH_INTERVAL = 300_000;
 interface GroupsFilter {
   env?: string;
   dateRange?: "24h" | "7d" | "30d" | "90d" | "all";
+  projectId?: string;
   search?: string;
   status?: "open" | "resolved" | "ignored" | "snoozed";
   level?: "fatal" | "error" | "warning" | "info" | "debug";

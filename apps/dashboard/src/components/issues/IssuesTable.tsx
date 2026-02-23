@@ -20,6 +20,7 @@ interface IssueGroup {
 interface IssuesTableProps {
   issues: IssueGroup[];
   projectSlug: string;
+  orgSlug: string;
   isLoading?: boolean;
   className?: string;
 }
@@ -87,6 +88,7 @@ function ErrorState({ message }: { message: string }) {
 export function IssuesTable({
   issues,
   projectSlug,
+  orgSlug,
   isLoading,
   className,
 }: IssuesTableProps) {
@@ -151,7 +153,7 @@ export function IssuesTable({
             level={issue.level}
             count={issue.count}
             lastSeen={issue.lastSeen}
-            projectSlug={projectSlug}
+            orgSlug={orgSlug}
             maxCount={maxCount}
             hasReplay={issue.hasReplay}
           />

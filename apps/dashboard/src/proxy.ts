@@ -120,9 +120,10 @@ export async function proxy(request: NextRequest) {
         return invalidateSessionAndRedirect(request, pathname);
       }
 
-      userId = sessionData.user.id;
-      if (sessionToken !== null) {
-        setSessionCache(sessionToken, userId);
+      const validUserId: string = userId!;
+      if (sessionToken) {
+        const token: string = sessionToken;
+        setSessionCache(token, validUserId);
       }
     } catch (error) {
       console.error("[Middleware] Failed to validate session:", error);

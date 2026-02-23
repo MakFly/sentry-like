@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "@/lib/auth-client";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/server/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ import {
 import { Zap, FlaskConical, Github, Bug, Layers, Shield, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
-// SSO provider icons
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -40,7 +38,7 @@ const features = [
 
 type DevUser = { email: string; name: string | null };
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +60,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isPending && session?.user) {
-      // Si déjà connecté, rediriger vers /dashboard qui gère la suite
       router.push("/dashboard");
     }
   }, [session, isPending, router]);
@@ -70,7 +67,6 @@ export default function LoginPage() {
   const handleSSOLogin = async (provider: "github" | "google") => {
     setSsoLoading(provider);
     try {
-      // Build absolute URL for OAuth redirect back to frontend
       const appUrl = typeof window !== "undefined"
         ? window.location.origin
         : (process.env.NEXT_PUBLIC_APP_URL ?? "");
@@ -116,10 +112,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md animate-fade-in-up">
-          {/* Header */}
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-6">
               <div className="accent-dot" />
@@ -138,7 +132,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             {isDev && devUsers.length > 0 && (
               <div className="space-y-2">
@@ -218,7 +211,6 @@ export default function LoginPage() {
             )}
           </form>
 
-          {/* SSO Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border/50" />
@@ -230,7 +222,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* SSO Buttons */}
           <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
@@ -262,9 +253,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side - Visual (desktop only) */}
       <div className="hidden lg:flex flex-1 items-center justify-center p-12 relative overflow-hidden">
-        {/* Grid pattern background */}
         <div className="absolute inset-0 opacity-5 text-muted-foreground">
           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
@@ -276,7 +265,6 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        {/* Gradient orbs */}
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl"
           style={{ background: "hsl(262 83% 58%)" }}
@@ -286,9 +274,7 @@ export default function LoginPage() {
           style={{ background: "hsl(280 60% 50%)" }}
         />
 
-        {/* Content */}
         <div className="relative text-center max-w-md animate-fade-in-up animate-delay-200">
-          {/* Logo with floating + pulse glow effect */}
           <div className="animate-float">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center animate-pulse-glow">
               <Zap className="h-10 w-10 text-white" />
@@ -303,7 +289,6 @@ export default function LoginPage() {
             Join developers using ErrorWatch to track, debug, and resolve application errors faster.
           </p>
 
-          {/* Feature list with staggered animation */}
           <div className="space-y-4 text-left">
             {features.map((feature, index) => (
               <div
@@ -321,5 +306,21 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoginLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
   );
 }
