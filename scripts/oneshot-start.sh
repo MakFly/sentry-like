@@ -22,8 +22,8 @@ docker compose -f docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_U
 
 echo "=== Running migrations ==="
 cd apps/monitoring-server
-bun add drizzle-orm@latest drizzle-kit@latest
-bun run db:migrate
+bun add drizzle-orm@latest drizzle-kit@latest 2>/dev/null || true
+DATABASE_URL="postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD:-errorwatch}@localhost:5432/${POSTGRES_DB:-errorwatch}" bun run db:migrate
 cd ../..
 
 export NODE_ENV=production
