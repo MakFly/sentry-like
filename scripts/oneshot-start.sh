@@ -20,9 +20,24 @@ if [ -z "$ENV_FILE" ]; then
     exit 1
 fi
 
-set -a
-source "$ENV_FILE"
-set +a
+# Read a single key from .env-like files without sourcing shell syntax.
+read_env_var() {
+    local key="$1"
+    local value
+    value="$(sed -n -E "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*(.*)[[:space:]]*$/\1/p" "$ENV_FILE" | tail -n 1)"
+    # Strip surrounding single or double quotes if present.
+    if [[ "$value" =~ ^\".*\"$ ]]; then
+        value="${value:1:${#value}-2}"
+    elif [[ "$value" =~ ^\'.*\'$ ]]; then
+        value="${value:1:${#value}-2}"
+    fi
+    printf '%s' "$value"
+}
+
+POSTGRES_USER="$(read_env_var POSTGRES_USER)"
+POSTGRES_DB="$(read_env_var POSTGRES_DB)"
+POSTGRES_PASSWORD="$(read_env_var POSTGRES_PASSWORD)"
+BETTER_AUTH_SECRET="$(read_env_var BETTER_AUTH_SECRET)"
 
 : "${POSTGRES_USER:=errorwatch}"
 : "${POSTGRES_DB:=errorwatch}"
