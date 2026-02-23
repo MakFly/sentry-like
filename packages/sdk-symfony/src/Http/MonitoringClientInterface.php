@@ -7,6 +7,11 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 interface MonitoringClientInterface
 {
     /**
+     * Check if the client is properly configured with valid endpoint and API key.
+     */
+    public function isConfigured(): bool;
+
+    /**
      * @param array<string, mixed> $payload
      */
     public function sendEvent(array $payload): ResponseInterface;

@@ -3,10 +3,15 @@ services:
         autowire: true
         autoconfigure: true
 
+    ErrorWatch\Symfony\Service\ErrorWatchLogger:
+        arguments:
+            $logger: '@?Psr\Log\LoggerInterface'
+
     ErrorWatch\Symfony\Http\MonitoringClient:
         arguments:
             $endpoint: '%error_watch.endpoint%'
             $apiKey: '%error_watch.api_key%'
+            $logger: '@ErrorWatch\Symfony\Service\ErrorWatchLogger'
 
     ErrorWatch\Symfony\Http\MonitoringClientInterface:
         alias: ErrorWatch\Symfony\Http\MonitoringClient
@@ -33,6 +38,7 @@ services:
             $debug: '%error_watch.replay.debug%'
             $sampleRate: '%error_watch.replay.sample_rate%'
             $release: '%error_watch.release%'
+            $logger: '@ErrorWatch\Symfony\Service\ErrorWatchLogger'
 
     ErrorWatch\Symfony\Service\ErrorSender:
         arguments:

@@ -19,6 +19,7 @@ class SessionReplayManager
     private bool $debug;
     private float $sampleRate;
     private ?string $release;
+    private bool $configured;
 
     public function __construct(
         RequestStack $requestStack,
@@ -28,6 +29,7 @@ class SessionReplayManager
         bool $debug = false,
         float $sampleRate = 0.1,
         ?string $release = null,
+        ?ErrorWatchLogger $logger = null,
     ) {
         $this->requestStack = $requestStack;
         $this->endpoint = $endpoint ?? '';
@@ -36,11 +38,22 @@ class SessionReplayManager
         $this->debug = $debug;
         $this->sampleRate = max(0.0, min(1.0, $sampleRate)); // Clamp between 0 and 1
         $this->release = $release;
+
+        // Validate configuration
+        $this->configured = true;
+        if ('' === $this->endpoint || '' === $this->apiKey) {
+            $this->configured = false;
+            if ($enabled) {
+                $logger?->warning('SessionReplay enabled but endpoint or api_key is empty. Session replay will be disabled.', [
+                    'hint' => 'Set ERRORWATCH_ENDPOINT and ERRORWATCH_API_KEY in your .env file',
+                ]);
+            }
+        }
     }
 
     /**
      * Get or create session ID for replay linking
-     * Returns null if replay is disabled or if request doesn't pass sample rate.
+     * Returns null if replay is disabled, not configured, or if request doesn't pass sample rate.
      *
      * Note: SessionId is scoped to the current HTTP request (page load),
      * not the browser session. Each page load gets a new sessionId.
@@ -48,6 +61,10 @@ class SessionReplayManager
     public function getSessionId(): ?string
     {
         if (!$this->enabled) {
+            return null;
+        }
+
+        if (!$this->configured) {
             return null;
         }
 
@@ -79,6 +96,14 @@ class SessionReplayManager
     public function isEnabled(): bool
     {
         return $this->enabled;
+    }
+
+    /**
+     * Check if the manager is properly configured.
+     */
+    public function isConfigured(): bool
+    {
+        return $this->configured;
     }
 
     /**
