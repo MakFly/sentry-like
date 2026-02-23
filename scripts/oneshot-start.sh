@@ -6,9 +6,23 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_ROOT"
 
-echo "Starting ErrorWatch services via PM2..."
+echo "Building ErrorWatch services..."
 
 export NODE_ENV=production
+
+echo "Building monitoring-server..."
+cd apps/monitoring-server
+bun run build
+cd ../..
+
+echo "Building dashboard..."
+cd apps/dashboard
+bun run build
+cd ../..
+
+cd "$PROJECT_ROOT"
+
+echo "Starting ErrorWatch services via PM2..."
 
 bunx pm2 delete errorwatch 2>/dev/null || true
 bunx pm2 delete errorwatch-api 2>/dev/null || true
@@ -17,14 +31,12 @@ bunx pm2 delete errorwatch-dashboard 2>/dev/null || true
 bunx pm2 start apps/monitoring-server/package.json \
     --name errorwatch-api \
     -- \
-    start 2>/dev/null || \
-    bunx pm2 start bun --name errorwatch-api -- run apps/monitoring-server/src/index.ts
+    start
 
 bunx pm2 start apps/dashboard/package.json \
     --name errorwatch-dashboard \
     -- \
-    start 2>/dev/null || \
-    bunx pm2 start bun --name errorwatch-dashboard -- run apps/dashboard/src/server.ts -p 3001
+    start
 
 bunx pm2 save
 
