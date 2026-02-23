@@ -10,25 +10,14 @@ set -a
 source .env 2>/dev/null || true
 set +a
 
-# Get postgres password from running container or use default
+# Default password if not set
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-errorwatch}"
-if docker ps --format '{{.Names}}' | grep -q "errorwatch-postgres\|postgres"; then
-  CONTAINER_NAME="postgres"
-else
-  CONTAINER_NAME="errorwatch-postgres"
-fi
 
 echo "=== Starting Docker infra ==="
-docker compose -f docker-compose.prod.yml up -d
+POSTGRES_PASSWORD="$POSTGRES_PASSWORD" docker compose -f docker-compose.prod.yml up -d
 
 echo "=== Waiting for postgres... ==="
 sleep 5
-
-# Get actual password from container if available
-CONTAINER_PW=$(docker compose -f docker-compose.prod.yml exec -T postgres env 2>/dev/null | grep POSTGRES_PASSWORD | cut -d= -f2)
-if [ -n "$CONTAINER_PW" ]; then
-  POSTGRES_PASSWORD="$CONTAINER_PW"
-fi
 
 echo "=== Creating database if not exists ==="
 docker compose -f docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_USER:-errorwatch}" -d "${POSTGRES_DB:-errorwatch}" -c "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB:-errorwatch}'" 2>/dev/null | grep -q 1 || \
