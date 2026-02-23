@@ -3,71 +3,73 @@
 # Self-hosted VPS deployment
 # ===========================================
 
+# Services are commented out - apps run natively via PM2
+# Only infra (postgres, redis) runs in Docker
+
 services:
   # ===========================================
-  # Dashboard (Next.js)
+  # Dashboard (Next.js) - RUNS NATIVELY VIA PM2
   # ===========================================
-  dashboard:
-    build:
-      context: ./apps/dashboard
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
-    container_name: errorwatch-dashboard
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      - NODE_ENV=production
-      - NEXT_TELEMETRY_DISABLED=1
-      # API URL for server-side calls
-      - API_URL=http://api:3333
-    networks:
-      - errorwatch-net
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+  # dashboard:
+  #   build:
+  #     context: ./apps/dashboard
+  #     dockerfile: Dockerfile
+  #     args:
+  #       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+  #   container_name: errorwatch-dashboard
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - NEXT_TELEMETRY_DISABLED=1
+  #     - API_URL=http://api:3333
+  #   networks:
+  #     - errorwatch-net
+  #   depends_on:
+  #     api:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 15s
 
   # ===========================================
-  # Monitoring Server (API)
+  # Monitoring Server (API) - RUNS NATIVELY VIA PM2
   # ===========================================
-  api:
-    build:
-      context: ./apps/monitoring-server
-      dockerfile: Dockerfile
-    container_name: errorwatch-api
-    restart: unless-stopped
-    ports:
-      - "3333:3333"
-    environment:
-      - NODE_ENV=production
-      - PORT=3333
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-errorwatch}
-      - REDIS_URL=redis://redis:6379
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET required}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001}
-    networks:
-      - errorwatch-net
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3333/health/live"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+  # api:
+  #   build:
+  #     context: ./apps/monitoring-server
+  #     dockerfile: Dockerfile
+  #   container_name: errorwatch-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3333:3333"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3333
+  #     - DATABASE_URL=postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-errorwatch}
+  #     - REDIS_URL=redis://redis:6379
+  #     - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET required}
+  #     - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001}
+  #   networks:
+  #     - errorwatch-net
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3333/health/live"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 10s
 
   # ===========================================
-  # PostgreSQL Database
+  # PostgreSQL Database - RUNS IN DOCKER
   # ===========================================
   postgres:
     image: postgres:16-alpine
@@ -91,7 +93,7 @@ services:
       start_period: 10s
 
   # ===========================================
-  # Redis (Queue & Caching)
+  # Redis (Queue & Caching) - RUNS IN DOCKER
   # ===========================================
   redis:
     image: redis:7-alpine
