@@ -361,9 +361,8 @@ oneshot-mon: ## Monitor PM2 processes
 
 oneshot-db-create: ## Create database
 	@echo "$(GREEN)Creating database...$(RESET)"
-	@sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'errorwatch'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE errorwatch;"
-	@sudo -u postgres psql -c "SELECT 1 FROM pg_roles WHERE rolname = 'errorwatch'" | grep -q 1 || sudo -u postgres psql -c "CREATE USER errorwatch WITH PASSWORD '$$POSTGRES_PASSWORD';"
-	@sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE errorwatch TO errorwatch;"
+	@docker compose -f $(COMPOSE_PROD) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "SELECT 1 FROM pg_database WHERE datname = '$(POSTGRES_DB)'" | grep -q 1 || \
+		docker compose -f $(COMPOSE_PROD) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "CREATE DATABASE $(POSTGRES_DB);"
 	@echo "$(GREEN)Database created.$(RESET)"
 
 oneshot-db-push: ## Push database schema
