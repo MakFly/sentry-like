@@ -6,27 +6,57 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_ROOT"
 
+# Resolve production env file in priority order.
+ENV_FILE=""
+for candidate in ".env.production" ".env.prod" ".env"; do
+    if [ -f "$candidate" ]; then
+        ENV_FILE="$candidate"
+        break
+    fi
+done
+
+if [ -z "$ENV_FILE" ]; then
+    echo "Error: no env file found (.env.production, .env.prod, or .env)."
+    exit 1
+fi
+
 set -a
-source .env 2>/dev/null || true
+source "$ENV_FILE"
 set +a
 
-# Default password if not set
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-errorwatch}"
+: "${POSTGRES_USER:=errorwatch}"
+: "${POSTGRES_DB:=errorwatch}"
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in ${ENV_FILE}}"
 
 echo "=== Starting Docker infra ==="
-POSTGRES_PASSWORD="$POSTGRES_PASSWORD" docker compose -f docker-compose.prod.yml up -d
+docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d
 
 echo "=== Waiting for postgres... ==="
 sleep 5
 
+echo "=== Forcing PostgreSQL credentials sync ==="
+docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
+    psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v ew_user="${POSTGRES_USER}" -v ew_pass="${POSTGRES_PASSWORD}" \
+    -c "DO \$\$ BEGIN
+            IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'ew_user') THEN
+                EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', :'ew_user', :'ew_pass');
+            ELSE
+                EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'ew_user', :'ew_pass');
+            END IF;
+        END \$\$;"
+
 echo "=== Creating database if not exists ==="
-docker compose -f docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_USER:-errorwatch}" -d "${POSTGRES_DB:-errorwatch}" -c "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB:-errorwatch}'" 2>/dev/null | grep -q 1 || \
-    docker compose -f docker-compose.prod.yml exec -T postgres psql -U "${POSTGRES_USER:-errorwatch}" -d "${POSTGRES_DB:-errorwatch}" -c "CREATE DATABASE ${POSTGRES_DB:-errorwatch};"
+docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres psql -U postgres -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" 2>/dev/null | grep -q 1 || \
+    docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres psql -U postgres -d postgres -c "CREATE DATABASE \"${POSTGRES_DB}\" OWNER \"${POSTGRES_USER}\";"
+
+echo "=== Enforcing database ownership ==="
+docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
+    psql -U postgres -d postgres -c "ALTER DATABASE \"${POSTGRES_DB}\" OWNER TO \"${POSTGRES_USER}\";" >/dev/null
 
 echo "=== Running migrations ==="
 cd apps/monitoring-server
 bun add drizzle-orm@latest drizzle-kit@latest 2>/dev/null || true
-DATABASE_URL="postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB:-errorwatch}" bun run db:migrate
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}" bun run db:migrate
 cd ../..
 
 export NODE_ENV=production
