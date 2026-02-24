@@ -165,6 +165,24 @@ return [
 ];
 ```
 
+### System Metrics (Go Agent)
+
+See [errorwatch-sdk-metrics](https://github.com/MakFly/errorwatch-sdk-metrics) for the system metrics collection agent.
+
+```bash
+# Download binary
+curl -L -o sdk-metrics https://github.com/MakFly/errorwatch-sdk-metrics/releases/latest/download/sdk-metrics
+
+# Or build from source
+git clone https://github.com/MakFly/errorwatch-sdk-metrics.git
+cd errorwatch-sdk-metrics
+go build -o sdk-metrics .
+
+# Run
+./sdk-metrics --init
+./sdk-metrics -c sdk-metrics.yaml
+```
+
 ## Self-Hosting
 
 ### Production Deployment
