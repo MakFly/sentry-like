@@ -563,3 +563,29 @@ export const transactionAggregatesDaily = pgTable("transaction_aggregates_daily"
   projectOpDayIdx: index("idx_trans_daily_project_op").on(table.projectId, table.op, table.dayBucket),
   uniqueBucket: uniqueIndex("idx_trans_daily_unique").on(table.projectId, table.name, table.op, table.env, table.dayBucket),
 }));
+
+// ============================================
+// System Metrics Tables
+// ============================================
+
+export const systemMetrics = pgTable("system_metrics", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  hostId: text("host_id").notNull(),
+  hostname: text("hostname").notNull(),
+  os: text("os").notNull(),
+  osVersion: text("os_version"),
+  architecture: text("architecture"),
+  cpu: jsonb("cpu").notNull(),
+  memory: jsonb("memory").notNull(),
+  disks: jsonb("disks"),
+  networks: jsonb("networks"),
+  tags: jsonb("tags"),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+}, (table) => ({
+  projectHostTimestampIdx: index("idx_system_metrics_project_host_timestamp").on(table.projectId, table.hostId, table.timestamp),
+  hostTimestampIdx: index("idx_system_metrics_host_timestamp").on(table.hostId, table.timestamp),
+  projectTimestampIdx: index("idx_system_metrics_project_timestamp").on(table.projectId, table.timestamp),
+}));

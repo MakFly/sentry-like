@@ -19,6 +19,8 @@ import user from "./user";
 import dev from "./dev";
 import export_ from "./export";
 import logs from "./logs";
+import metrics from "./metrics";
+import metricsSse from "./metrics-sse";
 
 const v1 = new Hono();
  
@@ -42,5 +44,7 @@ v1.route("/user", user);
 v1.route("/dev", dev);
 v1.route("/export", export_);
 v1.route("/logs", logs);
+v1.route("/metrics", metrics);
+v1.route("/metrics-sse", metricsSse);
 
 export default v1;

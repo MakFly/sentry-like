@@ -284,6 +284,7 @@ import { eventWorker } from "./queue/workers/event.worker";
 import { replayWorker } from "./queue/workers/replay.worker";
 import { alertWorker } from "./queue/workers/alert.worker";
 import { aggregationWorker, scheduleAggregationJobs } from "./queue/workers/aggregation.worker";
+import { metricsWorker } from "./queue/workers/metrics.worker";
 import { isRedisAvailable } from "./queue/connection";
 
 // Check Redis and start workers
@@ -294,11 +295,12 @@ import { isRedisAvailable } from "./queue/connection";
     await scheduleAggregationJobs();
 
     logger.info("🔄 BullMQ workers started", {
-      queues: ["events", "replays", "alerts", "aggregation"],
+      queues: ["events", "replays", "alerts", "aggregation", "metrics"],
       eventConcurrency: eventWorker.opts.concurrency,
       replayConcurrency: replayWorker.opts.concurrency,
       alertConcurrency: alertWorker.opts.concurrency,
       aggregationConcurrency: aggregationWorker.opts.concurrency,
+      metricsConcurrency: metricsWorker.opts.concurrency,
     });
   } else {
     logger.warn("⚠️ Redis not available - workers not started. Events will fail to queue.");
@@ -326,6 +328,7 @@ const shutdown = async (signal: string) => {
       replayWorker.close(),
       alertWorker.close(),
       aggregationWorker.close(),
+      metricsWorker.close(),
     ]);
     logger.info("Workers closed");
 

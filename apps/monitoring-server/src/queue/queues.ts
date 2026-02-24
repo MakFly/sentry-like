@@ -142,3 +142,39 @@ export interface AggregationJobData {
   type: AggregationJobType;
   targetDate?: string; // ISO date string
 }
+
+/**
+ * Metrics queue - processes system metrics from agents
+ */
+export const metricsQueue = new Queue("metrics", {
+  ...redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 1000,
+    },
+    removeOnComplete: {
+      age: 3600,
+      count: 5000,
+    },
+    removeOnFail: {
+      age: 86400,
+    },
+  },
+});
+
+export interface MetricsJobData {
+  projectId: string;
+  hostId: string;
+  hostname: string;
+  os: string;
+  osVersion?: string;
+  architecture?: string;
+  cpu: string;
+  memory: string;
+  disks: string | null;
+  networks: string | null;
+  tags: string | null;
+  timestamp: string;
+}
