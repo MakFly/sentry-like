@@ -81,6 +81,13 @@ app.use("/api/v1/replay/session/end", cors({
 }));
 
 // 3. CORS - Dashboard endpoints (restricted to trusted origins)
+app.use("/sse", cors({
+  origin: corsOrigin,
+  allowMethods: ["GET", "OPTIONS"],
+  allowHeaders: ["Content-Type", "Authorization", "Cookie"],
+  credentials: true,
+}));
+
 app.use("*", cors({
   origin: corsOrigin,
   allowMethods: ["GET", "POST", "OPTIONS", "DELETE", "PATCH"],

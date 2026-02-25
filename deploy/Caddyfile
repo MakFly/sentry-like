@@ -53,5 +53,11 @@ api.{$DOMAIN} {
         -Server
     }
 
+    @sse path /sse/*
+    reverse_proxy @sse {$API_UPSTREAM} {
+        header_down -Transfer-Encoding
+        header_down -Content-Encoding
+    }
+
     reverse_proxy {$API_UPSTREAM}
 }
