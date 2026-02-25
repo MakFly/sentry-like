@@ -2,48 +2,15 @@ name: CD Production
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 concurrency:
   group: cd-production
   cancel-in-progress: false
 
 jobs:
-  preflight:
-    name: Preflight (CD config)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    environment: production
-    steps:
-      - name: Validate required deployment secrets
-        env:
-          PROD_HOST: ${{ secrets.PROD_HOST }}
-          PROD_USER: ${{ secrets.PROD_USER }}
-          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
-        run: |
-          set -euo pipefail
-          missing=0
-          if [ -z "${PROD_HOST}" ]; then
-            echo "::error::Missing secret PROD_HOST"
-            missing=1
-          fi
-          if [ -z "${PROD_USER}" ]; then
-            echo "::error::Missing secret PROD_USER"
-            missing=1
-          fi
-          if [ -z "${PROD_SSH_KEY}" ]; then
-            echo "::error::Missing secret PROD_SSH_KEY"
-            missing=1
-          fi
-          if [ "${missing}" -ne 0 ]; then
-            echo "Configure repository/environment secrets before using CD."
-            exit 1
-          fi
-
   deploy:
     name: Deploy to production
-    needs: preflight
+    if: ${{ secrets.PROD_HOST != '' && secrets.PROD_USER != '' && secrets.PROD_SSH_KEY != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: production
