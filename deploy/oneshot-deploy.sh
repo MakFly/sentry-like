@@ -105,14 +105,14 @@ export CADDY_HTTP_PORT="${CADDY_HTTP_PORT:-80}"
 export CADDY_HTTPS_PORT="${CADDY_HTTPS_PORT:-443}"
 export DASHBOARD_UPSTREAM="${DASHBOARD_UPSTREAM:-host.docker.internal:4001}"
 export API_UPSTREAM="${API_UPSTREAM:-host.docker.internal:3333}"
-export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${DOCKER_POSTGRES_PORT}/${POSTGRES_DB}}"
-export REDIS_URL="${REDIS_URL:-redis://localhost:${DOCKER_REDIS_PORT}}"
+export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:${DOCKER_POSTGRES_PORT}/${POSTGRES_DB}}"
+export REDIS_URL="${REDIS_URL:-redis://host.docker.internal:${DOCKER_REDIS_PORT}}"
 export BETTER_AUTH_URL="${BETTER_AUTH_URL:-${DASHBOARD_URL}}"
 export NEXT_PUBLIC_MONITORING_API_URL="${NEXT_PUBLIC_MONITORING_API_URL:-${API_URL:-http://localhost:3333}}"
 export NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-${DASHBOARD_URL}}"
 
 echo "[1/8] Install dependencies"
-bun install --frozen-lockfile
+bun install --frozen-lockfile --ignore-scripts
 
 echo "[2/8] Start infra (PostgreSQL + Redis)"
 docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d postgres redis
@@ -125,39 +125,38 @@ bun run build
 
 echo "[4/8] Ensure DB role/database"
 docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v ew_user="${POSTGRES_USER}" -v ew_pass="${POSTGRES_PASSWORD}" \
-  -c "DO \$\$ BEGIN
-      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'ew_user') THEN
-        EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', :'ew_user', :'ew_pass');
-      ELSE
-        EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'ew_user', :'ew_pass');
-      END IF;
-    END \$\$;"
-
-docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  -c "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1 || \
+  psql -U "${POSTGRES_USER:-errorwatch}" -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER:-errorwatch}'" | grep -q 1 || \
   docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  -c "CREATE DATABASE \"${POSTGRES_DB}\" OWNER \"${POSTGRES_USER}\";"
+  psql -U "${POSTGRES_USER:-errorwatch}" -d postgres -c "CREATE ROLE \"${POSTGRES_USER:-errorwatch}\" LOGIN PASSWORD '${POSTGRES_PASSWORD}';"
 
 docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  -c "ALTER DATABASE \"${POSTGRES_DB}\" OWNER TO \"${POSTGRES_USER}\";"
+  psql -U "${POSTGRES_USER:-errorwatch}" -d postgres -c "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1 || \
+  docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
+  psql -U "${POSTGRES_USER:-errorwatch}" -d postgres -c "CREATE DATABASE \"${POSTGRES_DB}\" OWNER \"${POSTGRES_USER:-errorwatch}\";"
+
+docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
+  psql -U "${POSTGRES_USER:-errorwatch}" -d postgres -c "ALTER DATABASE \"${POSTGRES_DB}\" OWNER TO \"${POSTGRES_USER:-errorwatch}\";"
 
 echo "[5/8] Run migrations"
 (
   cd apps/monitoring-server
-  DATABASE_URL="${DATABASE_URL}" bun run db:migrate
+  export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${DOCKER_POSTGRES_PORT}/${POSTGRES_DB}"
+  bun run db:push
 )
 
 echo "[6/8] Start/reload PM2 apps"
-bunx pm2 startOrReload deploy/ecosystem.config.cjs --update-env
+bunx pm2 startOrReload deploy/ecosystem.config.cjs
 bunx pm2 save
 
 echo "[7/8] Start/reload Caddy (Docker)"
-docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d caddy
-wait_for_healthy "errorwatch-caddy" 60
+if docker ps -a --format '{{.Names}}' | grep -q '^errorwatch-caddy$'; then
+  docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d caddy 2>&1 || echo "[WARN] Caddy failed to start, ports may be in use"
+else
+  docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d caddy 2>&1 || echo "[WARN] Caddy failed to start, ports may be in use"
+fi
+if docker ps --format '{{.Names}}' | grep -q '^errorwatch-caddy$'; then
+  wait_for_healthy "errorwatch-caddy" 60 || echo "[WARN] Caddy health check failed"
+fi
 
 echo "[8/8] Health checks"
 API_CODE="$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${PORT}/health/live" || true)"

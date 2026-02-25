@@ -21,6 +21,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 const isProduction = process.env.NODE_ENV === "production";
+const useSecureCookies = process.env.USE_SECURE_COOKIES === "true" && isProduction;
+
 const devTrustedOrigins = [
   "localhost:*",
   "127.0.0.1:*",
@@ -48,7 +50,7 @@ export const auth = betterAuth({
   advanced: {
     defaultCookieAttributes: {
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: useSecureCookies,
       httpOnly: true,
     },
   },

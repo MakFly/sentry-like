@@ -31,7 +31,7 @@ export function useSSE(orgId: string | undefined) {
   useEffect(() => {
     if (!orgId) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333";
+    const apiUrl = process.env.NEXT_PUBLIC_SSE_URL || process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
     const es = new EventSource(`${apiUrl}/sse/${orgId}`, {
       withCredentials: true,
     });

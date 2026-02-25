@@ -10,6 +10,36 @@
         output stdout
         format json
     }
+    # Disable automatic HTTPS for domains without DNS
+    auto_https off
+}
+
+http://51.158.55.137 {
+    # Auth API -> backend
+    @authApi path /api/auth/*
+    reverse_proxy @authApi host.docker.internal:3333
+
+    # SSE -> backend (strip encoding headers)
+    @sse path /sse/*
+    reverse_proxy @sse host.docker.internal:3333 {
+        header_down -Transfer-Encoding
+        header_down -Content-Encoding
+    }
+
+    # tRPC API -> dashboard (Next.js)
+    @trpcApi path /api/trpc/*
+    reverse_proxy @trpcApi host.docker.internal:4001
+
+    # Other API routes -> backend
+    @backendApi path /api/v1/*
+    reverse_proxy @backendApi host.docker.internal:3333
+
+    # Everything else -> dashboard
+    reverse_proxy host.docker.internal:4001
+}
+
+http://{$DOMAIN} {
+    reverse_proxy {$DASHBOARD_UPSTREAM}
 }
 
 {$DOMAIN} {
