@@ -1,11 +1,10 @@
 import { Hono } from "hono";
-import { stream } from "hono/streaming";
 import { Redis } from "ioredis";
 import { apiKeyMiddleware } from "../../middleware/api-key";
 import logger from "../../logger";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const encoder = new TextEncoder();
 
 function toSseFrame(event: string, data: string): string {
   return `event: ${event}\ndata: ${data}\n\n`;
@@ -31,46 +30,77 @@ metricsSse.get("/:projectId", apiKeyMiddleware, async (c) => {
   c.header("Connection", "keep-alive");
   c.header("X-Accel-Buffering", "no");
 
-  return stream(c, async (stream) => {
-    const subClient = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: false,
-    });
+  const subClient = new Redis(REDIS_URL, {
+    maxRetriesPerRequest: 3,
+    enableReadyCheck: false,
+  });
 
-    let closed = false;
+  let closed = false;
+  let pingInterval: ReturnType<typeof setInterval> | null = null;
+  let onMessage: ((channel: string, message: string) => void) | null = null;
 
-    try {
-      await subClient.subscribe(`sse:metrics:${projectId}`);
-    } catch (err) {
-      logger.warn("Metrics SSE subscribe failed", { projectId, error: err });
-      await subClient.quit();
-      return;
-    }
+  const cleanup = async () => {
+    if (closed) return;
+    closed = true;
+    if (pingInterval) clearInterval(pingInterval);
+    if (onMessage) subClient.off("message", onMessage);
+    await subClient.unsubscribe().catch(() => {});
+    await subClient.quit().catch(() => {});
+  };
 
-    subClient.on("message", (_channel, message) => {
-      if (closed) return;
-      stream.write(toSseFrame("metrics", message)).catch(() => {
-        closed = true;
-      });
-    });
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        await subClient.subscribe(`sse:metrics:${projectId}`);
+      } catch (err) {
+        logger.warn("Metrics SSE subscribe failed", { projectId, error: err });
+        await cleanup();
+        controller.close();
+        return;
+      }
 
-    const pingInterval = setInterval(() => {
-      if (closed) return;
-      stream.write(toSseFrame("ping", "")).catch(() => {
-        closed = true;
-      });
-    }, 15_000);
+      onMessage = (_channel, message) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(toSseFrame("metrics", message)));
+        } catch {
+          void cleanup();
+        }
+      };
+      subClient.on("message", onMessage);
 
-    stream.onAbort(() => {
-      closed = true;
-      clearInterval(pingInterval);
-      subClient.unsubscribe().catch(() => {});
-      subClient.quit().catch(() => {});
-    });
+      pingInterval = setInterval(() => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(toSseFrame("ping", "")));
+        } catch {
+          void cleanup();
+        }
+      }, 15_000);
 
-    while (!closed) {
-      await wait(30_000);
-    }
+      c.req.raw.signal?.addEventListener(
+        "abort",
+        () => {
+          void cleanup();
+          try {
+            controller.close();
+          } catch {}
+        },
+        { once: true }
+      );
+    },
+    async cancel() {
+      await cleanup();
+    },
+  });
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 });
 
