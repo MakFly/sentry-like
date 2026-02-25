@@ -350,6 +350,24 @@ git pull
 ./deploy/deploy.sh .env.production
 ```
 
+### Releases (Tags + GitHub Release)
+
+Use the release helper script from a clean `main` branch:
+
+```bash
+# Auto bump from latest semver tag
+./scripts/release.sh --type patch
+
+# Or explicit version
+./scripts/release.sh --version v0.4.1 --notes "Bugfix release"
+```
+
+Dry-run preview:
+
+```bash
+./scripts/release.sh --type minor --dry-run
+```
+
 ### Local Self-Hosted (Without Production Proxy)
 
 For local development with conflict-free infra ports:
