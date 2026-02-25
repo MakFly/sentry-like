@@ -8,9 +8,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  preflight:
+    name: Preflight (CD config)
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check required deployment secrets
+        id: check
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PROD_HOST}" ] && [ -n "${PROD_USER}" ] && [ -n "${PROD_SSH_KEY}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "CD secrets present."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CD skipped: missing PROD_HOST/PROD_USER/PROD_SSH_KEY"
+          fi
+
   deploy:
     name: Deploy to production
-    if: ${{ secrets.PROD_HOST != '' && secrets.PROD_USER != '' && secrets.PROD_SSH_KEY != '' }}
+    needs: preflight
+    if: ${{ needs.preflight.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: production
