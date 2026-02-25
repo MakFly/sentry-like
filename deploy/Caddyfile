@@ -1,25 +1,45 @@
 # ===========================================
-# ErrorWatch Caddy Configuration
-# Copy content to /etc/caddy/Caddyfile on VPS
+# ErrorWatch Production Caddyfile (OneShot + PM2)
+# Copy to /etc/caddy/Caddyfile
 # ===========================================
 
-# Replace with your actual domain
-your-domain.com {
-    # API Monitoring Server (/api/*)
-    handle /api/* {
-        reverse_proxy localhost:3333
-    }
-
-    # Dashboard Next.js (catch-all)
-    handle {
-        reverse_proxy localhost:3001
-    }
-
-    # Logging
+{
+    admin off
+    email {$ACME_EMAIL}
     log {
         output file /var/log/caddy/errorwatch.log {
-            roll_size 10mb
-            roll_keep 5
+            roll_size 20mb
+            roll_keep 10
+            roll_keep_for 720h
         }
     }
+}
+
+{$DOMAIN} {
+    encode gzip zstd
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+
+    reverse_proxy 127.0.0.1:4001
+}
+
+api.{$DOMAIN} {
+    encode gzip zstd
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    reverse_proxy 127.0.0.1:3333
 }

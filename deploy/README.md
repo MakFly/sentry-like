@@ -1,95 +1,92 @@
-# ErrorWatch VPS Deployment
+# ErrorWatch OneShot Production Deployment (VPS)
 
-## Files
+Déploiement cible: apps en natif via PM2, PostgreSQL + Redis via Docker, reverse-proxy via Caddy.
+
+## Fichiers
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.prod.yml` | Docker services config |
-| `.env.example.prod` | Environment variables template |
-| `Caddyfile` | Reverse proxy config (copy to `/etc/caddy/Caddyfile`) |
+| `deploy/oneshot-deploy.sh` | Script complet idempotent (build + infra + migrate + PM2 + healthchecks) |
+| `deploy/ecosystem.config.cjs` | Définition PM2 des processus API et Dashboard |
+| `deploy/.env.production.example` | Template des variables d'environnement de production |
+| `deploy/Caddyfile` | Configuration Caddy TLS + proxy |
 
-## Deployment Steps
-
-### 1. Prepare environment
+## 1) Préparer le serveur
 
 ```bash
-# On VPS, clone the repo
+# Ubuntu/Debian example
+sudo apt-get update
+sudo apt-get install -y curl git docker.io docker-compose-plugin caddy
+sudo systemctl enable --now docker caddy
+
+# Bun
+curl -fsSL https://bun.sh/install | bash
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# PM2
+bun add -g pm2
+```
+
+## 2) Déployer le code
+
+```bash
 git clone <repo-url> /opt/errorwatch
 cd /opt/errorwatch
-
-# Create environment file
-cp .env.example.prod .env.prod
-
-# Edit and fill in values
-nano .env.prod
 ```
 
-### 2. Generate secrets
+## 3) Configurer l'environnement
 
 ```bash
-# Generate BETTER_AUTH_SECRET
-openssl rand -base64 32
-
-# Generate POSTGRES_PASSWORD
-openssl rand -base64 24
+cp deploy/.env.production.example .env.production
+nano .env.production
 ```
 
-### 3. Configure Caddy
+Secrets minimum:
 
 ```bash
-# Copy Caddyfile content to system Caddy
-sudo nano /etc/caddy/Caddyfile
+openssl rand -base64 32   # BETTER_AUTH_SECRET
+openssl rand -base64 24   # POSTGRES_PASSWORD
+openssl rand -base64 24   # API_KEY_HASH_SECRET
+```
 
-# Reload Caddy
+## 4) Configurer Caddy
+
+```bash
+sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-### 4. Deploy
+## 5) Lancer le oneshot
 
 ```bash
-# Build and start services
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-
-# Check logs
-docker compose -f docker-compose.prod.yml logs -f
+./deploy/oneshot-deploy.sh .env.production
 ```
 
-### 5. Run migrations (first time only)
+Le script fait automatiquement:
+
+1. installation des dépendances (`bun install --frozen-lockfile`)
+2. démarrage de PostgreSQL/Redis
+3. build API + dashboard
+4. création/synchronisation user+DB PostgreSQL
+5. migrations Drizzle
+6. démarrage/reload PM2
+7. healthchecks locaux
+
+## Commandes utiles
 
 ```bash
-# Enter API container
-docker exec -it errorwatch-api sh
+# PM2
+bunx pm2 list
+bunx pm2 logs
+bunx pm2 restart errorwatch-api
+bunx pm2 restart errorwatch-dashboard
 
-# Run migrations
-bunx drizzle-kit push
+# Docker infra
+docker compose --env-file .env.production -f docker-compose.prod.yml ps
+docker compose --env-file .env.production -f docker-compose.prod.yml logs -f postgres
+docker compose --env-file .env.production -f docker-compose.prod.yml logs -f redis
+
+# Re-deploy after git pull
+./deploy/oneshot-deploy.sh .env.production
 ```
-
-## Useful Commands
-
-```bash
-# View status
-docker compose -f docker-compose.prod.yml ps
-
-# View logs
-docker compose -f docker-compose.prod.yml logs -f api
-docker compose -f docker-compose.prod.yml logs -f dashboard
-
-# Restart services
-docker compose -f docker-compose.prod.yml restart
-
-# Stop all
-docker compose -f docker-compose.prod.yml down
-
-# Update deployment
-git pull
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-```
-
-## Ports
-
-| Service | Internal | External |
-|---------|----------|----------|
-| Dashboard | 3000 | 3001 |
-| API | 3333 | 3333 |
-| PostgreSQL | 5432 | - (internal) |
-| Redis | 6379 | - (internal) |
