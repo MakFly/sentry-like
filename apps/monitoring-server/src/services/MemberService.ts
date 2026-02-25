@@ -6,6 +6,7 @@ import logger from "../logger";
 import { hashPassword } from "better-auth/crypto";
 import { db } from "../db/connection";
 import { accounts } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:3001";
 
@@ -80,6 +81,7 @@ export const MemberService = {
 
     let existingUser = await UserRepository.findByEmail(email.toLowerCase());
     let tempPassword: string | null = null;
+    let userCreated = false;
 
     if (!existingUser) {
       tempPassword = crypto.randomUUID().slice(0, 12);
@@ -105,6 +107,14 @@ export const MemberService = {
       });
       
       existingUser = await UserRepository.findById(newUserId);
+      userCreated = true;
+    } else {
+      tempPassword = crypto.randomUUID().slice(0, 12);
+      const hashedPassword = await hashPassword(tempPassword);
+      
+      await db.update(accounts)
+        .set({ password: hashedPassword, updatedAt: new Date() })
+        .where(eq(accounts.userId, existingUser.id));
     }
 
     const existingMember = await MemberRepository.findMemberByOrgAndUser(organizationId, existingUser.id);
@@ -122,11 +132,9 @@ export const MemberService = {
 
     return {
       success: true,
-      message: tempPassword 
-        ? `User ${email} added as member. Temp password: ${tempPassword}`
-        : `User ${email} added as member`,
-      userCreated: !!tempPassword,
-      tempPassword: tempPassword,
+      message: `User ${email} added as member. Temp password: ${tempPassword}`,
+      userCreated,
+      tempPassword,
     };
   },
 

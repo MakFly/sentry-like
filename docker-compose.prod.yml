@@ -13,9 +13,11 @@ services:
       - "${CADDY_HTTPS_PORT:-443}:443"
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN is required}
+      BASE_DOMAIN: ${BASE_DOMAIN:?BASE_DOMAIN is required}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
       DASHBOARD_UPSTREAM: ${DASHBOARD_UPSTREAM:-host.docker.internal:4001}
       API_UPSTREAM: ${API_UPSTREAM:-host.docker.internal:3333}
+      KUMA_UPSTREAM: ${KUMA_UPSTREAM:-host.docker.internal:3001}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

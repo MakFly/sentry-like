@@ -23,6 +23,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 const isProduction = process.env.NODE_ENV === "production";
 const useSecureCookies = process.env.USE_SECURE_COOKIES === "true" && isProduction;
 
+const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3333";
+const baseDomain = new URL(baseUrl).hostname.replace(/^api\./, "");
+
 const devTrustedOrigins = [
   "localhost:*",
   "127.0.0.1:*",
@@ -32,11 +35,11 @@ const devTrustedOrigins = [
   process.env.DASHBOARD_URL || "",
 ].filter(Boolean);
 const trustedOrigins = isProduction
-  ? [process.env.DASHBOARD_URL || ""].filter(Boolean)
+  ? [process.env.DASHBOARD_URL || "", process.env.BETTER_AUTH_URL || ""].filter(Boolean)
   : devTrustedOrigins;
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3333",
+  baseURL: baseUrl,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -52,6 +55,7 @@ export const auth = betterAuth({
       sameSite: "lax",
       secure: useSecureCookies,
       httpOnly: true,
+      domain: isProduction ? baseDomain : undefined,
     },
   },
   emailAndPassword: {

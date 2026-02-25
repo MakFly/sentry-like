@@ -24,17 +24,21 @@ export function InviteMemberDialog({ organizationId, onSuccess }: { organization
 
   const inviteMutation = trpc.members.invite.useMutation({
     onSuccess: (data) => {
+      console.log("Invite success:", data);
       if (method === "direct") {
         setInviteResult({ 
           message: data.tempPassword 
             ? `User ${email} added. Temp password: ${data.tempPassword}`
-            : `User ${email} added as member`,
-          tempPassword: data.tempPassword 
+            : data.message || `User ${email} added as member`,
+          tempPassword: data.tempPassword || ""
         });
       } else {
         setInviteResult({ inviteUrl: data.inviteUrl });
       }
       onSuccess?.();
+    },
+    onError: (error) => {
+      console.log("Invite error:", error);
     },
   });
 
@@ -137,22 +141,25 @@ export function InviteMemberDialog({ organizationId, onSuccess }: { organization
             ) : (
               <>
                 <div className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-500">
-                  {inviteResult.message}
+                  {inviteResult.message || "User added successfully"}
                 </div>
-                {inviteResult.tempPassword && (
-                  <div className="flex gap-2">
-                    <Input value={inviteResult.tempPassword} readOnly className="font-mono text-xs" />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        navigator.clipboard.writeText(inviteResult.tempPassword!);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                    >
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                {inviteResult.tempPassword && inviteResult.tempPassword.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Temporary password:</p>
+                    <div className="flex gap-2">
+                      <Input value={inviteResult.tempPassword} readOnly className="font-mono text-xs" />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          navigator.clipboard.writeText(inviteResult.tempPassword!);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                      >
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>

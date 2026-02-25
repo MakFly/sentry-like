@@ -13,10 +13,11 @@ const app = new Hono();
 // === Environment Configuration ===
 const isProduction = process.env.NODE_ENV === "production";
 const dashboardUrl = process.env.DASHBOARD_URL || "http://localhost:4000";
+const apiUrl = process.env.API_URL || process.env.BETTER_AUTH_URL || "http://localhost:3333";
 
 // Trusted origins for CORS
 const trustedOrigins = isProduction
-  ? [dashboardUrl].filter(Boolean)
+  ? [dashboardUrl, apiUrl].filter(Boolean)
   : [
       "http://localhost:3000",
       "http://localhost:4000",
