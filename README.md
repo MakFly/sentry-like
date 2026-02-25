@@ -196,9 +196,10 @@ Recommended production topology:
 - **PostgreSQL + Redis** run in Docker (`docker-compose.prod.yml`)
 - **Caddy** handles TLS termination and reverse proxy
 
-This is exactly what the one-shot script automates:
+This is exactly what the deploy scripts automate:
 
-- [deploy/oneshot-deploy.sh](./deploy/oneshot-deploy.sh)
+- [deploy/first-init-deploy.sh](./deploy/first-init-deploy.sh)
+- [deploy/deploy.sh](./deploy/deploy.sh)
 - [deploy/ecosystem.config.cjs](./deploy/ecosystem.config.cjs)
 - [deploy/Caddyfile](./deploy/Caddyfile)
 - [deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md)
@@ -224,7 +225,7 @@ Required software:
 - Bun 1.x
 - PM2
 
-### Production (One-Shot) Setup
+### Production Setup
 
 1. Clone on your VPS:
 
@@ -255,10 +256,16 @@ openssl rand -base64 24   # API_KEY_HASH_SECRET
 # Open inbound 80/tcp and 443/tcp
 ```
 
-5. Run one-shot deploy:
+5. Run first deployment:
 
 ```bash
-./deploy/oneshot-deploy.sh .env.production
+./deploy/first-init-deploy.sh .env.production
+```
+
+6. For updates:
+
+```bash
+./deploy/deploy.sh .env.production
 ```
 
 ### Dynamic Docker Ports (Conflict-Free)
@@ -340,7 +347,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f red
 
 # Re-deploy after updates
 git pull
-./deploy/oneshot-deploy.sh .env.production
+./deploy/deploy.sh .env.production
 ```
 
 ### Local Self-Hosted (Without Production Proxy)

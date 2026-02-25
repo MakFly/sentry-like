@@ -10,7 +10,9 @@ Target topology:
 
 | File | Purpose |
 |------|---------|
-| `deploy/oneshot-deploy.sh` | Full idempotent deployment (build + infra + migrate + PM2 + Caddy + checks) |
+| `deploy/first-init-deploy.sh` | First server bootstrap + initial full deploy |
+| `deploy/deploy.sh` | Update deploy (pull/build/migrate/reload/checks) |
+| `deploy/oneshot-deploy.sh` | Deprecated wrapper to `first-init-deploy.sh` |
 | `deploy/ecosystem.config.cjs` | PM2 process definitions |
 | `deploy/.env.production.example` | Production env template |
 | `deploy/Caddyfile` | Caddy config used by Docker service |
@@ -96,13 +98,19 @@ curl -s https://api64.ipify.org
 sudo journalctl -k --since "-30 min" --no-pager | grep "UFW BLOCK"
 ```
 
-## 5) Run one-shot
+## 5) First deployment (new server)
 
 ```bash
-./deploy/oneshot-deploy.sh .env.production
+./deploy/first-init-deploy.sh .env.production
 ```
 
-What it does:
+## 6) Subsequent deployments (updates)
+
+```bash
+./deploy/deploy.sh .env.production
+```
+
+What the deployment flow does:
 
 1. `bun install --frozen-lockfile`
 2. starts PostgreSQL + Redis
@@ -128,7 +136,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f cad
 docker compose --env-file .env.production -f docker-compose.prod.yml logs -f postgres
 docker compose --env-file .env.production -f docker-compose.prod.yml logs -f redis
 
-# Re-deploy
+# Re-deploy (updates)
 git pull
-./deploy/oneshot-deploy.sh .env.production
+./deploy/deploy.sh .env.production
 ```
