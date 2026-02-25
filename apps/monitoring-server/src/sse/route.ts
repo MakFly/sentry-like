@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { stream } from "hono/streaming";
 import { Redis } from "ioredis";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/connection";
@@ -9,7 +8,7 @@ import logger from "../logger";
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 const sse = new Hono();
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const encoder = new TextEncoder();
 
 function toSseFrame(event: string, data: string): string {
   return `event: ${event}\ndata: ${data}\n\n`;
@@ -40,54 +39,77 @@ sse.get("/:orgId", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  c.header("Content-Type", "text/event-stream; charset=utf-8");
-  c.header("Cache-Control", "no-cache");
-  c.header("Connection", "keep-alive");
-  c.header("X-Accel-Buffering", "no");
+  const subClient = new Redis(REDIS_URL, {
+    maxRetriesPerRequest: 3,
+    enableReadyCheck: false,
+  });
 
-  return stream(c, async (stream) => {
-    const subClient = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: false,
-    });
+  let closed = false;
+  let pingInterval: ReturnType<typeof setInterval> | null = null;
+  let onMessage: ((channel: string, message: string) => void) | null = null;
 
-    let closed = false;
+  const cleanup = async () => {
+    if (closed) return;
+    closed = true;
+    if (pingInterval) clearInterval(pingInterval);
+    if (onMessage) subClient.off("message", onMessage);
+    await subClient.unsubscribe().catch(() => {});
+    await subClient.quit().catch(() => {});
+  };
 
-    try {
-      await subClient.subscribe(`sse:org:${orgId}`);
-    } catch (err) {
-      logger.warn("SSE subscribe failed", { orgId, error: err });
-      await subClient.quit();
-      return;
-    }
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        await subClient.subscribe(`sse:org:${orgId}`);
+      } catch (err) {
+        logger.warn("SSE subscribe failed", { orgId, error: err });
+        await cleanup();
+        controller.close();
+        return;
+      }
 
-    subClient.on("message", (_channel, message) => {
-      if (closed) return;
-      stream.write(toSseFrame("update", message)).catch(() => {
-        closed = true;
-      });
-    });
+      onMessage = (_channel, message) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(toSseFrame("update", message)));
+        } catch {
+          void cleanup();
+        }
+      };
+      subClient.on("message", onMessage);
 
-    // Keepalive ping every 15s
-    const pingInterval = setInterval(() => {
-      if (closed) return;
-      stream.write(toSseFrame("ping", "")).catch(() => {
-        closed = true;
-      });
-    }, 15_000);
+      pingInterval = setInterval(() => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(toSseFrame("ping", "")));
+        } catch {
+          void cleanup();
+        }
+      }, 15_000);
 
-    // Cleanup on disconnect
-    stream.onAbort(() => {
-      closed = true;
-      clearInterval(pingInterval);
-      subClient.unsubscribe().catch(() => {});
-      subClient.quit().catch(() => {});
-    });
+      c.req.raw.signal?.addEventListener(
+        "abort",
+        () => {
+          void cleanup();
+          try {
+            controller.close();
+          } catch {}
+        },
+        { once: true }
+      );
+    },
+    async cancel() {
+      await cleanup();
+    },
+  });
 
-    // Keep the stream open
-    while (!closed) {
-      await wait(30_000);
-    }
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 });
 
