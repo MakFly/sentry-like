@@ -60,6 +60,41 @@ openssl rand -base64 24   # API_KEY_HASH_SECRET
 - open inbound `80/tcp` and `443/tcp` (and optionally SSH)
 - if `CADDY_HTTP_PORT`/`CADDY_HTTPS_PORT` are changed, adjust firewall and LB rules
 
+### Optional hardening (UFW + Fail2ban)
+
+Script:
+- `deploy/hardening-ufw-fail2ban.sh`
+
+Behavior:
+- install/configure `ufw` + `fail2ban`
+- default policy: deny incoming, allow outgoing
+- allow SSH on `22/tcp`
+- `80/443` only if `ALLOWED_WEB_IPS` is provided at runtime
+
+Usage without hardcoding IPs in repository:
+
+```bash
+ALLOWED_WEB_IPS="x.x.x.x/32 y.y.y.y/32" bash deploy/hardening-ufw-fail2ban.sh
+```
+
+Manual allowlist (recommended for sensitive production):
+
+```bash
+sudo ufw allow from x.x.x.x/32 to any port 80 proto tcp
+sudo ufw allow from x.x.x.x/32 to any port 443 proto tcp
+sudo ufw status numbered
+```
+
+Troubleshooting blocked access:
+
+```bash
+# On your client, check current public egress IP (VPN can change it)
+curl -s https://api64.ipify.org
+
+# On server, inspect UFW block logs
+sudo journalctl -k --since "-30 min" --no-pager | grep "UFW BLOCK"
+```
+
 ## 5) Run one-shot
 
 ```bash
