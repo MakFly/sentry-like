@@ -1,10 +1,15 @@
 import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
+import { stream } from "hono/streaming";
 import { Redis } from "ioredis";
 import { apiKeyMiddleware } from "../../middleware/api-key";
 import logger from "../../logger";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function toSseFrame(event: string, data: string): string {
+  return `event: ${event}\ndata: ${data}\n\n`;
+}
 
 const metricsSse = new Hono();
 
@@ -21,7 +26,12 @@ metricsSse.get("/:projectId", apiKeyMiddleware, async (c) => {
     return c.json({ error: "Forbidden - project mismatch", code: "FORBIDDEN" }, 403);
   }
 
-  return streamSSE(c, async (stream) => {
+  c.header("Content-Type", "text/event-stream; charset=utf-8");
+  c.header("Cache-Control", "no-cache");
+  c.header("Connection", "keep-alive");
+  c.header("X-Accel-Buffering", "no");
+
+  return stream(c, async (stream) => {
     const subClient = new Redis(REDIS_URL, {
       maxRetriesPerRequest: 3,
       enableReadyCheck: false,
@@ -39,14 +49,14 @@ metricsSse.get("/:projectId", apiKeyMiddleware, async (c) => {
 
     subClient.on("message", (_channel, message) => {
       if (closed) return;
-      stream.writeSSE({ data: message, event: "metrics" }).catch(() => {
+      stream.write(toSseFrame("metrics", message)).catch(() => {
         closed = true;
       });
     });
 
     const pingInterval = setInterval(() => {
       if (closed) return;
-      stream.writeSSE({ data: "", event: "ping" }).catch(() => {
+      stream.write(toSseFrame("ping", "")).catch(() => {
         closed = true;
       });
     }, 15_000);
@@ -59,7 +69,7 @@ metricsSse.get("/:projectId", apiKeyMiddleware, async (c) => {
     });
 
     while (!closed) {
-      await new Promise((resolve) => setTimeout(resolve, 30_000));
+      await wait(30_000);
     }
   });
 });

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
+import { stream } from "hono/streaming";
 import { Redis } from "ioredis";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/connection";
@@ -9,6 +9,11 @@ import logger from "../logger";
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 const sse = new Hono();
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function toSseFrame(event: string, data: string): string {
+  return `event: ${event}\ndata: ${data}\n\n`;
+}
 
 sse.get("/:orgId", async (c) => {
   const session = c.get("session" as never) as { user?: { id: string } } | undefined;
@@ -35,7 +40,12 @@ sse.get("/:orgId", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  return streamSSE(c, async (stream) => {
+  c.header("Content-Type", "text/event-stream; charset=utf-8");
+  c.header("Cache-Control", "no-cache");
+  c.header("Connection", "keep-alive");
+  c.header("X-Accel-Buffering", "no");
+
+  return stream(c, async (stream) => {
     const subClient = new Redis(REDIS_URL, {
       maxRetriesPerRequest: 3,
       enableReadyCheck: false,
@@ -53,7 +63,7 @@ sse.get("/:orgId", async (c) => {
 
     subClient.on("message", (_channel, message) => {
       if (closed) return;
-      stream.writeSSE({ data: message, event: "update" }).catch(() => {
+      stream.write(toSseFrame("update", message)).catch(() => {
         closed = true;
       });
     });
@@ -61,7 +71,7 @@ sse.get("/:orgId", async (c) => {
     // Keepalive ping every 15s
     const pingInterval = setInterval(() => {
       if (closed) return;
-      stream.writeSSE({ data: "", event: "ping" }).catch(() => {
+      stream.write(toSseFrame("ping", "")).catch(() => {
         closed = true;
       });
     }, 15_000);
@@ -76,7 +86,7 @@ sse.get("/:orgId", async (c) => {
 
     // Keep the stream open
     while (!closed) {
-      await new Promise((resolve) => setTimeout(resolve, 30_000));
+      await wait(30_000);
     }
   });
 });
