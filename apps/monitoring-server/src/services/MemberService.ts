@@ -3,6 +3,9 @@ import { OrganizationRepository } from "../repositories/OrganizationRepository";
 import { UserRepository } from "../repositories/UserRepository";
 import { sendInvitationEmail } from "./email";
 import logger from "../logger";
+import { hashPassword } from "better-auth/crypto";
+import { db } from "../db/connection";
+import { accounts } from "../db/schema";
 
 const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:3001";
 
@@ -66,6 +69,64 @@ export const MemberService = {
       inviteUrl,
       inviteToken,
       emailSent: emailResult.success,
+    };
+  },
+
+  inviteDirect: async (userId: string, organizationId: string, email: string) => {
+    const member = await MemberRepository.findMemberByOrgAndUser(organizationId, userId);
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("Unauthorized");
+    }
+
+    let existingUser = await UserRepository.findByEmail(email.toLowerCase());
+    let tempPassword: string | null = null;
+
+    if (!existingUser) {
+      tempPassword = crypto.randomUUID().slice(0, 12);
+      const hashedPassword = await hashPassword(tempPassword);
+      
+      const newUserId = crypto.randomUUID();
+      await UserRepository.create({
+        id: newUserId,
+        name: email.split("@")[0],
+        email: email.toLowerCase(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      await db.insert(accounts).values({
+        id: crypto.randomUUID(),
+        userId: newUserId,
+        accountId: newUserId,
+        providerId: "credential",
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      existingUser = await UserRepository.findById(newUserId);
+    }
+
+    const existingMember = await MemberRepository.findMemberByOrgAndUser(organizationId, existingUser.id);
+    if (existingMember) {
+      throw new Error("User is already a member of this organization");
+    }
+
+    await MemberRepository.createMembership({
+      id: crypto.randomUUID(),
+      organizationId,
+      userId: existingUser.id,
+      role: "member",
+      createdAt: new Date(),
+    });
+
+    return {
+      success: true,
+      message: tempPassword 
+        ? `User ${email} added as member. Temp password: ${tempPassword}`
+        : `User ${email} added as member`,
+      userCreated: !!tempPassword,
+      tempPassword: tempPassword,
     };
   },
 

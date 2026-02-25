@@ -27,7 +27,11 @@ export type Member = {
 };
 
 export type Invite = {
-  inviteUrl: string;
-  inviteToken: string;
+  inviteUrl?: string;
+  inviteToken?: string;
+  message?: string;
+  success?: boolean;
+  userCreated?: boolean;
+  tempPassword?: string;
 };
 

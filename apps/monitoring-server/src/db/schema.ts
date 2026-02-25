@@ -118,6 +118,7 @@ export const users = pgTable("user", {
   name: text("name"),
   emailVerified: boolean("email_verified"),
   image: text("image"),
+  password: text("password"), // For direct invite - stores hashed password
   plan: text("plan").notNull().default("free"), // "free" | "pro" | "team" | "enterprise"
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),

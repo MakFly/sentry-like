@@ -5,10 +5,10 @@ export const getByOrganization = async (organizationId: string): Promise<Member[
   return fetchAPI<Member[]>(`/members/organization/${organizationId}`);
 };
 
-export const invite = async (organizationId: string, email: string): Promise<Invite> => {
+export const invite = async (organizationId: string, email: string, method: "token" | "direct" = "token"): Promise<Invite> => {
   return fetchAPI<Invite>("/members/invite", {
     method: "POST",
-    body: JSON.stringify({ organizationId, email }),
+    body: JSON.stringify({ organizationId, email, method }),
   });
 };
 

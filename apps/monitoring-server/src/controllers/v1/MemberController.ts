@@ -18,9 +18,13 @@ export const getByOrganization = async (c: AuthContext) => {
 
 export const invite = async (c: AuthContext) => {
   const userId = c.get("userId");
-  const { organizationId, email } = await c.req.json();
+  const { organizationId, email, method } = await c.req.json();
 
   try {
+    if (method === "direct") {
+      const result = await MemberService.inviteDirect(userId, organizationId, email);
+      return c.json(result);
+    }
     const result = await MemberService.invite(userId, organizationId, email);
     return c.json(result);
   } catch (error: any) {

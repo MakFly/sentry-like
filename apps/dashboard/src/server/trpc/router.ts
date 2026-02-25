@@ -441,10 +441,11 @@ const membersRouter = router({
   invite: protectedProcedure
     .input(z.object({
       organizationId: z.string().uuid(),
-      email: z.string().email()
+      email: z.string().email(),
+      method: z.enum(["token", "direct"]).optional().default("token")
     }))
     .mutation(async ({ input }) => {
-      return api.members.invite(input.organizationId, input.email);
+      return api.members.invite(input.organizationId, input.email, input.method);
     }),
 
   checkInvite: publicProcedure

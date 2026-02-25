@@ -35,14 +35,16 @@ export function SettingsContent() {
 
   return (
     <div className="px-4 lg:px-6">
-      <div className="mb-4 flex justify-end">
-        <Button asChild variant="outline">
-          <Link href={integrationTestPath}>
-            <FlaskConical className="mr-2 h-4 w-4" />
-            Integration Test
-          </Link>
-        </Button>
-      </div>
+      {process.env.NODE_ENV !== "production" && (
+        <div className="mb-4 flex justify-end">
+          <Button asChild variant="outline">
+            <Link href={integrationTestPath}>
+              <FlaskConical className="mr-2 h-4 w-4" />
+              Integration Test
+            </Link>
+          </Button>
+        </div>
+      )}
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="mb-6 h-auto flex-wrap gap-1 bg-transparent p-0">
           <TabsTrigger

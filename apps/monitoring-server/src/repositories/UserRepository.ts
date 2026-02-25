@@ -6,6 +6,18 @@ export const UserRepository = {
   findById: (id: string) =>
     db.select().from(users).where(eq(users.id, id)).then(rows => rows[0]),
 
+  findByEmail: (email: string) =>
+    db.select().from(users).where(eq(users.email, email)).then(rows => rows[0]),
+
+  create: (data: { id: string; name: string; email: string; createdAt: Date; updatedAt: Date }) =>
+    db.insert(users).values({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    }).returning().then(rows => rows[0]),
+
   findByIdWithBilling: (id: string) =>
     db
       .select({
