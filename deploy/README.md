@@ -140,3 +140,27 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f red
 git pull
 ./deploy/deploy.sh .env.production
 ```
+
+## GitHub Actions CD setup
+
+Workflow: `.github/workflows/cd-production.yml`
+
+Expected server path:
+
+- `/opt/errorwatch`
+
+Required repository secrets:
+
+- `PROD_HOST`
+- `PROD_USER`
+- `PROD_SSH_KEY`
+
+The workflow runs:
+
+1. `git fetch` + `git pull --ff-only` on server
+2. `./deploy/deploy.sh .env.production`
+
+Recommended:
+
+- use GitHub Environment `production` with required reviewers
+- keep server working tree clean (workflow fails if dirty)

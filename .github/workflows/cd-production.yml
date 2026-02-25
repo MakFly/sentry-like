@@ -1,0 +1,43 @@
+name: CD Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            export PATH="$HOME/.bun/bin:$PATH"
+            cd /opt/errorwatch
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "[ERROR] Working tree is dirty on server. Aborting deploy."
+              git status --short
+              exit 1
+            fi
+            git fetch origin main --tags
+            git pull --ff-only origin main
+            ./deploy/deploy.sh .env.production

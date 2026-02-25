@@ -436,6 +436,26 @@ bun run build
 cd apps/monitoring-server && bunx drizzle-kit push
 ```
 
+## CI/CD
+
+GitHub Actions workflows are included:
+
+- `CI` (`.github/workflows/ci.yml`): lint + build + API tests
+- `Security` (`.github/workflows/security.yml`): secret scan + dependency review
+- `CD Production` (`.github/workflows/cd-production.yml`): deploy to `/opt/errorwatch` via SSH
+
+### Required GitHub Secrets (for CD)
+
+Set these in repository settings:
+
+- `PROD_HOST` (example: `51.158.55.137`)
+- `PROD_USER` (example: `kaubree`)
+- `PROD_SSH_KEY` (private key for deploy user)
+
+### Recommended Protection
+
+Configure a GitHub Environment named `production` and require manual approval before deployment.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
