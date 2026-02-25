@@ -43,6 +43,12 @@ kuma.{$BASE_DOMAIN} {
 }
 
 api.{$DOMAIN} {
+    @sse {
+        path /sse/*
+    }
+
+    reverse_proxy @sse {$API_UPSTREAM}
+
     encode gzip zstd
 
     header {
@@ -52,12 +58,6 @@ api.{$DOMAIN} {
         Referrer-Policy "strict-origin-when-cross-origin"
         -Server
     }
-
-    @sse {
-        path /sse/*
-        header Connection *upgrade*
-    }
-    reverse_proxy @sse {$API_UPSTREAM}
 
     reverse_proxy {$API_UPSTREAM}
 }
