@@ -47,17 +47,31 @@ api.{$DOMAIN} {
         path /sse/*
     }
 
-    reverse_proxy @sse {$API_UPSTREAM}
-
-    encode gzip zstd
-
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
+    # SSE streams are sensitive to proxy/content-encoding transforms.
+    # Route them through a dedicated upstream config to avoid 502 from
+    # duplicate transfer-encoding handling.
+    handle @sse {
+        reverse_proxy {$API_UPSTREAM} {
+            header_up Accept-Encoding identity
+            flush_interval -1
+            transport http {
+                compression off
+                versions 1.1
+            }
+        }
     }
 
-    reverse_proxy {$API_UPSTREAM}
+    handle {
+        encode gzip zstd
+
+        header {
+            Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+            X-Frame-Options "DENY"
+            X-Content-Type-Options "nosniff"
+            Referrer-Policy "strict-origin-when-cross-origin"
+            -Server
+        }
+
+        reverse_proxy {$API_UPSTREAM}
+    }
 }

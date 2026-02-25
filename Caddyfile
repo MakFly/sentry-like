@@ -34,19 +34,37 @@ errorwatch.io {
 
 # API subdomain - REPLACE {$DOMAIN} with your actual domain  
 api.errorwatch.io {
-    reverse_proxy localhost:3333
-
     tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     }
 
-    encode gzip zstd
+    @sse {
+        path /sse/*
+    }
 
-    header {
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        X-XSS-Protection "1; mode=block"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
+    # Prevent transfer/content-encoding rewrites for SSE.
+    handle @sse {
+        reverse_proxy localhost:3333 {
+            header_up Accept-Encoding identity
+            flush_interval -1
+            transport http {
+                compression off
+                versions 1.1
+            }
+        }
+    }
+
+    handle {
+        encode gzip zstd
+
+        header {
+            X-Frame-Options "DENY"
+            X-Content-Type-Options "nosniff"
+            X-XSS-Protection "1; mode=block"
+            Referrer-Policy "strict-origin-when-cross-origin"
+            -Server
+        }
+
+        reverse_proxy localhost:3333
     }
 }
