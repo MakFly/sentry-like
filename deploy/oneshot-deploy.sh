@@ -91,31 +91,39 @@ set +a
 : "${POSTGRES_USER:=errorwatch}"
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in ${ENV_FILE}}"
 : "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required in ${ENV_FILE}}"
+: "${DOMAIN:?DOMAIN is required in ${ENV_FILE}}"
+: "${ACME_EMAIL:?ACME_EMAIL is required in ${ENV_FILE}}"
 : "${DASHBOARD_URL:?DASHBOARD_URL is required in ${ENV_FILE}}"
 
 export NODE_ENV=production
 export NEXT_TELEMETRY_DISABLED=1
 export ERRORWATCH_ROOT="$PROJECT_ROOT"
 export PORT="${PORT:-3333}"
-export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}}"
-export REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
+export DOCKER_POSTGRES_PORT="${DOCKER_POSTGRES_PORT:-55432}"
+export DOCKER_REDIS_PORT="${DOCKER_REDIS_PORT:-56379}"
+export CADDY_HTTP_PORT="${CADDY_HTTP_PORT:-80}"
+export CADDY_HTTPS_PORT="${CADDY_HTTPS_PORT:-443}"
+export DASHBOARD_UPSTREAM="${DASHBOARD_UPSTREAM:-host.docker.internal:4001}"
+export API_UPSTREAM="${API_UPSTREAM:-host.docker.internal:3333}"
+export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${DOCKER_POSTGRES_PORT}/${POSTGRES_DB}}"
+export REDIS_URL="${REDIS_URL:-redis://localhost:${DOCKER_REDIS_PORT}}"
 export BETTER_AUTH_URL="${BETTER_AUTH_URL:-${DASHBOARD_URL}}"
 export NEXT_PUBLIC_MONITORING_API_URL="${NEXT_PUBLIC_MONITORING_API_URL:-${API_URL:-http://localhost:3333}}"
 export NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-${DASHBOARD_URL}}"
 
-echo "[1/7] Install dependencies"
+echo "[1/8] Install dependencies"
 bun install --frozen-lockfile
 
-echo "[2/7] Start infra (PostgreSQL + Redis)"
+echo "[2/8] Start infra (PostgreSQL + Redis)"
 docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d postgres redis
 
 wait_for_healthy "errorwatch-postgres" 90
 wait_for_healthy "errorwatch-redis" 60
 
-echo "[3/7] Build API and dashboard"
+echo "[3/8] Build API and dashboard"
 bun run build
 
-echo "[4/7] Ensure DB role/database"
+echo "[4/8] Ensure DB role/database"
 docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgres \
   psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v ew_user="${POSTGRES_USER}" -v ew_pass="${POSTGRES_PASSWORD}" \
   -c "DO \$\$ BEGIN
@@ -137,17 +145,21 @@ docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgre
   psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
   -c "ALTER DATABASE \"${POSTGRES_DB}\" OWNER TO \"${POSTGRES_USER}\";"
 
-echo "[5/7] Run migrations"
+echo "[5/8] Run migrations"
 (
   cd apps/monitoring-server
   DATABASE_URL="${DATABASE_URL}" bun run db:migrate
 )
 
-echo "[6/7] Start/reload PM2 apps"
+echo "[6/8] Start/reload PM2 apps"
 bunx pm2 startOrReload deploy/ecosystem.config.cjs --update-env
 bunx pm2 save
 
-echo "[7/7] Health checks"
+echo "[7/8] Start/reload Caddy (Docker)"
+docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml up -d caddy
+wait_for_healthy "errorwatch-caddy" 60
+
+echo "[8/8] Health checks"
 API_CODE="$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${PORT}/health/live" || true)"
 DASH_CODE="$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:4001/" || true)"
 

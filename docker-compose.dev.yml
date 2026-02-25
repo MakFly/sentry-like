@@ -1,13 +1,14 @@
 # ErrorWatch - Development Services
 # DEPRECATED - Use local dev-infra instead
 # Usage: docker compose -f docker-compose.dev.yml up -d
+# Ports can be customized with DOCKER_POSTGRES_PORT / DOCKER_REDIS_PORT.
 
 services:
   postgres:
     image: postgres:16-alpine
     container_name: errorwatch-postgres-dev
     ports:
-      - "5433:5432"
+      - "${DOCKER_POSTGRES_PORT:-55432}:5432"
     environment:
       POSTGRES_USER: errorwatch
       POSTGRES_PASSWORD: errorwatch_dev_password
@@ -24,7 +25,7 @@ services:
     image: redis:7-alpine
     container_name: errorwatch-redis-dev
     ports:
-      - "6380:6379"
+      - "${DOCKER_REDIS_PORT:-56379}:6379"
     command: redis-server --appendonly yes --maxmemory-policy noeviction
     volumes:
       - errorwatch_redis_dev:/data

@@ -1,17 +1,14 @@
 # ===========================================
-# ErrorWatch Production Caddyfile (OneShot + PM2)
-# Copy to /etc/caddy/Caddyfile
+# ErrorWatch Production Caddyfile (Docker)
+# Domain and upstream values are injected via env vars.
 # ===========================================
 
 {
     admin off
     email {$ACME_EMAIL}
     log {
-        output file /var/log/caddy/errorwatch.log {
-            roll_size 20mb
-            roll_keep 10
-            roll_keep_for 720h
-        }
+        output stdout
+        format json
     }
 }
 
@@ -27,7 +24,7 @@
         -Server
     }
 
-    reverse_proxy 127.0.0.1:4001
+    reverse_proxy {$DASHBOARD_UPSTREAM}
 }
 
 api.{$DOMAIN} {
@@ -41,5 +38,5 @@ api.{$DOMAIN} {
         -Server
     }
 
-    reverse_proxy 127.0.0.1:3333
+    reverse_proxy {$API_UPSTREAM}
 }
