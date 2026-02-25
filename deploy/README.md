@@ -69,6 +69,7 @@ Behavior:
 - install/configure `ufw` + `fail2ban`
 - default policy: deny incoming, allow outgoing
 - allow SSH on `22/tcp`
+- allow Docker bridge network (`172.16.0.0/12`) to local app upstream ports `3333` and `4001` (required for Caddy container -> host PM2 apps)
 - `80/443` only if `ALLOWED_WEB_IPS` is provided at runtime
 
 Usage without hardcoding IPs in repository:

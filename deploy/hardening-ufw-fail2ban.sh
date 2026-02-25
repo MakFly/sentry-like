@@ -36,6 +36,12 @@ ${SUDO} ufw default allow outgoing
 echo "[3/6] Allowing SSH (22/tcp)"
 ${SUDO} ufw allow 22/tcp comment 'SSH'
 
+echo "[3b/6] Allowing Docker bridge traffic to local app upstreams"
+# Caddy runs in Docker and proxies to host app ports via host.docker.internal.
+# Without these rules, UFW can block container->host traffic and cause 502.
+${SUDO} ufw allow from 172.16.0.0/12 to any port 3333 proto tcp comment "Docker->API"
+${SUDO} ufw allow from 172.16.0.0/12 to any port 4001 proto tcp comment "Docker->Dashboard"
+
 echo "[4/6] Allowing HTTP/HTTPS only from approved IPs"
 if [[ "${#ALLOWED_IP_ARRAY[@]}" -eq 0 ]]; then
   echo "[WARN] No ALLOWED_WEB_IPS provided. 80/443 rules were not added."
