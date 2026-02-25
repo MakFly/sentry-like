@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ============================================================================
+# ErrorWatch - deploy.sh
+# ----------------------------------------------------------------------------
+# Use this script for day-2 operations (updates on an already initialized host):
+# - pull latest code
+# - install deps
+# - rebuild
+# - migrate db
+# - reload PM2 + Caddy
+#
+# First deployment on a fresh server:
+#   deploy/first-init-deploy.sh .env.production
+#
+# Regular updates:
+#   deploy/deploy.sh .env.production
+# ============================================================================
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=deploy/_common.sh
 source "${SCRIPT_DIR}/_common.sh"
@@ -18,6 +35,14 @@ while [[ $# -gt 0 ]]; do
       cat <<'USAGE'
 Usage:
   deploy/deploy.sh [--skip-pull] [path-to-env-file]
+
+When to use:
+  - Existing production install (update/redeploy)
+  - Not for first server bootstrap
+
+Examples:
+  deploy/deploy.sh .env.production
+  deploy/deploy.sh --skip-pull .env.production
 
 Default env file resolution order:
   .env.production -> .env.prod -> .env
@@ -39,6 +64,12 @@ ENV_FILE="$(resolve_env_file "${ENV_ARG}")" || {
 cd "$PROJECT_ROOT"
 
 require_runtime_tools || exit 1
+
+if ! command -v pm2 >/dev/null 2>&1; then
+  echo "[WARN] PM2 is not available in PATH."
+  echo "       If this is a fresh server, run: deploy/first-init-deploy.sh ${ENV_FILE}"
+fi
+
 load_env_file "$ENV_FILE"
 validate_required_env "$ENV_FILE"
 export_runtime_env

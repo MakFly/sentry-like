@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ============================================================================
+# ErrorWatch - first-init-deploy.sh
+# ----------------------------------------------------------------------------
+# Use this script on a fresh server for first initialization:
+# - install system prerequisites
+# - ensure docker is available
+# - ensure bun + pm2 are available
+# - run full deployment flow (same as deploy.sh, with bootstrap step)
+#
+# First deployment:
+#   deploy/first-init-deploy.sh .env.production
+#
+# Next deployments:
+#   deploy/deploy.sh .env.production
+# ============================================================================
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=deploy/_common.sh
 source "${SCRIPT_DIR}/_common.sh"
@@ -12,7 +28,16 @@ if [[ "${ENV_ARG}" == "-h" || "${ENV_ARG}" == "--help" ]]; then
 Usage:
   deploy/first-init-deploy.sh [path-to-env-file]
 
-Initial server bootstrap + first full deploy.
+When to use:
+  - First deployment on a fresh host
+  - Initial bootstrap + full deploy
+
+Example:
+  deploy/first-init-deploy.sh .env.production
+
+After first init:
+  deploy/deploy.sh .env.production
+
 Default env file resolution order:
   .env.production -> .env.prod -> .env
 USAGE
@@ -64,6 +89,9 @@ ENV_FILE="$(resolve_env_file "${ENV_ARG}")" || {
 }
 
 cd "$PROJECT_ROOT"
+
+echo "[INFO] Running first-init flow (bootstrap + initial deploy)"
+echo "[INFO] For regular updates later, use: deploy/deploy.sh ${ENV_FILE}"
 
 ensure_system_prereqs
 
