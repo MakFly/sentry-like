@@ -201,6 +201,13 @@ This is exactly what the one-shot script automates:
 - [deploy/oneshot-deploy.sh](./deploy/oneshot-deploy.sh)
 - [deploy/ecosystem.config.cjs](./deploy/ecosystem.config.cjs)
 - [deploy/Caddyfile](./deploy/Caddyfile)
+- [deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md)
+
+### Security Hardening Guide
+
+For a complete production firewall and SSH protection setup (UFW + Fail2ban + Docker `DOCKER-USER` allowlist enforcement), follow:
+
+- [Security Hardening: UFW + Fail2ban](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md)
 
 ### Requirements
 
