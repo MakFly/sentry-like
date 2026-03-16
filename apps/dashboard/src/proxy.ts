@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+import { MONITORING_API_URL } from "@/lib/config";
+const API_URL = MONITORING_API_URL;
 const API_VERSION = "v1";
 const FAIL_OPEN = process.env.AUTH_FAIL_OPEN === "true" || process.env.NODE_ENV !== "production";
 

@@ -1,8 +1,9 @@
 import type { MiddlewareHandler } from "hono";
+import type { AppEnv } from "../types/hono";
 
-export const auth = (): MiddlewareHandler => {
+export const auth = (): MiddlewareHandler<AppEnv> => {
   return async (c, next) => {
-    const session = (c as any).get("session");
+    const session = c.get("session");
     if (!session?.user?.id) {
       return c.json({ error: "Unauthorized" }, 401);
     }

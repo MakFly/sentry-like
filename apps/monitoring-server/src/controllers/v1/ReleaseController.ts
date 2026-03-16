@@ -1,12 +1,13 @@
 import type { AuthContext, ApiKeyContext } from "../../types/context";
 import type { Context } from "hono";
+import type { AppEnv } from "../../types/hono";
 import { z } from "zod";
 import { ReleaseService } from "../../services/ReleaseService";
 import logger from "../../logger";
 
-export const create = async (c: Context) => {
+export const create = async (c: Context<AppEnv>) => {
   const apiKeyHeader = c.req.header("X-API-Key");
-  const userId = (c as any).get("session")?.user?.id;
+  const userId = c.get("session")?.user?.id;
 
   const schema = z.object({
     projectId: z.string().optional(),

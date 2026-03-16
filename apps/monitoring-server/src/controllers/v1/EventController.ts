@@ -4,6 +4,7 @@
  * Events are queued for async processing via BullMQ
  */
 import type { Context } from "hono";
+import type { AppEnv } from "../../types/hono";
 import { z } from "zod";
 import { createHash } from "crypto";
 import logger from "../../logger";
@@ -52,14 +53,14 @@ const eventSchema = z.object({
  * Submit error event from SDK
  * Events are validated and queued for async processing
  */
-export const submit = async (c: Context) => {
+export const submit = async (c: Context<AppEnv>) => {
   try {
     // Parse and validate input (fast, sync)
     const rawInput = await c.req.json();
     const input = eventSchema.parse(rawInput);
 
     // Get API key context
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId || null;
 
     if (!projectId) {

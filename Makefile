@@ -43,8 +43,7 @@ install: ## Install all dependencies
 
 build: ## Build all apps for production
 	@echo "$(GREEN)Building applications...$(RESET)"
-	@cd apps/monitoring-server && bun run build
-	@cd apps/dashboard && bun run build
+	@bunx turbo run build
 
 clean: ## Clean build artifacts
 	@echo "$(YELLOW)Cleaning...$(RESET)"

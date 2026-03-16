@@ -4,8 +4,9 @@
  */
 
 import { logApiCall, createApiTimer } from '@/lib/api-logger';
+import { MONITORING_API_URL } from '@/lib/config';
 
-export const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+export const API_URL = MONITORING_API_URL;
 export const API_VERSION = "v1";
 export const API_BASE = `${API_URL}/api/${API_VERSION}`;
 
@@ -59,32 +60,6 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit & { co
   logApiCall({ method, url, status: res.status, duration, hasAuth, body });
 
   const data = await res.json();
-  return transformDates(data);
-}
-
-function transformDates(data: any): any {
-  if (data === null || data === undefined) return data;
-  
-  if (typeof data === 'string') {
-    const date = new Date(data);
-    if (!isNaN(date.getTime()) && data.match(/^\d{4}-\d{2}-\d{2}T/)) {
-      return date;
-    }
-    return data;
-  }
-  
-  if (Array.isArray(data)) {
-    return data.map(item => transformDates(item));
-  }
-  
-  if (typeof data === 'object') {
-    const result: any = {};
-    for (const key in data) {
-      result[key] = transformDates(data[key]);
-    }
-    return result;
-  }
-  
   return data;
 }
 

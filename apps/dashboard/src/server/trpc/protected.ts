@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { cookies } from "next/headers";
+import { MONITORING_API_URL } from "@/lib/config";
 
 /**
  * Session type from BetterAuth
@@ -52,8 +53,7 @@ export const createProtectedContext = async (): Promise<ProtectedContext> => {
 
     if (cookieHeader) {
       // Fetch session from monitoring server
-      const apiUrl = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
-      const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+      const response = await fetch(`${MONITORING_API_URL}/api/auth/get-session`, {
         headers: {
           Cookie: cookieHeader,
         },

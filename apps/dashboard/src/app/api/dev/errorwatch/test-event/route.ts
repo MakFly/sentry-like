@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MONITORING_API_URL } from "@/lib/config";
 
-const IAUTOS_API_URL = process.env.NEXT_PUBLIC_IAUTOS_API_URL || "http://localhost:8080";
+const TARGET_API_URL = process.env.NEXT_PUBLIC_TARGET_APP_URL || MONITORING_API_URL;
 
 const scenarioMap: Record<string, { path: string; method: "GET" | "POST" }> = {
   ping: { path: "/api/v1/dev/errorwatch/ping", method: "GET" },
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unknown scenario" }, { status: 400 });
     }
 
-    const response = await fetch(`${IAUTOS_API_URL}${target.path}`, {
+    const response = await fetch(`${TARGET_API_URL}${target.path}`, {
       method: target.method,
       headers: {
         "Content-Type": "application/json",
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
         ok: response.ok,
         status: response.status,
         scenario,
-        target: `${IAUTOS_API_URL}${target.path}`,
+        target: `${TARGET_API_URL}${target.path}`,
         data,
       },
       { status: response.status }

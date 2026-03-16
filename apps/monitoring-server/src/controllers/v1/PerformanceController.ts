@@ -4,6 +4,7 @@
  */
 import type { Context } from "hono";
 import type { AuthContext } from "../../types/context";
+import type { AppEnv } from "../../types/hono";
 import { z } from "zod";
 import { db } from "../../db/connection";
 import { performanceMetrics, performanceMetricsHourly, performanceMetricsDaily, transactions, transactionAggregatesHourly, transactionAggregatesDaily, spans, projects } from "../../db/schema";
@@ -101,12 +102,12 @@ const transactionPayloadSchema = z.object({
 /**
  * Submit performance metrics from SDK
  */
-export const submitMetrics = async (c: Context) => {
+export const submitMetrics = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = metricsPayloadSchema.parse(rawInput);
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId;
 
     if (!projectId) {
@@ -195,13 +196,13 @@ function normalizeTransactionData(data: Record<string, any>): Record<string, any
 /**
  * Submit a transaction from SDK
  */
-export const submitTransaction = async (c: Context) => {
+export const submitTransaction = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = transactionPayloadSchema.parse(rawInput);
     const { transaction } = input;
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId;
 
     if (!projectId) {

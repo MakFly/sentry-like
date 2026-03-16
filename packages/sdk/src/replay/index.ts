@@ -308,7 +308,9 @@ export class ReplayCapture {
     const eventsToSend = [...this.events]
     this.events = []
 
-    const compressed = btoa(unescape(encodeURIComponent(JSON.stringify(eventsToSend))))
+    const json = JSON.stringify(eventsToSend)
+    const bytes = new TextEncoder().encode(json)
+    const compressed = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ''))
 
     if (this.onFlushCallback) {
       try {

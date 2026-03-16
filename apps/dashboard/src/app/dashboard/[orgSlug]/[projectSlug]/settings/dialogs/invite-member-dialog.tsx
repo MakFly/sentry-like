@@ -24,7 +24,6 @@ export function InviteMemberDialog({ organizationId, onSuccess }: { organization
 
   const inviteMutation = trpc.members.invite.useMutation({
     onSuccess: (data) => {
-      console.log("Invite success:", data);
       if (method === "direct") {
         setInviteResult({ 
           message: data.tempPassword 
@@ -37,8 +36,8 @@ export function InviteMemberDialog({ organizationId, onSuccess }: { organization
       }
       onSuccess?.();
     },
-    onError: (error) => {
-      console.log("Invite error:", error);
+    onError: (_error) => {
+      // error is displayed via inviteMutation.error in the form
     },
   });
 

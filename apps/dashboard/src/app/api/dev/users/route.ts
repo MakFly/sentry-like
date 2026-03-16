@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+import { MONITORING_API_URL } from "@/lib/config";
+const API_URL = MONITORING_API_URL;
 
 export async function GET() {
   if (process.env.NODE_ENV === "production") {

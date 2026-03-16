@@ -17,8 +17,5 @@ export default async function ProjectLayout({
   // Await params (Next.js 15 requirement)
   const { orgSlug, projectSlug } = await params;
 
-  // Log for debugging (can be removed later)
-  console.log(`[ProjectLayout] org=${orgSlug}, project=${projectSlug}`);
-
   return <>{children}</>;
 }

@@ -5,11 +5,12 @@
 import type { Context, Next } from "hono";
 import { cacheApiKey, getCachedApiKey, isApiKeyFormat, validateApiKey } from "../services/api-keys";
 import logger from "../logger";
+import type { AppEnv } from "../types/hono";
 
 /**
  * API Key validation middleware
  */
-export async function apiKeyMiddleware(c: Context, next: Next) {
+export async function apiKeyMiddleware(c: Context<AppEnv>, next: Next) {
   const apiKey = c.req.header("X-API-Key");
 
   // Check if API key is present

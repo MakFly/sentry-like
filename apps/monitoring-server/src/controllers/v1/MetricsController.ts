@@ -3,6 +3,7 @@
  * @description Handles metrics ingestion from the Go agent
  */
 import type { Context } from "hono";
+import type { AppEnv } from "../../types/hono";
 import { z } from "zod";
 import logger from "../../logger";
 import { canAcceptEvent } from "../../services/quotas";
@@ -78,12 +79,12 @@ const metricsPayloadSchema = z.object({
   tags: z.record(z.string(), z.string()).optional(),
 });
 
-export const ingest = async (c: Context) => {
+export const ingest = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = metricsPayloadSchema.parse(rawInput);
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId || null;
 
     if (!projectId) {

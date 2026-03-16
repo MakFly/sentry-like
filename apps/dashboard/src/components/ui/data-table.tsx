@@ -169,7 +169,10 @@ export function DataTable<TData, TValue>({
   onRowSelectionChange: controlledOnRowSelectionChange,
   onRowClick,
 }: DataTableProps<TData, TValue>) {
-  const [data, setData] = React.useState(() => initialData)
+  // For drag-and-drop, we need a mutable local copy. Otherwise, derive directly.
+  const [dragData, setDragData] = React.useState(initialData)
+  const data = enableRowDragging ? dragData : initialData
+  const setData = setDragData
   const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({})
   const rowSelection = controlledRowSelection ?? internalRowSelection
   const setRowSelection = React.useCallback((updaterOrValue: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {
@@ -281,9 +284,12 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
+  // When drag mode is active, keep local drag data in sync when the prop changes externally
   React.useEffect(() => {
-    setData(initialData)
-  }, [initialData])
+    if (enableRowDragging) {
+      setDragData(initialData)
+    }
+  }, [initialData, enableRowDragging])
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event

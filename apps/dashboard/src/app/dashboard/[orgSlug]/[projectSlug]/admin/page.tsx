@@ -21,8 +21,8 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+import { MONITORING_API_URL } from "@/lib/config";
+const API_URL = MONITORING_API_URL;
 
 function formatDuration(ms: number | null): string {
   if (ms == null) return "-";

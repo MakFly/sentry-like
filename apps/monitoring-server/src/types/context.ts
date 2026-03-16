@@ -1,22 +1,5 @@
 import type { Context } from "hono";
+import type { AppEnv } from "./hono";
 
-export type AuthContext = Context & {
-  var: {
-    userId: string;
-    user: {
-      id: string;
-      email: string;
-      name?: string | null;
-    };
-  };
-};
-
-export type ApiKeyContext = Context & {
-  var: {
-    apiKey: {
-      id: string;
-      projectId: string;
-    };
-  };
-};
-
+export type AuthContext = Context<AppEnv>;
+export type ApiKeyContext = Context<AppEnv>;

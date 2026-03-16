@@ -7,6 +7,17 @@ import { sessionMiddleware } from "./middleware/session";
 import { securityHeaders } from "./middleware/security-headers";
 import { rateLimit } from "./middleware/rate-limit";
 import api from "./routes";
+import type { AppEnv } from "./types/hono";
+
+// === Process-level error handlers ===
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason: String(reason) });
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error("Uncaught exception", { message: err.message, stack: err.stack });
+  process.exit(1);
+});
 
 // === Startup Environment Validation ===
 const REQUIRED_ENV_VARS = ["API_KEY_HASH_SECRET"] as const;
@@ -16,7 +27,7 @@ for (const key of REQUIRED_ENV_VARS) {
   }
 }
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 // === Environment Configuration ===
 const isProduction = process.env.NODE_ENV === "production";
@@ -305,22 +316,33 @@ import { isRedisAvailable } from "./queue/connection";
 
 // Check Redis and start workers
 (async () => {
-  const redisAvailable = await isRedisAvailable();
-  if (redisAvailable) {
-    // Schedule aggregation cron jobs
-    await scheduleAggregationJobs();
-
-    logger.info("🔄 BullMQ workers started", {
-      queues: ["events", "replays", "alerts", "aggregation", "metrics"],
-      eventConcurrency: eventWorker.opts.concurrency,
-      replayConcurrency: replayWorker.opts.concurrency,
-      alertConcurrency: alertWorker.opts.concurrency,
-      aggregationConcurrency: aggregationWorker.opts.concurrency,
-      metricsConcurrency: metricsWorker.opts.concurrency,
-    });
-  } else {
-    logger.warn("⚠️ Redis not available - workers not started. Events will fail to queue.");
+  // Verify Redis is reachable before initializing workers
+  let redisAvailable = false;
+  try {
+    redisAvailable = await Promise.race([
+      isRedisAvailable(),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000)),
+    ]);
+  } catch {
+    redisAvailable = false;
   }
+
+  if (!redisAvailable) {
+    logger.warn("Redis not available - workers not started. Events will fail to queue.");
+    return;
+  }
+
+  // Schedule aggregation cron jobs in parallel with worker startup log
+  await scheduleAggregationJobs();
+
+  logger.info("BullMQ workers started", {
+    queues: ["events", "replays", "alerts", "aggregation", "metrics"],
+    eventConcurrency: eventWorker.opts.concurrency,
+    replayConcurrency: replayWorker.opts.concurrency,
+    alertConcurrency: alertWorker.opts.concurrency,
+    aggregationConcurrency: aggregationWorker.opts.concurrency,
+    metricsConcurrency: metricsWorker.opts.concurrency,
+  });
 })();
 
 // === Graceful Shutdown ===

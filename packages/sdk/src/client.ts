@@ -243,7 +243,9 @@ export class Client implements ErrorWatchClient {
           return
         }
 
-        const compressedEvents = btoa(unescape(encodeURIComponent(JSON.stringify(bufferedEvents))))
+        const bufferedJson = JSON.stringify(bufferedEvents)
+        const bufferedBytes = new TextEncoder().encode(bufferedJson)
+        const compressedEvents = btoa(bufferedBytes.reduce((s, b) => s + String.fromCharCode(b), ''))
 
         await sendErrorWithReplay(
           this.config.endpoint,
@@ -268,7 +270,9 @@ export class Client implements ErrorWatchClient {
         const newEvents = this.replayCapture.getNewEventsOnly()
 
         if (newEvents.length > 0) {
-          const compressedEvents = btoa(unescape(encodeURIComponent(JSON.stringify(newEvents))))
+          const newEventsJson = JSON.stringify(newEvents)
+          const newEventsBytes = new TextEncoder().encode(newEventsJson)
+          const compressedEvents = btoa(newEventsBytes.reduce((s, b) => s + String.fromCharCode(b), ''))
 
           await sendErrorWithReplay(
             this.config.endpoint,

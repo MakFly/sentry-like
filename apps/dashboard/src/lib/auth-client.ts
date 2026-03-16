@@ -1,7 +1,8 @@
 import { createAuthClient } from "better-auth/react";
+import { MONITORING_API_URL } from "@/lib/config";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333",
+  baseURL: MONITORING_API_URL,
 });
 
 export const {

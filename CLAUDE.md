@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Component | Location | Port | Stack |
 |-----------|----------|------|-------|
 | Monitoring Server | `apps/monitoring-server/` | 3333 | Hono.js 4, Drizzle ORM, PostgreSQL, BetterAuth |
-| Dashboard | `apps/dashboard/` | 3001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
+| Dashboard | `apps/dashboard/` | 4001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
 | SDK Universal | `packages/sdk/` | - | TypeScript |
 | SDK React | `packages/sdk/` (via exports) | - | React 18+ / 19+ |
 | SDK Vue | `packages/sdk/` (via exports) | - | Vue 3+ |
@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Mode | Dashboard | API |
 |------|-----------|-----|
-| **Development** | http://localhost:3001 | http://localhost:3333 |
+| **Development** | http://localhost:4001 | http://localhost:3333 |
 | **Production** | https://errorwatch.io | https://api.errorwatch.io |
 
 ---
@@ -60,24 +60,6 @@ sentry-like/
 ├── package.json                   # Workspaces root
 ├── turbo.json                     # Turborepo config
 ├── tsconfig.base.json             # Base TypeScript config
-├── Makefile                       # Dev commands
-└── CLAUDE.md
-```
-sentry-like/
-├── apps/
-│   ├── dashboard/                 # Next.js 16 frontend
-│   └── monitoring-server/         # Hono.js API server
-├── packages/
-│   ├── errorwatch-sdk/            # Universal SDK (Browser + React + Vue)
-│   └── errorwatch-sdk-symfony/    # PHP Symfony Bundle
-├── examples/                      # Integration examples
-│   ├── react-vite/
-│   └── vue-vite/
-├── example-client/                # Symfony example client
-├── docs/                          # Documentation
-├── docker-compose.yml             # DEPRECATED - Use local dev-infra
-├── docker-compose.dev.yml         # DEPRECATED - Use local dev-infra
-├── package.json                   # Workspaces root (apps only)
 ├── Makefile                       # Dev commands
 └── CLAUDE.md
 ```
@@ -177,7 +159,7 @@ Server Component → getServerCaller()   ─────────────
 ```bash
 cd apps/dashboard
 bun install
-bun run dev:standalone  # Port 3001
+bun run dev:standalone  # Port 4001
 ```
 
 ---
@@ -397,7 +379,7 @@ resolve-bugs/
 
 ```bash
 # Development (standalone)
-make dev             # Start dev servers (http://localhost:3001)
+make dev             # Start dev servers (http://localhost:4001)
 make stop            # Stop all servers
 make restart         # Restart all servers
 make status          # Check server status

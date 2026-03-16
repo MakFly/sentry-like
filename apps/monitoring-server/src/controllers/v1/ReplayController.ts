@@ -4,6 +4,7 @@
  */
 import type { Context } from "hono";
 import type { AuthContext } from "../../types/context";
+import type { AppEnv } from "../../types/hono";
 import { z } from "zod";
 import { createHash } from "crypto";
 import { db } from "../../db/connection";
@@ -66,12 +67,12 @@ function decompressEvents(compressedBase64: string): unknown[] {
 /**
  * Start a new session recording
  */
-export const startSession = async (c: Context) => {
+export const startSession = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = startSessionSchema.parse(rawInput);
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId;
 
     if (!projectId) {
@@ -124,12 +125,12 @@ export const startSession = async (c: Context) => {
 /**
  * Submit session events
  */
-export const submitEvents = async (c: Context) => {
+export const submitEvents = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = submitEventsSchema.parse(rawInput);
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId;
 
     if (!projectId) {
@@ -202,12 +203,12 @@ export const submitEvents = async (c: Context) => {
 /**
  * End a session recording
  */
-export const endSession = async (c: Context) => {
+export const endSession = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = endSessionSchema.parse(rawInput);
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId;
 
     if (!projectId) {
@@ -890,12 +891,12 @@ export const listSessionsWithErrors = async (c: AuthContext) => {
   }
 };
 
-export const handleErrorReplay = async (c: Context) => {
+export const handleErrorReplay = async (c: Context<AppEnv>) => {
   try {
     const rawInput = await c.req.json();
     const input = errorReplaySchema.parse(rawInput);
 
-    const apiKeyData = (c as any).get("apiKey") as { id: string; projectId: string } | undefined;
+    const apiKeyData = c.get("apiKey");
     const projectId = apiKeyData?.projectId;
 
     if (!projectId) {

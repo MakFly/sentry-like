@@ -19,6 +19,13 @@ import { detectEventSource } from "@/lib/event-source";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { normalizeGroups } from "@/lib/utils/normalize-groups";
 import { Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 type DateRange = "24h" | "7d" | "30d" | "90d" | "all";
 
@@ -252,7 +259,8 @@ export default function IssuesPage() {
   );
 }
 
-const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+import { MONITORING_API_URL } from "@/lib/config";
+const API_URL = MONITORING_API_URL;
 
 function ExportDropdown({
   projectId,
@@ -263,45 +271,30 @@ function ExportDropdown({
   dateRange: string;
   status: string;
 }) {
-  const [open, setOpen] = useState(false);
-
   const handleExport = (format: "csv" | "json") => {
     if (!projectId) return;
     const params = new URLSearchParams({ projectId, format });
     if (dateRange !== "all") params.set("dateRange", dateRange);
     if (status !== "all") params.set("status", status);
     window.open(`${API_URL}/api/v1/export/errors?${params.toString()}`, "_blank");
-    setOpen(false);
   };
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-muted/50"
-      >
-        <Download className="size-4" />
-        Export
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-md border bg-popover p-1 shadow-md">
-            <button
-              onClick={() => handleExport("csv")}
-              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
-            >
-              Export CSV
-            </button>
-            <button
-              onClick={() => handleExport("json")}
-              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
-            >
-              Export JSON
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <Download className="size-4" />
+          Export
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-32">
+        <DropdownMenuItem onClick={() => handleExport("csv")}>
+          Export CSV
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExport("json")}>
+          Export JSON
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

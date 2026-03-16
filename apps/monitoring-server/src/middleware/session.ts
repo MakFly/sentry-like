@@ -1,7 +1,8 @@
 import type { MiddlewareHandler } from "hono";
 import { auth } from "../auth";
+import type { AppEnv } from "../types/hono";
 
-export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
+export const sessionMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
   let user = null;
 
   try {

@@ -7,6 +7,7 @@ import { pgTable, text, integer, boolean, timestamp, unique, index, uniqueIndex,
 export const errorGroups = pgTable("error_groups", {
   fingerprint: text("fingerprint").primaryKey(),
   projectId: text("project_id")
+    .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
   message: text("message").notNull(),
   file: text("file").notNull(),
@@ -190,7 +191,9 @@ export const organizationMembers = pgTable("organization_members", {
     .references(() => users.id, { onDelete: "cascade" }),
   role: text("role").notNull().default("member"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-});
+}, (table) => ({
+  orgMemberUniqueIdx: uniqueIndex("org_member_unique").on(table.organizationId, table.userId),
+}));
 
 export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
