@@ -25,7 +25,7 @@ export const create = async (c: Context) => {
     return c.json(release);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return c.json({ error: "Invalid input", details: error.errors }, 400);
+      return c.json({ error: "Invalid input", details: error.issues }, 400);
     }
     if (error.message === "Invalid API key") {
       return c.json({ error: error.message }, 401);

@@ -57,7 +57,7 @@ const metricSchema = z.object({
   value: z.number(),
   unit: z.string().max(20).optional(),
   url: z.string().max(2000).optional(),
-  tags: emptyArrayToObject(z.record(z.string())).optional(),
+  tags: emptyArrayToObject(z.record(z.string(), z.string())).optional(),
   timestamp: z.number(),
   sessionId: z.string().max(100).optional(),
   userId: z.string().max(100).optional(),
@@ -71,7 +71,7 @@ const spanSchema = z.object({
   status: z.string().max(20).optional(),
   startTimestamp: z.number(),
   endTimestamp: z.number(),
-  data: emptyArrayToObject(z.record(z.any())).optional(),
+  data: emptyArrayToObject(z.record(z.string(), z.any())).optional(),
 });
 
 const transactionSchema = z.object({
@@ -84,8 +84,8 @@ const transactionSchema = z.object({
   startTimestamp: z.number(),
   endTimestamp: z.number(),
   spans: z.array(spanSchema).optional(),
-  tags: emptyArrayToObject(z.record(z.string())).optional(),
-  data: emptyArrayToObject(z.record(z.any())).optional(),
+  tags: emptyArrayToObject(z.record(z.string(), z.string())).optional(),
+  data: emptyArrayToObject(z.record(z.string(), z.any())).optional(),
 });
 
 const metricsPayloadSchema = z.object({

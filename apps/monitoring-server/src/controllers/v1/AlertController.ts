@@ -66,7 +66,7 @@ export const create = async (c: AuthContext) => {
     return c.json(rule);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return c.json({ error: "Invalid input", details: error.errors }, 400);
+      return c.json({ error: "Invalid input", details: error.issues }, 400);
     }
     if (error.message === "Project not found" || error.message === "Access denied") {
       return c.json({ error: error.message }, 403);
@@ -102,7 +102,7 @@ export const update = async (c: AuthContext) => {
     return c.json(result);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return c.json({ error: "Invalid input", details: error.errors }, 400);
+      return c.json({ error: "Invalid input", details: error.issues }, 400);
     }
     if (error.message === "Alert rule not found") {
       return c.json({ error: error.message }, 404);

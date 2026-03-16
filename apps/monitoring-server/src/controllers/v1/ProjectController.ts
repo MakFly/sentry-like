@@ -30,7 +30,7 @@ export const create = async (c: AuthContext) => {
     input = schema.parse(await c.req.json());
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return c.json({ error: "Invalid input", details: error.errors }, 400);
+      return c.json({ error: "Invalid input", details: error.issues }, 400);
     }
     return c.json({ error: "Invalid input" }, 400);
   }

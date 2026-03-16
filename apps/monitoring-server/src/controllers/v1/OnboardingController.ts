@@ -25,7 +25,7 @@ export const setup = async (c: AuthContext) => {
     return c.json(result);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return c.json({ error: "Invalid input", details: error.errors }, 400);
+      return c.json({ error: "Invalid input", details: error.issues }, 400);
     }
 
     const message = error.message || "Unknown error";

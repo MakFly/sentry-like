@@ -75,7 +75,7 @@ const metricsPayloadSchema = z.object({
   hostId: z.string(),
   hostname: z.string(),
   metrics: systemMetricsSchema,
-  tags: z.record(z.string()).optional(),
+  tags: z.record(z.string(), z.string()).optional(),
 });
 
 export const ingest = async (c: Context) => {

@@ -39,7 +39,7 @@ const EventSchema = z.object({
   request: z.object({
     method: z.string().optional(),
     url: z.string().optional(),
-    headers: z.record(z.string()).optional(),
+    headers: z.record(z.string(), z.string()).optional(),
     userAgent: z.string().optional(),
     clientIp: z.string().optional()
   }).optional(),
@@ -49,8 +49,8 @@ const EventSchema = z.object({
     lineno: z.number().optional(),
     colno: z.number().optional()
   })).optional(),
-  tags: z.record(z.string()).optional(),
-  extra: z.record(z.any()).optional(),
+  tags: z.record(z.string(), z.string()).optional(),
+  extra: z.record(z.string(), z.any()).optional(),
   breadcrumbs: z.array(z.any()).optional()
 })
 

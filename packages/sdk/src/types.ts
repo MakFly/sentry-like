@@ -1,15 +1,17 @@
-// Breadcrumb types
-export type BreadcrumbCategory = 'ui' | 'navigation' | 'console' | 'http' | 'user'
-export type BreadcrumbLevel = 'debug' | 'info' | 'warning' | 'error'
+export type {
+  Breadcrumb,
+  BreadcrumbCategory,
+  BreadcrumbLevel,
+  User,
+  RequestContext,
+  StackFrame,
+  ErrorEvent,
+  TransportErrorCode,
+  TransportError,
+  CaptureOptions,
+} from '@errorwatch/shared/client'
 
-export interface Breadcrumb {
-  timestamp: number
-  category: BreadcrumbCategory
-  type?: string
-  level?: BreadcrumbLevel
-  message?: string
-  data?: Record<string, any>
-}
+import type { ErrorEvent, User, Breadcrumb, CaptureOptions, TransportError } from '@errorwatch/shared/client'
 
 // SDK Configuration
 export interface SDKConfig {
@@ -56,69 +58,6 @@ export interface BreadcrumbConfig {
   enableNavigationCapture?: boolean
   enableFetchCapture?: boolean
   enableXHRCapture?: boolean
-}
-
-// Error Event
-export interface ErrorEvent {
-  fingerprint: string
-  message: string
-  level: 'fatal' | 'error' | 'warning' | 'info' | 'debug'
-  timestamp: string
-  environment: string
-  release?: string
-  user?: User
-  request?: RequestContext
-  stacktrace?: StackFrame[]
-  tags?: Record<string, string>
-  extra?: Record<string, any>
-  breadcrumbs?: Breadcrumb[]
-}
-
-export interface User {
-  id?: string
-  email?: string
-  username?: string
-  ipAddress?: string
-}
-
-export interface RequestContext {
-  method?: string
-  url?: string
-  headers?: Record<string, string>
-  userAgent?: string
-  clientIp?: string
-}
-
-export interface StackFrame {
-  filename?: string
-  function?: string
-  lineno?: number
-  colno?: number
-  preContext?: string[]
-  context?: string
-  postContext?: string[]
-}
-
-export interface CaptureOptions {
-  level?: ErrorEvent['level']
-  tags?: Record<string, string>
-  extra?: Record<string, any>
-  user?: User
-}
-
-// Transport error types
-export type TransportErrorCode =
-  | 'AUTH_ERROR'           // 401 - Invalid API key
-  | 'INGESTION_DISABLED'   // 403 - Project ingestion disabled
-  | 'RATE_LIMITED'         // 429 - Too many requests
-  | 'SERVER_ERROR'         // 5xx - Server error
-  | 'NETWORK_ERROR'        // Network failure
-
-export interface TransportError {
-  status: number
-  code: TransportErrorCode
-  message: string
-  retryable: boolean
 }
 
 export interface TransportConfig {

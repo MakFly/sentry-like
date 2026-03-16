@@ -25,7 +25,7 @@ const breadcrumbSchema = z.object({
   type: z.string().max(50).optional(),
   level: z.enum(['debug', 'info', 'warning', 'error']).optional(),
   message: z.string().max(1000).optional(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.string(), z.any()).optional(),
 });
 
 const eventSchema = z.object({
