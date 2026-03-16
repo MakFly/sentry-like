@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Film } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,14 +12,16 @@ interface ReplaysHeaderProps {
 }
 
 export function ReplaysHeader({ totalSessions, isLoading, className }: ReplaysHeaderProps) {
+  const t = useTranslations("replays");
+
   return (
     <div className={cn("mb-6 flex items-start justify-between", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Session Replays
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Watch user sessions to understand how errors occurred
+          {t("subtitle")}
         </p>
       </div>
 
@@ -32,7 +35,7 @@ export function ReplaysHeader({ totalSessions, isLoading, className }: ReplaysHe
             {totalSessions.toLocaleString()}
           </span>
         )}
-        <span className="text-xs text-muted-foreground">sessions</span>
+        <span className="text-xs text-muted-foreground">{t("sessions")}</span>
       </div>
     </div>
   );

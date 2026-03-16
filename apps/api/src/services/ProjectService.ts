@@ -50,7 +50,7 @@ export const ProjectService = {
     return project;
   },
 
-  update: async (userId: string, id: string, data: { name?: string }) => {
+  update: async (userId: string, id: string, data: { name?: string; environment?: string }) => {
     const project = await ProjectRepository.findByIdWithOrg(id);
     if (!project) {
       throw new Error("Project not found");
@@ -67,6 +67,9 @@ export const ProjectService = {
       const baseSlug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const uniqueSuffix = crypto.randomUUID().slice(0, 8);
       updates.slug = `${baseSlug}-${uniqueSuffix}`;
+    }
+    if (data.environment) {
+      updates.environment = data.environment;
     }
 
     if (Object.keys(updates).length === 0) {

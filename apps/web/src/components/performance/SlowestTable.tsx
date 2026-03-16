@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Table,
   TableBody,
@@ -21,14 +22,16 @@ interface SlowestTableProps {
 }
 
 export function SlowestTable({ transactions }: SlowestTableProps) {
+  const t = useTranslations("performance");
+
   if (transactions.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Slowest Transactions</CardTitle>
+          <CardTitle className="text-base">{t("slowestTransactions.title")}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8">
-          <p className="text-sm text-muted-foreground">No transaction data yet.</p>
+          <p className="text-sm text-muted-foreground">{t("transactions.noData")}</p>
         </CardContent>
       </Card>
     );
@@ -37,37 +40,37 @@ export function SlowestTable({ transactions }: SlowestTableProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Slowest Transactions</CardTitle>
+        <CardTitle className="text-base">{t("slowestTransactions.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Op</TableHead>
-              <TableHead className="text-right">Avg</TableHead>
-              <TableHead className="text-right">Max</TableHead>
-              <TableHead className="text-right">Count</TableHead>
+              <TableHead>{t("transactions.columns.name")}</TableHead>
+              <TableHead>{t("transactions.columns.op")}</TableHead>
+              <TableHead className="text-right">{t("transactions.columns.avg")}</TableHead>
+              <TableHead className="text-right">{t("transactions.columns.max")}</TableHead>
+              <TableHead className="text-right">{t("transactions.columns.count")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((t, i) => (
-              <TableRow key={`${t.name}-${t.op}-${i}`}>
+            {transactions.map((txn, i) => (
+              <TableRow key={`${txn.name}-${txn.op}-${i}`}>
                 <TableCell className="max-w-[200px] truncate font-medium">
-                  {t.name}
+                  {txn.name}
                 </TableCell>
                 <TableCell>
                   <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
-                    {t.op}
+                    {txn.op}
                   </span>
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
-                  {formatDuration(t.avgDuration)}
+                  {formatDuration(txn.avgDuration)}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm">
-                  {formatDuration(t.maxDuration)}
+                  {formatDuration(txn.maxDuration)}
                 </TableCell>
-                <TableCell className="text-right">{t.count}</TableCell>
+                <TableCell className="text-right">{txn.count}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -63,6 +63,7 @@ export const update = async (c: AuthContext) => {
 
   const schema = z.object({
     name: z.string().min(1).max(100).optional(),
+    environment: z.enum(["production", "staging", "development"]).optional(),
   });
 
   let input;

@@ -8,6 +8,7 @@ import {
   Bug,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type StatusType = "critical" | "unresolved" | "today" | "new24h";
 
@@ -22,7 +23,7 @@ const statusConfig: Record<
   StatusType,
   {
     icon: LucideIcon;
-    label: string;
+    labelKey: string;
     colorClass: string;
     bgClass: string;
     borderClass: string;
@@ -30,28 +31,28 @@ const statusConfig: Record<
 > = {
   critical: {
     icon: AlertTriangle,
-    label: "CRITICAL",
+    labelKey: "critical",
     colorClass: "text-status-critical",
     bgClass: "bg-status-critical/10",
     borderClass: "border-status-critical/30",
   },
   unresolved: {
     icon: AlertCircle,
-    label: "UNRESOLVED",
+    labelKey: "unresolved",
     colorClass: "text-status-warning",
     bgClass: "bg-status-warning/10",
     borderClass: "border-status-warning/30",
   },
   today: {
     icon: Activity,
-    label: "TODAY",
+    labelKey: "today",
     colorClass: "text-frost",
     bgClass: "bg-frost/10",
     borderClass: "border-frost/30",
   },
   new24h: {
     icon: Bug,
-    label: "NEW 24H",
+    labelKey: "new24h",
     colorClass: "text-status-caution",
     bgClass: "bg-status-caution/10",
     borderClass: "border-status-caution/30",
@@ -59,6 +60,7 @@ const statusConfig: Record<
 };
 
 export function StatusTile({ type, value, delta, className }: StatusTileProps) {
+  const t = useTranslations("dashboard.statusTile");
   const config = statusConfig[type];
   const Icon = config.icon;
 
@@ -92,7 +94,7 @@ export function StatusTile({ type, value, delta, className }: StatusTileProps) {
           <Icon className={cn("h-4 w-4", config.colorClass)} />
         </div>
         <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {config.label}
+          {t(config.labelKey as Parameters<typeof t>[0])}
         </span>
       </div>
 

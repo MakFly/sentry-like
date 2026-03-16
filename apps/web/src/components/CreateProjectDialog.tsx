@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { PlatformSelector } from "./PlatformSelector";
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import type { Platform } from "@/server/api";
+import { useTranslations } from "next-intl";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -36,6 +37,8 @@ interface CreateProjectDialogProps {
 }
 
 export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreateProjectDialogProps) {
+  const t = useTranslations("project");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState("");
   const [platform, setPlatform] = useState<Platform | "">("");
@@ -89,8 +92,8 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
       onOpenChange(false);
       utils.projects.getAll.invalidate();
       utils.projects.canCreate.invalidate();
-      toast.success("Project created!", {
-        description: `"${data.name}" is ready to receive errors.`,
+      toast.success(t("createSuccess"), {
+        description: t("createSuccessDescription", { name: data.name }),
       });
       onSuccess?.();
       // Navigate to the new project

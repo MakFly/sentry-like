@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Activity, Calendar, Clock, Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface OccurrenceChartProps {
   count: number;
@@ -80,6 +81,7 @@ export function OccurrenceChart({
   timeline,
   className,
 }: OccurrenceChartProps) {
+  const t = useTranslations("issueDetail.occurrenceChart");
   const sparklineData = timeline.map(t => t.count);
 
   return (
@@ -94,7 +96,7 @@ export function OccurrenceChart({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Activity className="h-3.5 w-3.5" />
-              <span className="text-[10px] font-mono uppercase tracking-wider">Occurrences</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider">{t("occurrences")}</span>
             </div>
             <p className="font-mono text-2xl font-bold text-foreground tabular-nums">
               {count.toLocaleString()}
@@ -105,7 +107,7 @@ export function OccurrenceChart({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" />
-              <span className="text-[10px] font-mono uppercase tracking-wider">First seen</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider">{t("firstSeen")}</span>
             </div>
             <p className="font-mono text-sm text-foreground">
               {formatDate(firstSeen)}
@@ -116,7 +118,7 @@ export function OccurrenceChart({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
-              <span className="text-[10px] font-mono uppercase tracking-wider">Last seen</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider">{t("lastSeen")}</span>
             </div>
             <p className="font-mono text-sm text-foreground">
               {formatTimeAgo(lastSeen)}
@@ -128,7 +130,7 @@ export function OccurrenceChart({
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
-                <span className="text-[10px] font-mono uppercase tracking-wider">Users</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider">{t("users")}</span>
               </div>
               <p className="font-mono text-sm text-foreground">
                 {users.toLocaleString()}
@@ -141,10 +143,10 @@ export function OccurrenceChart({
         <div className="pt-2 border-t border-issues-border">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              Last 30 days
+              {t("last30days")}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground">
-              {sparklineData.reduce((a, b) => a + b, 0).toLocaleString()} events
+              {sparklineData.reduce((a, b) => a + b, 0).toLocaleString()} {t("events")}
             </span>
           </div>
           <Sparkline data={sparklineData} />

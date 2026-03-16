@@ -11,8 +11,10 @@ import { UpgradeModal } from "./UpgradeModal";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { getPlatformIcon } from "@/lib/platform-icons";
+import { useTranslations } from "next-intl";
 
 export function ProjectSelector() {
+  const t = useTranslations("project");
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -93,7 +95,7 @@ export function ProjectSelector() {
             <>
               <Layers className="h-5 w-5 text-muted-foreground" />
               <span className="flex-1 truncate text-sm text-muted-foreground">
-                {orgProjects.length > 0 ? "Select project" : "No projects"}
+                {orgProjects.length > 0 ? t("select") : t("noProjects")}
               </span>
             </>
           )}
@@ -105,7 +107,7 @@ export function ProjectSelector() {
             <div className="max-h-64 overflow-y-auto p-1">
               {orgProjects.length === 0 ? (
                 <p className="px-2 py-3 text-center text-sm text-muted-foreground">
-                  No projects yet
+                  {t("noProjectsYet")}
                 </p>
               ) : (
                 orgProjects.map((project) => {
@@ -139,7 +141,7 @@ export function ProjectSelector() {
                 onClick={handleCreateClick}
               >
                 <Plus className="h-4 w-4" />
-                <span>New project</span>
+                <span>{t("new")}</span>
                 {canCreateResult && !canCreateResult.allowed && (
                   <span className="ml-auto flex items-center gap-1 text-xs text-amber-400">
                     <Crown className="h-3 w-3" />

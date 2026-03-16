@@ -1,4 +1,3 @@
-export { SeverityDistributionBar } from "./SeverityDistributionBar";
 export { IssueRow } from "./IssueRow";
 export { IssuesHeader } from "./IssuesHeader";
 export { FiltersRow } from "./FiltersRow";

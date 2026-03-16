@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import type { SeverityBreakdown } from "@/server/api/types/stats";
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -18,6 +19,7 @@ interface ErrorSeverityChartProps {
 }
 
 export function ErrorSeverityChart({ data }: ErrorSeverityChartProps) {
+  const t = useTranslations("dashboard.errorSeverity");
   const sorted = useMemo(() => {
     return [...data].sort(
       (a, b) => SEVERITY_ORDER.indexOf(a.level) - SEVERITY_ORDER.indexOf(b.level)
@@ -53,7 +55,7 @@ export function ErrorSeverityChart({ data }: ErrorSeverityChartProps) {
   return (
     <div className="rounded-2xl border border-dashboard-border bg-dashboard-surface/30 p-4">
       <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Error Severity
+        {t("title")}
       </h3>
       <div className="flex items-center gap-6">
         {/* Donut */}
@@ -73,7 +75,7 @@ export function ErrorSeverityChart({ data }: ErrorSeverityChartProps) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-lg font-bold font-mono">{total.toLocaleString()}</span>
-            <span className="text-[10px] text-muted-foreground">total</span>
+            <span className="text-[10px] text-muted-foreground">{t("total")}</span>
           </div>
         </div>
 

@@ -1,0 +1,1179 @@
+{
+  "common": {
+    "appName": "ErrorWatch",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "search": "Search",
+    "noResults": "No results found",
+    "create": "Create",
+    "edit": "Edit",
+    "user": "User",
+    "logOut": "Log out",
+    "creating": "Creating...",
+    "toggleSidebar": "Toggle sidebar"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "issues": "Issues",
+    "logs": "Logs",
+    "replays": "Replays",
+    "stats": "Stats",
+    "performance": "Performance",
+    "overview": "Overview",
+    "transactions": "Transactions",
+    "webVitals": "Web Vitals",
+    "databaseQueries": "Database Queries",
+    "settings": "Settings",
+    "help": "Help",
+    "admin": "Admin",
+    "monitoring": "Monitoring",
+    "live": "Live",
+    "reconnecting": "Reconnecting...",
+    "offline": "Offline",
+    "organization": "Organization",
+    "project": "Project",
+    "commandSearch": "Search...",
+    "commandPlaceholder": "Type a command or search...",
+    "commandNoResults": "No results found.",
+    "commandNavigation": "Navigation",
+    "commandHelp": "Help",
+    "commandQuickActions": "Quick Actions",
+    "commandAccount": "Account",
+    "commandStatistics": "Statistics",
+    "commandHelpCenter": "Help Center",
+    "commandDocumentation": "Documentation",
+    "commandGoToDashboard": "Go to Dashboard",
+    "commandCreateNewProject": "Create New Project"
+  },
+  "organization": {
+    "select": "Select Organization",
+    "new": "New Organization",
+    "createTitle": "Create Organization",
+    "createDescription": "Create a new organization to manage separate projects and teams.",
+    "nameLabel": "Organization Name",
+    "namePlaceholder": "My Company",
+    "createdSuccess": "Organization created successfully",
+    "createError": "Failed to create organization"
+  },
+  "project": {
+    "select": "Select project",
+    "noProjects": "No projects",
+    "noProjectsYet": "No projects yet",
+    "new": "New project",
+    "createTitle": "Create New Project",
+    "createDescription": "Add a new project to monitor errors",
+    "organizationLabel": "Organization",
+    "organizationPlaceholder": "Select organization",
+    "nameLabel": "Project Name",
+    "namePlaceholder": "My App",
+    "environmentLabel": "Environment",
+    "platformLabel": "Platform / Framework",
+    "environmentProduction": "Production",
+    "environmentStaging": "Staging",
+    "environmentDevelopment": "Development",
+    "createSuccess": "Project created!",
+    "createSuccessDescription": "\"{name}\" is ready to receive errors.",
+    "createError": "Failed to create project"
+  },
+  "platform": {
+    "fullstack": "Fullstack",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "php": "PHP"
+  },
+  "upgrade": {
+    "title": "Upgrade to Pro",
+    "limitReached": "You've reached the limit of {maxItems} {resource} on your {plan} plan.",
+    "currentUsage": "Current usage",
+    "proPlan": "Pro Plan",
+    "featureUnlimited": "Unlimited projects & organizations",
+    "featureEvents": "100,000 events/month",
+    "featureRetention": "30-day data retention",
+    "featureSupport": "Priority support",
+    "featureAlerts": "Advanced alerts & integrations",
+    "price": "$29",
+    "pricePerMonth": "/month",
+    "billingNote": "Billed monthly. Cancel anytime.",
+    "maybeLater": "Maybe Later",
+    "upgradeNow": "Upgrade Now",
+    "starting": "Starting...",
+    "checkoutError": "Failed to start checkout",
+    "checkoutUrlUnavailable": "Checkout URL unavailable"
+  },
+  "noProject": {
+    "title": "No project configured",
+    "descriptionWithOrg": "Create your first project to start monitoring errors in your applications.",
+    "descriptionWithoutOrg": "You need to complete the onboarding to create your organization and first project.",
+    "createProjectTitle": "Create a project",
+    "createProjectDescription": "A project represents an application you want to monitor",
+    "featureAlerts": "Receive error alerts in real-time",
+    "featureStackTraces": "Track stack traces and context",
+    "featureFrameworks": "Support for 9+ frameworks",
+    "createFirstProject": "Create your first project",
+    "completeOnboarding": "Complete onboarding"
+  },
+  "placeholderDashboard": {
+    "loadingDashboard": "Loading your dashboard...",
+    "dashboardTitle": "Dashboard",
+    "dashboardOverview": "Overview of your application's error monitoring",
+    "statUnresolved": "Unresolved",
+    "statEventsToday": "Events today",
+    "statNewIssues": "New issues (24h)",
+    "statAvgResponse": "Avg response",
+    "recentErrorsTitle": "Recent Errors",
+    "recentErrorsDescription": "Latest issues from your applications",
+    "overlayTitle": "No project configured",
+    "overlayDescription": "Complete the setup to start monitoring errors in your applications.",
+    "completeSetup": "Complete Setup"
+  },
+  "onboarding": {
+    "steps": {
+      "workspace": "Workspace",
+      "platform": "Platform",
+      "setup": "Setup"
+    },
+    "setupStep": {
+      "title": "Welcome to ErrorWatch",
+      "subtitle": "Let's set up your workspace to start monitoring errors",
+      "orgNameLabel": "Organization Name",
+      "orgNamePlaceholder": "My Company",
+      "orgNameHint": "This is your team or company name",
+      "projectNameLabel": "Project Name",
+      "projectNamePlaceholder": "My App",
+      "projectNameHint": "The application you want to monitor",
+      "environmentLabel": "Environment",
+      "envProduction": "Production",
+      "envStaging": "Staging",
+      "envDevelopment": "Development",
+      "continueButton": "Continue",
+      "orgNameRequired": "Organization name is required",
+      "projectNameRequired": "Project name is required",
+      "projectNameSameAsOrg": "Project name cannot be the same as organization name"
+    },
+    "platformStep": {
+      "title": "Select Your Platform",
+      "subtitle": "Choose the framework or platform for your project",
+      "backButton": "Back",
+      "createButton": "Create Workspace",
+      "creatingButton": "Creating..."
+    },
+    "apikeyStep": {
+      "title": "You're All Set!",
+      "subtitle": "Follow these steps to integrate ErrorWatch",
+      "workspaceCreated": "Workspace created!",
+      "apiKeyLabel": "Your API Key",
+      "saveKeyWarning": "Save this key now - you won't be able to see it again!",
+      "goToDashboard": "Go to Dashboard"
+    },
+    "errors": {
+      "failedToCreate": "Failed to create workspace"
+    },
+    "invite": {
+      "loading": "Loading invitation...",
+      "invalidTitle": "Invalid Invitation",
+      "invalidOrExpired": "Invalid or expired invitation",
+      "goToLogin": "Go to Login",
+      "successTitle": "Welcome aboard!",
+      "successJoined": "You've successfully joined <strong>{orgName}</strong>",
+      "redirecting": "Redirecting to dashboard...",
+      "invitedTitle": "You're Invited!",
+      "invitedSubtitle": "You've been invited to join an organization",
+      "roleLabel": "Role:",
+      "invitationSentTo": "Invitation sent to:",
+      "pleaseSignIn": "Please sign in to accept this invitation",
+      "signIn": "Sign In",
+      "signUp": "Sign Up",
+      "acceptButton": "Accept Invitation",
+      "acceptingButton": "Accepting...",
+      "failedToAccept": "Failed to accept invitation"
+    }
+  },
+  "performance": {
+    "overview": "Performance Overview",
+    "title": "Performance",
+    "dateRange": {
+      "last24h": "Last 24h",
+      "last7d": "Last 7 days",
+      "last30d": "Last 30 days",
+      "last90d": "Last 90 days",
+      "last6m": "Last 6 months",
+      "lastYear": "Last year"
+    },
+    "serverResponseTime": "Server Response Time ({label})",
+    "throughputLabel": "Throughput",
+    "throughputUnit": "req/min",
+    "errorRate": "Error Rate",
+    "aboveThreshold": "Above threshold",
+    "subPages": {
+      "transactions": {
+        "title": "Transactions",
+        "description": "View all transactions, grouped or individual, with filtering and pagination."
+      },
+      "webVitals": {
+        "title": "Web Vitals",
+        "description": "Core Web Vitals metrics: LCP, FID, CLS, TTFB, INP."
+      },
+      "databaseQueries": {
+        "title": "Database Queries",
+        "description": "Duplicate queries (N+1), slowest queries, and endpoint impact analysis."
+      }
+    },
+    "transactions": {
+      "title": "Transactions",
+      "noTransactions": "No transactions found.",
+      "noData": "No transaction data yet.",
+      "tabAll": "All Transactions",
+      "tabSlowest": "Slowest",
+      "pageOf": "Page {page} of {total}",
+      "totalCount": "{count} total",
+      "grouped": "Grouped",
+      "individual": "Individual",
+      "backToTransactions": "Back to Transactions",
+      "notFound": "Transaction not found.",
+      "columns": {
+        "name": "Name",
+        "op": "Op",
+        "count": "Count",
+        "avg": "Avg",
+        "min": "Min",
+        "max": "Max",
+        "status": "Status",
+        "latest": "Latest",
+        "duration": "Duration",
+        "date": "Date"
+      }
+    },
+    "slowestTransactions": {
+      "title": "Slowest Transactions"
+    },
+    "webVitals": {
+      "title": "Web Vitals",
+      "noData": "No Web Vitals data available",
+      "noDataHint": "Web Vitals track browser performance metrics (LCP, FID, CLS). For server-side projects, check the Transactions section below for response times and query performance.",
+      "status": {
+        "good": "Good",
+        "needsImprovement": "Needs Improvement",
+        "poor": "Poor"
+      },
+      "descriptions": {
+        "LCP": "Loading performance",
+        "FID": "Interactivity",
+        "CLS": "Visual stability",
+        "TTFB": "Server response",
+        "INP": "Responsiveness"
+      }
+    },
+    "apdex": {
+      "title": "Apdex Score",
+      "noData": "No data",
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "unacceptable": "Unacceptable",
+      "satisfied": "Satisfied (<{threshold}ms)",
+      "tolerating": "Tolerating",
+      "frustrated": "Frustrated",
+      "total": "Total"
+    },
+    "queries": {
+      "title": "Database Queries",
+      "insights": {
+        "title": "Query Insights",
+        "duplicates": "Duplicate Queries (potential N+1)",
+        "slowest": "Slowest Queries",
+        "columns": {
+          "query": "Query",
+          "count": "Count",
+          "totalTime": "Total Time",
+          "severity": "Severity",
+          "duration": "Duration",
+          "transaction": "Transaction"
+        },
+        "severity": {
+          "critical": "Critical",
+          "warning": "Warning",
+          "info": "Info"
+        }
+      },
+      "endpointImpact": {
+        "title": "Top Endpoints by Impact",
+        "columns": {
+          "endpoint": "Endpoint",
+          "count": "Count",
+          "avg": "Avg",
+          "totalTime": "Total Time",
+          "impact": "% Impact",
+          "errors": "Errors"
+        }
+      }
+    },
+    "transactionDetail": {
+      "duration": "Duration",
+      "operation": "Operation",
+      "environment": "Environment",
+      "spans": "Spans",
+      "traceId": "Trace ID",
+      "breakdown": "Breakdown",
+      "queryStats": {
+        "title": "Query Statistics",
+        "total": "Total Queries",
+        "unique": "Unique Queries",
+        "totalTime": "Total Query Time"
+      },
+      "n1Detected": {
+        "sdk": "SDK-Detected N+1 Queries",
+        "pattern": "N+1 Query Pattern Detected",
+        "description": "The same query was executed multiple times in this request:"
+      },
+      "waterfall": {
+        "title": "Span Waterfall",
+        "noSpans": "No spans recorded for this transaction.",
+        "operation": "Operation",
+        "timeline": "Timeline",
+        "durationDesc": "Duration / Description / Relative time",
+        "normal": "Normal",
+        "repeated": "Repeated",
+        "n1Suspect": "N+1 Suspect"
+      }
+    }
+  },
+  "replays": {
+    "title": "Session Replays",
+    "subtitle": "Watch user sessions to understand how errors occurred",
+    "sessions": "sessions",
+    "failedToLoad": "Failed to load replays",
+    "noMatchingSessions": "No matching sessions found. Try adjusting your filters.",
+    "noSessionsYet": "No session replays recorded yet.",
+    "sessionNotFound": "Session not found",
+    "sessionNotFoundDesc": "This replay session may have been deleted or does not exist.",
+    "backToReplays": "Back to replays",
+    "noEventsRecorded": "No events recorded",
+    "noEventsDesc": "This session has no recorded events. The user may have left the page before any interactions were captured.",
+    "filters": {
+      "searchByUrl": "Search by URL...",
+      "allBrowsers": "All browsers",
+      "allOS": "All OS",
+      "allTime": "All time",
+      "timeRange": "Time range",
+      "allSeverity": "All severity",
+      "clear": "Clear",
+      "last24h": "Last 24h",
+      "last7d": "Last 7 days",
+      "last30d": "Last 30 days",
+      "last90d": "Last 90 days",
+      "severityFatal": "Fatal",
+      "severityError": "Error",
+      "severityWarning": "Warning",
+      "severityInfo": "Info",
+      "severityDebug": "Debug"
+    }
+  },
+  "help": {
+    "title": "Help Center",
+    "subtitle": "Learn how to use ErrorWatch effectively",
+    "quickStart": {
+      "title": "Quick Start",
+      "subtitle": "Get started with ErrorWatch in minutes",
+      "dashboardOverview": {
+        "title": "Dashboard Overview",
+        "description": "Understand the main dashboard and its metrics"
+      },
+      "managingIssues": {
+        "title": "Managing Issues",
+        "description": "Learn how to track and resolve errors"
+      },
+      "sessionReplays": {
+        "title": "Session Replays",
+        "description": "Replay user sessions to understand errors"
+      },
+      "statistics": {
+        "title": "Statistics & Analytics",
+        "description": "Analyze error trends and patterns"
+      }
+    },
+    "documentation": {
+      "title": "Documentation",
+      "gettingStarted": {
+        "title": "Getting Started",
+        "description": "Installation and setup guide"
+      },
+      "sdkIntegration": {
+        "title": "SDK Integration",
+        "description": "Integrate with your framework"
+      },
+      "apiReference": {
+        "title": "API Reference",
+        "description": "Complete API documentation"
+      },
+      "configuration": {
+        "title": "Configuration",
+        "description": "Configure monitoring and alerts"
+      }
+    },
+    "commonTasks": {
+      "title": "Common Tasks",
+      "managingProjects": {
+        "title": "Managing Projects",
+        "description": "Create, configure, and delete projects. Use the project selector in the sidebar to switch between projects."
+      },
+      "managingTeam": {
+        "title": "Managing Team Members",
+        "description": "Invite team members to your organization. Go to Settings > Team to manage access."
+      },
+      "settingUpAlerts": {
+        "title": "Setting Up Alerts",
+        "description": "Configure alerts to be notified about errors. Go to Settings > Alerts to set up notification preferences."
+      }
+    },
+    "moreHelp": {
+      "title": "Need More Help?",
+      "subtitle": "Can't find what you're looking for? Our team is here to help.",
+      "openIssue": "Open an Issue",
+      "fullDocumentation": "Full Documentation"
+    }
+  },
+  "logs": {
+    "title": "Live Logs",
+    "live": "Live",
+    "reconnecting": "Reconnecting",
+    "paused": "Paused",
+    "streaming": "Streaming",
+    "sampledDrops": "sampled drops: {count}",
+    "resume": "Resume",
+    "pause": "Pause",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh",
+    "allLevels": "All levels",
+    "allChannels": "All channels",
+    "searchMessage": "Search message",
+    "loadingLogs": "Loading logs...",
+    "noLogs": "No logs in current filter."
+  },
+  "settings": {
+    "tabs": {
+      "general": "General",
+      "alerts": "Alerts",
+      "apiKeys": "API Keys",
+      "billing": "Billing",
+      "data": "Data",
+      "organizations": "Organizations"
+    },
+    "general": {
+      "projectCardTitle": "Project",
+      "projectCardDescription": "Project configuration",
+      "projectNameLabel": "Project Name",
+      "projectNamePlaceholder": "My App",
+      "timezoneLabel": "Timezone",
+      "timezonePlaceholder": "Select timezone",
+      "profileCardTitle": "Profile",
+      "profileCardDescription": "Your personal information",
+      "emailLabel": "Email",
+      "verified": "Verified",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "dsnCardTitle": "DSN",
+      "dsnCardDescription": "Endpoint for error reporting",
+      "dsnUrlLabel": "Monitoring Server URL",
+      "dsnUrlPlaceholder": "https://your-server.com",
+      "dsnSymfonyComment": "# Symfony config",
+      "securityCardTitle": "Security",
+      "securityCardDescription": "Authentication settings",
+      "passwordLabel": "Password",
+      "passwordSet": "Set",
+      "passwordEnabled": "Password authentication enabled",
+      "oauthOnly": "OAuth only",
+      "oauthDescription": "Using Google, GitHub, etc.",
+      "sessionsCardTitle": "Active Sessions",
+      "sessionsCardDescription": "Manage your login sessions",
+      "revokeAll": "Revoke All",
+      "noActiveSessions": "No active sessions",
+      "unknownIp": "Unknown IP",
+      "expired": "Expired",
+      "saveChanges": "Save Changes",
+      "dangerZoneTitle": "Danger Zone",
+      "dangerZoneDescription": "Irreversible and destructive actions",
+      "deleteProjectTitle": "Delete Project",
+      "deleteProjectDescription": "Delete {name} and all its data",
+      "deleteOrgTitle": "Delete Organization",
+      "deleteOrgDescription": "Delete {name} and all projects",
+      "revokeSessionTitle": "Revoke Session?",
+      "revokeSessionDescription": "This will log out this device immediately.",
+      "revokeAllTitle": "Revoke All Sessions?",
+      "revokeAllDescription": "This will log out all devices except your current one.",
+      "revoke": "Revoke",
+      "deleteProjectDialogTitle": "Delete Project?",
+      "deleteProjectDialogDescription": "This will permanently delete {name} and all its data including errors, events, and replays. This action cannot be undone.",
+      "deleting": "Deleting...",
+      "deleteProjectConfirm": "Delete Project",
+      "deleteOrgDialogTitle": "Delete Organization?",
+      "deleteOrgDialogDescription": "This will permanently delete the organization {name}.",
+      "deleteOrgWillDelete": "This will delete:",
+      "deleteOrgProjects": "All projects ({count} project{plural})",
+      "deleteOrgEvents": "All error events and groups",
+      "deleteOrgReplays": "All session replays",
+      "deleteOrgSettings": "All settings and configurations",
+      "deleteOrgMembers": "All team members will lose access",
+      "deleteOrgCannotUndo": "This action cannot be undone.",
+      "deleteOrgTypeToConfirm": "Type {name} to confirm",
+      "deleteOrgConfirm": "Delete Organization",
+      "toastProjectDeleted": "Project deleted",
+      "toastProjectDeleteFailed": "Failed to delete project",
+      "toastSessionRevoked": "Session revoked",
+      "toastSessionsRevoked": "{count} session(s) revoked",
+      "toastOrgDeleted": "Organization deleted",
+      "toastOrgDeleteFailed": "Failed to delete organization",
+      "toastDsnCopied": "DSN copied to clipboard",
+      "toastSettingsSaved": "Settings saved",
+      "toastSettingsFailed": "Failed to save settings",
+      "environmentLabel": "Environment",
+      "environmentProduction": "Production",
+      "environmentStaging": "Staging",
+      "environmentDevelopment": "Development"
+    },
+    "alerts": {
+      "emailCardTitle": "Email Notifications",
+      "emailCardDescription": "Receive alerts via email",
+      "emailAddressLabel": "Email Address",
+      "emailPlaceholder": "alerts@example.com",
+      "emailDigestNote": "Digest emails sent hourly",
+      "slackCardTitle": "Slack Integration",
+      "slackCardDescription": "Send alerts to Slack",
+      "slackWebhookLabel": "Webhook URL",
+      "slackWebhookPlaceholder": "https://hooks.slack.com/...",
+      "slackTestConnection": "Test Connection",
+      "thresholdCardTitle": "Alert Threshold",
+      "thresholdCardDescription": "Minimum events before triggering notifications",
+      "thresholdEventsPerHour": "events per hour",
+      "saveChanges": "Save Changes",
+      "toastSaved": "Alert settings saved",
+      "toastFailed": "Failed to save alerts"
+    },
+    "apiKeys": {
+      "cardTitle": "API Keys",
+      "cardDescription": "Manage authentication keys for SDK integration",
+      "keyNamePlaceholder": "Key name (e.g., Production SDK)",
+      "creating": "Creating...",
+      "newKey": "New Key",
+      "keyCreatedTitle": "Key created successfully",
+      "keyCreatedDescription": "Copy your key now. You won't be able to see it again.",
+      "dismiss": "Dismiss",
+      "createdLabel": "Created",
+      "usedLabel": "Used",
+      "neverUsed": "Never",
+      "noKeysTitle": "No API keys yet",
+      "noKeysDescription": "Create one to authenticate your SDK",
+      "deleteKeyTitle": "Delete API Key?",
+      "deleteKeyDescription": "Applications using this key will stop working immediately.",
+      "toastCreated": "API key created",
+      "toastDeleted": "API key deleted",
+      "toastCopied": "Copied to clipboard"
+    },
+    "billing": {
+      "currentPlanTitle": "Current Plan",
+      "currentPlanDescription": "Manage your subscription",
+      "retentionDays": "{days} days retention",
+      "selfHosted": "Self-Hosted",
+      "active": "Active",
+      "free": "Free",
+      "projectsQuota": "{count} projects",
+      "usersQuota": "{count} users",
+      "unlimited": "Unlimited",
+      "selfHostedNote": "Self-hosted mode - all features unlocked.",
+      "manageBilling": "Manage Billing",
+      "upgradeToPro": "Upgrade to Pro",
+      "stripeNotConfigured": "Stripe not configured. Add keys to enable billing.",
+      "monthlyUsageTitle": "Monthly Usage",
+      "monthlyUsageDescription": "Events tracked this month",
+      "eventsLabel": "Events",
+      "unlimitedEvents": "Unlimited events on your plan",
+      "eventsRemaining": "{count} events remaining"
+    },
+    "data": {
+      "eventIngestionTitle": "Event Ingestion",
+      "eventIngestionEnabled": "Events are being received",
+      "eventIngestionDisabled": "All incoming events will be rejected (HTTP 403)",
+      "eventIngestionEnabledNote": "SDKs can send error events to this project.",
+      "eventIngestionDisabledNote": "SDKs will receive HTTP 403 errors. Use this to test blocking behavior or temporarily pause ingestion.",
+      "retentionTitle": "Data Retention",
+      "retentionDescription": "How long to keep error data",
+      "retentionPeriodLabel": "Retention Period",
+      "retentionNote": "Events older than {days} days will be deleted.",
+      "autoResolveTitle": "Auto-resolve Issues",
+      "autoResolveDescription": "Resolve inactive issues automatically",
+      "inactivityPeriodLabel": "Inactivity Period",
+      "autoResolveNote": "Issues inactive for {days} days will be resolved.",
+      "saveChanges": "Save Changes",
+      "toastSaved": "Data settings saved",
+      "toastFailed": "Failed to save"
+    },
+    "organizations": {
+      "cardTitle": "Organizations",
+      "cardDescription": "Manage your organizations and team members",
+      "noOrgsTitle": "No organizations yet",
+      "noOrgsDescription": "Create one to get started",
+      "membersButton": "Members",
+      "deleteConfirm": "Delete this organization?",
+      "membersCount": "Members ({count})",
+      "noMembersYet": "No members yet",
+      "removeMemberConfirm": "Remove {email}?"
+    },
+    "dialogs": {
+      "createOrg": {
+        "triggerButton": "New Organization",
+        "title": "Create Organization",
+        "description": "Organizations help you group projects and manage team access.",
+        "nameLabel": "Name",
+        "namePlaceholder": "My Company",
+        "cancel": "Cancel",
+        "creating": "Creating...",
+        "create": "Create",
+        "toastSuccess": "Organization created successfully",
+        "toastFailed": "Failed to create organization"
+      },
+      "inviteMember": {
+        "triggerButton": "Invite",
+        "title": "Invite Member",
+        "description": "Send an invitation to join this organization.",
+        "emailLabel": "Email",
+        "emailPlaceholder": "colleague@company.com",
+        "inviteMethodLabel": "Invite Method",
+        "methodToken": "Link (Token)",
+        "methodDirect": "Direct",
+        "directNote": "Directly add user to organization. Creates account with temporary password.",
+        "sending": "Sending...",
+        "sendInvite": "Send Invite",
+        "addMember": "Add Member",
+        "cancel": "Cancel",
+        "invitationSentTo": "Invitation sent to {email}",
+        "userAddedSuccess": "User added successfully",
+        "tempPasswordLabel": "Temporary password:",
+        "done": "Done"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "badge": "Welcome back",
+      "title": "Sign in to ErrorWatch",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "devPickUser": "Dev: Pick a user",
+      "devSelectPlaceholder": "Select a user...",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submitButton": "Sign in",
+      "devAutoFill": "Dev: Auto-fill",
+      "orContinueWith": "Or continue with",
+      "ssoNotConfigured": "{provider} login not configured. Add OAuth credentials to .env",
+      "ssoFailed": "{provider} login failed",
+      "loginFailed": "Login failed",
+      "panelTitle": "Monitor Errors in Real-Time",
+      "panelSubtitle": "Join developers using ErrorWatch to track, debug, and resolve application errors faster.",
+      "feature1": "Real-time error tracking",
+      "feature2": "Stack trace analysis",
+      "feature3": "Smart issue grouping"
+    },
+    "signup": {
+      "badge": "Get started",
+      "title": "Create your account",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "nameLabel": "Full name",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min. 8 chars",
+      "confirmLabel": "Confirm",
+      "confirmPlaceholder": "Confirm",
+      "submitButton": "Create account",
+      "devAutoFill": "Dev: Auto-fill",
+      "orSignUpWith": "Or sign up with",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "ssoNotConfigured": "{provider} signup not configured. Add OAuth credentials to .env",
+      "ssoFailed": "{provider} signup failed",
+      "signupFailed": "Signup failed",
+      "panelTitle": "Start Monitoring Today",
+      "panelSubtitle": "Join thousands of developers who trust ErrorWatch to keep their applications running smoothly.",
+      "feature1": "Setup in under 5 minutes",
+      "feature2": "Unlimited team members",
+      "feature3": "Detailed analytics & insights"
+    }
+  },
+  "dashboard": {
+    "attentionQueue": {
+      "allClear": "All clear",
+      "noErrors": "No errors requiring attention",
+      "requiresAttention": "Requires Attention",
+      "viewAll": "View all →"
+    },
+    "statusTile": {
+      "critical": "CRITICAL",
+      "unresolved": "UNRESOLVED",
+      "today": "TODAY",
+      "new24h": "NEW 24H"
+    },
+    "healthStrip": {
+      "errorRate": "Error Rate:",
+      "events": "Events:",
+      "health": "Health:",
+      "outOf100": "/100"
+    },
+    "errorSeverity": {
+      "title": "Error Severity",
+      "total": "total"
+    },
+    "overview": {
+      "pulse": "Pulse (Last 24h)",
+      "peak": "Peak:",
+      "avg": "Avg:",
+      "perHour": "/hr",
+      "environments": "Environments",
+      "noData": "No data"
+    }
+  },
+  "stats": {
+    "title": "Statistics",
+    "heroChart": {
+      "title": "Events Over Time",
+      "subtitle": "Error frequency in the last {range}",
+      "range24h": "24 hours",
+      "range7d": "7 days",
+      "range30d": "30 days",
+      "totalEvents": "Total Events",
+      "newGroups": "New Groups",
+      "noData": "No data available for this period",
+      "legendEvents": "Events",
+      "legendGroups": "New Groups",
+      "tooltipTime": "Time: {value}"
+    },
+    "distribution": {
+      "title": "Distribution by Environment",
+      "subtitle": "Error count across environments",
+      "noData": "No environment data"
+    },
+    "resolution": {
+      "title": "Resolution Metrics",
+      "subtitle": "Team performance and issue resolution",
+      "meanTimeToResolve": "Mean Time to Resolve",
+      "meanTimeSublabel": "Average across all issues",
+      "resolutionRate": "Resolution Rate",
+      "resolutionRateSublabel": "Issues resolved within SLA",
+      "resolvedThisMonth": "Resolved This Month",
+      "resolvedThisMonthSublabel": "Total issues closed"
+    },
+    "insights": {
+      "sectionTitle": "Insights",
+      "sectionSubtitle": "Patterns detected in your data",
+      "noDataTitle": "No data yet",
+      "noDataMessage": "Start sending errors to see insights",
+      "errorsIncreasingTitle": "Errors increasing",
+      "errorsDecreasingTitle": "Errors decreasing",
+      "errorsIncreasingMessage": "{percent}% more errors vs last week",
+      "errorsDecreasingMessage": "{percent}% fewer errors vs last week",
+      "peakErrorDayTitle": "Peak error day",
+      "peakErrorDayMessage": "{day}s have the most errors",
+      "mostStableDayTitle": "Most stable day",
+      "mostStableDayMessage": "{day}s have the fewest errors",
+      "productionHeavyTitle": "Production-heavy",
+      "productionHeavyMessage": "{percent}% of errors are from production",
+      "recentSpikeTitle": "Recent spike",
+      "recentSpikeMessage": "Today's errors are {multiplier}x above average",
+      "lookingStableTitle": "Looking stable",
+      "lookingStableMessage": "No significant patterns or anomalies detected",
+      "perDay": "~{count}/day",
+      "errorsCount": "{count} errors",
+      "changePositive": "+{percent}%",
+      "changeNegative": "{percent}%"
+    }
+  },
+  "issues": {
+    "header": {
+      "title": "Issues",
+      "subtitle": "Incoming signals requiring attention",
+      "signals": "signals"
+    },
+    "table": {
+      "columnSignal": "Signal",
+      "columnMessage": "Message",
+      "columnStrength": "Strength",
+      "columnSource": "Source",
+      "columnReplay": "Replay",
+      "columnFreq": "Freq",
+      "columnLast": "Last",
+      "emptyTitle": "All clear",
+      "emptyFiltered": "No matching signals",
+      "emptySubtitle": "No signals detected. Your application is running smoothly.",
+      "emptyFilteredSubtitle": "Try adjusting your filters to see more results.",
+      "errorTitle": "Failed to load signals"
+    },
+    "row": {
+      "fullMessage": "Full Message",
+      "quickActions": "Quick Actions",
+      "resolve": "Resolve",
+      "ignore": "Ignore",
+      "viewDetails": "View Details",
+      "sourceLocation": "Source Location",
+      "events": "events"
+    },
+    "filters": {
+      "searchPlaceholder": "Search signals...",
+      "clear": "Clear",
+      "allEnvs": "All envs",
+      "production": "Production",
+      "staging": "Staging",
+      "development": "Development",
+      "allTime": "All time",
+      "last24h": "Last 24h",
+      "last7d": "Last 7 days",
+      "last30d": "Last 30 days",
+      "last90d": "Last 90 days",
+      "allStatus": "All status",
+      "open": "Open",
+      "resolved": "Resolved",
+      "ignored": "Ignored",
+      "allSources": "All sources",
+      "sourceHTTP": "HTTP",
+      "sourceCLI": "CLI",
+      "sourceQueue": "Queue",
+      "sourceDeprecation": "Deprecation"
+    },
+    "page": {
+      "selected": "{count} selected",
+      "bulkResolve": "Resolve",
+      "bulkIgnore": "Ignore",
+      "bulkReopen": "Reopen",
+      "bulkMerge": "Merge",
+      "exportButton": "Export",
+      "exportCSV": "Export CSV",
+      "exportJSON": "Export JSON",
+      "noMatchingSignals": "No matching signals found. Try adjusting your filters.",
+      "noSignals": "No signals detected. Your application is running smoothly.",
+      "updateSuccess": "{count} issue(s) updated to {status}",
+      "updateError": "Failed to update issues",
+      "mergeSuccess": "Merged {count} issue(s) into 1",
+      "mergeError": "Failed to merge issues"
+    }
+  },
+  "issueDetail": {
+    "profile": {
+      "backToSignalDeck": "Back to Signal Deck",
+      "events": "Events",
+      "firstSeen": "First seen",
+      "lastSeen": "Last seen",
+      "trend": "Trend",
+      "resolve": "Resolve",
+      "ignore": "Ignore",
+      "reopen": "Reopen",
+      "unignore": "Unignore",
+      "resolvedBy": "Resolved by",
+      "justNow": "just now",
+      "minutesAgo": "{n}m ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago"
+    },
+    "navigator": {
+      "title": "Events ({count})",
+      "replay": "replay",
+      "replays": "replays",
+      "noReplay": "no replay",
+      "noEvents": "No events recorded"
+    },
+    "stackTrace": {
+      "title": "Stack Trace",
+      "frames": "{count} frames",
+      "showVendor": "Show vendor ({count})",
+      "hideVendor": "Hide vendor ({count})",
+      "raw": "Raw",
+      "parsed": "Parsed",
+      "noFrames": "No stack frames found",
+      "source": "source",
+      "vendor": "vendor",
+      "in": "in"
+    },
+    "eventTimeline": {
+      "title": "Event Timeline",
+      "actions": "{count} actions",
+      "showEarlier": "Show {count} earlier events",
+      "noBreadcrumbs": "No breadcrumbs recorded",
+      "replay": "Replay"
+    },
+    "contextCards": {
+      "environment": "Environment",
+      "device": "Device",
+      "release": "Release",
+      "context": "Context",
+      "firstSeenIn": "First seen in",
+      "noContext": "No context data available"
+    },
+    "occurrenceChart": {
+      "occurrences": "Occurrences",
+      "firstSeen": "First seen",
+      "lastSeen": "Last seen",
+      "users": "Users",
+      "last30days": "Last 30 days",
+      "events": "events"
+    },
+    "eventLog": {
+      "title": "Event Log",
+      "total": "{count} total",
+      "noEvents": "No events found",
+      "breadcrumbs": "Breadcrumbs",
+      "stackTrace": "Stack Trace",
+      "moreFrames": "... ({count} more frames)",
+      "prev": "← Prev",
+      "next": "Next →",
+      "page": "Page {current} of {total}"
+    },
+    "breadcrumbsSection": {
+      "title": "User Actions Trail",
+      "actionsCount": "{count} actions before the error",
+      "error": "Error"
+    },
+    "assigneeDropdown": {
+      "assign": "Assign",
+      "unassign": "Unassign",
+      "searchPlaceholder": "Search members...",
+      "noMembers": "No members found",
+      "assigned": "Assigned"
+    },
+    "devicePanel": {
+      "title": "Device",
+      "browser": "Browser",
+      "os": "OS",
+      "device": "Device",
+      "userAgent": "User Agent"
+    },
+    "tagsPanel": {
+      "title": "Tags",
+      "environment": "Environment",
+      "browser": "Browser",
+      "os": "OS",
+      "device": "Device"
+    },
+    "frequencyChart": {
+      "title": "Frequency",
+      "last30days": "Last 30 days",
+      "peak": "Peak",
+      "avg": "Avg",
+      "perDay": "{count}/day",
+      "noData": "No frequency data",
+      "byEnvironment": "By Environment"
+    },
+    "releasesPanel": {
+      "title": "Releases",
+      "firstSeenIn": "First seen in",
+      "moreReleases": "+{count} more releases"
+    },
+    "errorPage": {
+      "signalNotFound": "Signal not found",
+      "signalNotFoundDesc": "This error doesn't exist or has been deleted.",
+      "returnToIssues": "Return to issues",
+      "back": "issues"
+    },
+    "header": {
+      "issues": "issues",
+      "resolve": "Resolve",
+      "ignore": "Ignore",
+      "reopen": "Reopen",
+      "unignore": "Unignore",
+      "assign": "Assign",
+      "unassign": "Unassign",
+      "by": "by"
+    }
+  },
+  "marketing": {
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "docs": "Docs",
+      "dashboard": "Dashboard",
+      "signIn": "Sign in",
+      "getStarted": "Get Started",
+      "signOut": "Sign out"
+    },
+    "footer": {
+      "tagline": "Self-hosted error monitoring for modern applications.",
+      "allRightsReserved": "All rights reserved.",
+      "product": "Product",
+      "resources": "Resources",
+      "company": "Company",
+      "links": {
+        "features": "Features",
+        "pricing": "Pricing",
+        "changelog": "Changelog",
+        "documentation": "Documentation",
+        "apiReference": "API Reference",
+        "github": "GitHub",
+        "about": "About",
+        "blog": "Blog",
+        "contact": "Contact"
+      }
+    },
+    "hero": {
+      "badge1": "Open Source",
+      "badge2": "Self-hosted",
+      "badge3": "Real-time",
+      "titleLine1": "Error monitoring for",
+      "titleLine2": "modern applications",
+      "subtitle": "Self-hosted Sentry alternative. Track, debug, and resolve errors in your applications with powerful stack traces, real-time alerts, and beautiful dashboards.",
+      "ctaPrimary": "Get Started Free",
+      "ctaSecondary": "See how it works",
+      "trustBar": "Trusted by developers at startups and enterprises",
+      "dashboardPreview": "ErrorWatch Dashboard",
+      "stats": {
+        "unresolved": "Unresolved",
+        "eventsToday": "Events today",
+        "new24h": "New (24h)",
+        "resolved": "Resolved"
+      }
+    },
+    "features": {
+      "title": "Everything you need to",
+      "titleHighlight": "debug faster",
+      "subtitle": "Powerful features to help you track, analyze, and resolve errors in your applications.",
+      "items": {
+        "0": {
+          "title": "Real-time Error Tracking",
+          "description": "Capture errors as they happen with full stack traces, request data, and environment context."
+        },
+        "1": {
+          "title": "Beautiful Dashboard",
+          "description": "Monitor your application health with charts, trends, and actionable insights at a glance."
+        },
+        "2": {
+          "title": "Multi-tenant Support",
+          "description": "Organize errors by organizations and projects. Invite team members with role-based access."
+        },
+        "3": {
+          "title": "SDK Ecosystem",
+          "description": "First-class support for Symfony, Next.js, React, Vue, Nuxt, Hono, Fastify and more."
+        },
+        "4": {
+          "title": "Self-hosted",
+          "description": "Keep your data private. Deploy on your own infrastructure with Docker in minutes."
+        },
+        "5": {
+          "title": "Secure by Default",
+          "description": "No third-party data sharing. Your error data stays on your servers, always."
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "Up and running in",
+      "titleHighlight": "minutes",
+      "subtitle": "Three simple steps to start monitoring errors in your applications.",
+      "steps": {
+        "0": {
+          "title": "Install the SDK",
+          "description": "Add ErrorWatch to your project with a single command. Supports npm, yarn, bun, and composer."
+        },
+        "1": {
+          "title": "Configure your endpoint",
+          "description": "Point the SDK to your self-hosted ErrorWatch server or our cloud offering."
+        },
+        "2": {
+          "title": "Monitor and resolve",
+          "description": "Errors are captured automatically. View them in your dashboard and resolve issues fast."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple,",
+      "titleHighlight": "transparent pricing",
+      "subtitle": "Start free with self-hosting, or let us handle the infrastructure.",
+      "popular": "Popular",
+      "tiers": {
+        "0": {
+          "name": "Free",
+          "description": "Self-hosted, forever free",
+          "price": "$0",
+          "period": "forever",
+          "cta": "Deploy Now",
+          "features": {
+            "0": "Unlimited errors",
+            "1": "Unlimited projects",
+            "2": "Full stack traces",
+            "3": "Real-time monitoring",
+            "4": "Self-hosted on your infra",
+            "5": "Community support"
+          }
+        },
+        "1": {
+          "name": "Pro",
+          "description": "Managed cloud hosting",
+          "price": "$29",
+          "period": "/month",
+          "cta": "Start Free Trial",
+          "features": {
+            "0": "Everything in Free",
+            "1": "Managed infrastructure",
+            "2": "99.9% uptime SLA",
+            "3": "Priority support",
+            "4": "Advanced analytics",
+            "5": "Team collaboration"
+          }
+        },
+        "2": {
+          "name": "Enterprise",
+          "description": "Custom solutions",
+          "price": "Custom",
+          "period": "",
+          "cta": "Contact Sales",
+          "features": {
+            "0": "Everything in Pro",
+            "1": "Dedicated infrastructure",
+            "2": "Custom integrations",
+            "3": "SLA guarantee",
+            "4": "24/7 phone support",
+            "5": "On-premise option"
+          }
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Loved by",
+      "titleHighlight": "developers",
+      "subtitle": "See what developers are saying about ErrorWatch.",
+      "items": {
+        "0": {
+          "quote": "ErrorWatch has completely transformed how we handle production errors. The self-hosted option means we keep full control of our data.",
+          "author": "Sarah Chen",
+          "role": "CTO",
+          "company": "TechStartup Inc"
+        },
+        "1": {
+          "quote": "Finally, a Sentry alternative that's actually easy to self-host. Setup took less than 10 minutes with Docker.",
+          "author": "Marcus Johnson",
+          "role": "Lead Developer",
+          "company": "DevAgency"
+        },
+        "2": {
+          "quote": "The multi-tenant support is perfect for our agency. We can monitor all client projects from a single dashboard.",
+          "author": "Emily Rodriguez",
+          "role": "Engineering Manager",
+          "company": "WebWorks Studio"
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to ship with confidence?",
+      "subtitle": "Start monitoring your applications today. Deploy in minutes, debug in seconds.",
+      "primary": "Get Started Free",
+      "secondary": "View on GitHub"
+    }
+  }
+}

@@ -28,7 +28,8 @@ help: ## Show this help
 			/^(install|build|clean|dev|start|stop|status)/ {dev=dev"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
 			/^infra-|^db-|^redis-/ {infra=infra"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
 			/^prod-/ {prod=prod"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
-			END {print "\n$(YELLOW)DEVELOPMENT:$(RESET)" dev "\n\n$(YELLOW)INFRASTRUCTURE:$(RESET)" infra "\n\n$(YELLOW)PRODUCTION:$(RESET)" prod}'
+			/^example-/ {ex=ex"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
+			END {print "\n$(YELLOW)DEVELOPMENT:$(RESET)" dev "\n\n$(YELLOW)INFRASTRUCTURE:$(RESET)" infra "\n\n$(YELLOW)EXAMPLES:$(RESET)" ex "\n\n$(YELLOW)PRODUCTION:$(RESET)" prod}'
 
 # =============================================================================
 # DEVELOPMENT
@@ -163,3 +164,34 @@ prod-db-shell: ## Open PostgreSQL shell (production)
 prod-deploy: ## Full deploy (pull + build + migrate)
 	@chmod +x deploy/deploy.sh
 	@deploy/deploy.sh
+
+# =============================================================================
+# EXAMPLES
+# =============================================================================
+
+example-laravel-setup: ## Setup Laravel example (auth + API key + deps)
+	@chmod +x scripts/setup-laravel-example.sh
+	@./scripts/setup-laravel-example.sh
+
+example-laravel-start: ## Start Laravel example on port 8008
+	@echo "$(GREEN)Starting Laravel example on http://localhost:8008...$(RESET)"
+	@cd examples/laravel-api && php artisan serve --port=8008
+
+example-laravel-log: ## Write a test line via Laravel logger so ErrorWatch ingests it
+	@cd examples/laravel-api && php artisan tinker --execute="logger()->warning('makefile test log', ['source' => 'makefile']);"
+
+example-laravel: example-laravel-setup example-laravel-start ## Setup + start Laravel example
+
+example-laravel-test: ## Send test errors to ErrorWatch from Laravel
+	@echo "$(CYAN)Sending test errors...$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)1. RuntimeException:$(RESET)"
+	@curl -s http://localhost:8008/api/v1/test/error 2>/dev/null && echo "" || echo "$(RED)  Server not running. Run: make example-laravel-start$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)2. Warning log:$(RESET)"
+	@curl -s http://localhost:8008/api/v1/test/warning 2>/dev/null && echo "" || true
+	@echo ""
+	@echo "$(YELLOW)3. Division by zero:$(RESET)"
+	@curl -s http://localhost:8008/api/v1/test/divide-by-zero 2>/dev/null && echo "" || true
+	@echo ""
+	@echo "$(GREEN)Check your ErrorWatch dashboard for incoming errors.$(RESET)"

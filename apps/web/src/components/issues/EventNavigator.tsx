@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Play, Circle, Clock, Globe, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface EventData {
   id: string;
@@ -53,6 +54,7 @@ export function EventNavigator({
   projectSlug,
   className,
 }: EventNavigatorProps) {
+  const t = useTranslations("issueDetail.navigator");
   const eventsWithReplay = events.filter((e) => e.sessionId);
   const replayCount = eventsWithReplay.length;
 
@@ -66,12 +68,12 @@ export function EventNavigator({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-issues-border bg-issues-surface/50 px-4 py-3">
         <h3 className="font-mono text-sm font-semibold uppercase tracking-wider text-foreground">
-          Events ({events.length})
+          {t("title", { count: events.length })}
         </h3>
         {replayCount > 0 && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-pulse-primary/10 px-2.5 py-1 text-xs font-medium text-pulse-primary">
             <Play className="h-3 w-3 fill-current" />
-            {replayCount} replay{replayCount > 1 ? "s" : ""}
+            {replayCount} {replayCount > 1 ? t("replays") : t("replay")}
           </span>
         )}
       </div>
@@ -80,7 +82,7 @@ export function EventNavigator({
       <div className="divide-y divide-issues-border">
         {events.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
-            No events recorded
+            {t("noEvents")}
           </div>
         ) : (
           events.map((event) => {
@@ -137,7 +139,7 @@ export function EventNavigator({
                   </Link>
                 ) : (
                   <span className="shrink-0 text-xs text-muted-foreground/50">
-                    no replay
+                    {t("noReplay")}
                   </span>
                 )}
 

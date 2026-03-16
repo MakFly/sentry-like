@@ -119,7 +119,7 @@ export function SdkInstructions({ instructions, apiKey, className }: SdkInstruct
         </div>
         <CodeBlock
           code={instructions.configSnippet}
-          language={instructions.category === "php" ? "yaml" : "typescript"}
+          language={instructions.icon === "laravel" ? "env" : instructions.category === "php" ? "yaml" : "typescript"}
           title="Configuration"
           icon={FileCode}
         />

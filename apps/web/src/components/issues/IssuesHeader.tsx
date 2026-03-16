@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Radio } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 interface IssuesHeaderProps {
   totalSignals: number;
@@ -11,14 +12,16 @@ interface IssuesHeaderProps {
 }
 
 export function IssuesHeader({ totalSignals, isLoading, className }: IssuesHeaderProps) {
+  const t = useTranslations("issues.header");
+
   return (
     <div className={cn("mb-6 flex items-start justify-between", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Issues
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Incoming signals requiring attention
+          {t("subtitle")}
         </p>
       </div>
 
@@ -32,7 +35,7 @@ export function IssuesHeader({ totalSignals, isLoading, className }: IssuesHeade
             {totalSignals.toLocaleString()}
           </span>
         )}
-        <span className="text-xs text-pulse-muted">signals</span>
+        <span className="text-xs text-pulse-muted">{t("signals")}</span>
       </div>
     </div>
   );

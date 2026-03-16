@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Activity, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { BreadcrumbsTimeline } from "@/components/BreadcrumbsTimeline";
+import { useTranslations } from "next-intl";
 
 interface BreadcrumbsSectionProps {
   breadcrumbs: string | null;
@@ -19,6 +20,7 @@ export function BreadcrumbsSection({
   className,
 }: BreadcrumbsSectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const t = useTranslations("issueDetail.breadcrumbsSection");
 
   // Parse breadcrumbs to check if we have data
   let breadcrumbsArray: unknown[] = [];
@@ -47,10 +49,10 @@ export function BreadcrumbsSection({
           </div>
           <div>
             <h3 className="font-mono text-sm font-semibold uppercase tracking-wider text-foreground">
-              User Actions Trail
+              {t("title")}
             </h3>
             <p className="text-xs text-muted-foreground">
-              {breadcrumbsArray.length} actions before the error
+              {t("actionsCount", { count: breadcrumbsArray.length })}
             </p>
           </div>
         </div>
@@ -67,7 +69,7 @@ export function BreadcrumbsSection({
                     second: "2-digit",
                     hour12: false,
                   })
-                : "Error"}
+                : t("error")}
             </span>
           </div>
 

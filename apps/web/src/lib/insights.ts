@@ -1,13 +1,26 @@
 /**
  * Stats insights computation
  * Extracted from the tRPC router for testability and separation of concerns.
+ *
+ * IMPORTANT: This function returns translation keys (strings prefixed with "stats.insights.")
+ * instead of hardcoded English strings. The calling component is responsible for
+ * translating title and message fields using useTranslations('stats.insights').
+ *
+ * Example in a React component:
+ *   const t = useTranslations('stats.insights');
+ *   const insights = computeInsights(timeline, envBreakdown);
+ *   // Then: t(insight.title as TranslationKey), t(insight.message as TranslationKey, insight.params)
  */
 
 export interface StatsInsight {
   type: "trend" | "pattern" | "stability" | "alert" | "neutral";
   icon: "trending-up" | "trending-down" | "clock" | "calendar" | "shield" | "alert-triangle";
+  /** Translation key under stats.insights namespace */
   title: string;
+  /** Translation key under stats.insights namespace */
   message: string;
+  /** Interpolation params for the message translation */
+  params?: Record<string, string | number>;
   value?: string;
   sentiment: "positive" | "negative" | "neutral";
 }
@@ -24,8 +37,8 @@ export function computeInsights(
       {
         type: "neutral",
         icon: "shield",
-        title: "No data yet",
-        message: "Start sending errors to see insights",
+        title: "noDataTitle",
+        message: "noDataMessage",
         sentiment: "neutral",
       },
     ];
@@ -50,9 +63,12 @@ export function computeInsights(
       insights.push({
         type: "trend",
         icon: changePercent > 0 ? "trending-up" : "trending-down",
-        title: changePercent > 0 ? "Errors increasing" : "Errors decreasing",
-        message: `${Math.abs(changePercent)}% ${changePercent > 0 ? "more" : "fewer"} errors vs last week`,
-        value: `${changePercent > 0 ? "+" : ""}${changePercent}%`,
+        title: changePercent > 0 ? "errorsIncreasingTitle" : "errorsDecreasingTitle",
+        message: changePercent > 0 ? "errorsIncreasingMessage" : "errorsDecreasingMessage",
+        params: { percent: Math.abs(changePercent) },
+        value: changePercent > 0
+          ? `+${changePercent}%`
+          : `${changePercent}%`,
         sentiment: changePercent > 0 ? "negative" : "positive",
       });
     }
@@ -84,8 +100,9 @@ export function computeInsights(
       insights.push({
         type: "pattern",
         icon: "calendar",
-        title: "Peak error day",
-        message: `${peakDay.day}s have the most errors`,
+        title: "peakErrorDayTitle",
+        message: "peakErrorDayMessage",
+        params: { day: peakDay.day },
         value: `~${Math.round(peakDay.avg)}/day`,
         sentiment: "neutral",
       });
@@ -95,8 +112,9 @@ export function computeInsights(
       insights.push({
         type: "stability",
         icon: "shield",
-        title: "Most stable day",
-        message: `${quietDay.day}s have the fewest errors`,
+        title: "mostStableDayTitle",
+        message: "mostStableDayMessage",
+        params: { day: quietDay.day },
         value: `~${Math.round(quietDay.avg)}/day`,
         sentiment: "positive",
       });
@@ -115,8 +133,9 @@ export function computeInsights(
         insights.push({
           type: "alert",
           icon: "alert-triangle",
-          title: "Production-heavy",
-          message: `${prodPercent}% of errors are from production`,
+          title: "productionHeavyTitle",
+          message: "productionHeavyMessage",
+          params: { percent: prodPercent },
           value: `${prodPercent}%`,
           sentiment: "negative",
         });
@@ -133,8 +152,9 @@ export function computeInsights(
       insights.push({
         type: "alert",
         icon: "alert-triangle",
-        title: "Recent spike",
-        message: `Today's errors are ${Math.round(lastDay.events / avgDaily)}x above average`,
+        title: "recentSpikeTitle",
+        message: "recentSpikeMessage",
+        params: { multiplier: Math.round(lastDay.events / avgDaily) },
         value: `${lastDay.events} errors`,
         sentiment: "negative",
       });
@@ -145,8 +165,8 @@ export function computeInsights(
     insights.push({
       type: "stability",
       icon: "shield",
-      title: "Looking stable",
-      message: "No significant patterns or anomalies detected",
+      title: "lookingStableTitle",
+      message: "lookingStableMessage",
       sentiment: "positive",
     });
   }

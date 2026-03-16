@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { Clock, CheckCircle, Target } from "lucide-react";
 import type { DashboardStats } from "@/server/api";
 
@@ -32,6 +33,8 @@ function MetricCard({ icon, value, label, sublabel }: MetricCardProps) {
 }
 
 export function ResolutionMetrics({ stats, className }: ResolutionMetricsProps) {
+  const t = useTranslations("stats.resolution");
+
   // Calculate mock metrics based on available stats
   const resolutionRate = stats.totalGroups > 0
     ? Math.min(95, Math.round((stats.totalEvents / stats.totalGroups) * 10))
@@ -43,10 +46,10 @@ export function ResolutionMetrics({ stats, className }: ResolutionMetricsProps) 
     <div className={cn("mt-6", className)}>
       <div className="mb-6">
         <h3 className="font-mono text-sm font-semibold uppercase tracking-wider text-foreground">
-          Resolution Metrics
+          {t("title")}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Team performance and issue resolution
+          {t("subtitle")}
         </p>
       </div>
 
@@ -54,20 +57,20 @@ export function ResolutionMetrics({ stats, className }: ResolutionMetricsProps) 
         <MetricCard
           icon={<Clock className="h-5 w-5 text-primary" />}
           value={stats.avgResponse || "—"}
-          label="Mean Time to Resolve"
-          sublabel="Average across all issues"
+          label={t("meanTimeToResolve")}
+          sublabel={t("meanTimeSublabel")}
         />
         <MetricCard
           icon={<Target className="h-5 w-5 text-primary" />}
           value={`${resolutionRate}%`}
-          label="Resolution Rate"
-          sublabel="Issues resolved within SLA"
+          label={t("resolutionRate")}
+          sublabel={t("resolutionRateSublabel")}
         />
         <MetricCard
           icon={<CheckCircle className="h-5 w-5 text-primary" />}
           value={resolvedThisMonth}
-          label="Resolved This Month"
-          sublabel="Total issues closed"
+          label={t("resolvedThisMonth")}
+          sublabel={t("resolvedThisMonthSublabel")}
         />
       </div>
     </div>

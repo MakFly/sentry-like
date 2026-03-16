@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ChevronRight, AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ErrorGroup } from "@/server/api";
 
 interface AttentionQueueProps {
@@ -55,6 +56,8 @@ export function AttentionQueue({
   projectSlug,
   className,
 }: AttentionQueueProps) {
+  const t = useTranslations("dashboard.attentionQueue");
+
   if (errors.length === 0) {
     return (
       <div
@@ -78,9 +81,9 @@ export function AttentionQueue({
             />
           </svg>
         </div>
-        <p className="text-sm font-medium text-foreground">All clear</p>
+        <p className="text-sm font-medium text-foreground">{t("allClear")}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          No errors requiring attention
+          {t("noErrors")}
         </p>
       </div>
     );
@@ -98,7 +101,7 @@ export function AttentionQueue({
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-status-warning" />
           <span className="font-mono text-xs font-semibold uppercase tracking-wider text-foreground">
-            Requires Attention
+            {t("requiresAttention")}
           </span>
           <span className="rounded-full bg-status-warning/20 px-2 py-0.5 font-mono text-xs font-medium text-status-warning">
             {errors.length}
@@ -108,7 +111,7 @@ export function AttentionQueue({
           href={`/dashboard/${orgSlug}/${projectSlug}/issues`}
           className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          View all →
+          {t("viewAll")}
         </Link>
       </div>
 

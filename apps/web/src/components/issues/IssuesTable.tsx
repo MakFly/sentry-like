@@ -2,8 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import { IssueRow } from "./IssueRow";
-import { CheckCircle2, AlertTriangle, PlayCircle } from "lucide-react";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 import type { ErrorLevel } from "@/server/api";
+import { useTranslations } from "next-intl";
 
 interface IssueGroup {
   fingerprint: string;
@@ -46,6 +47,8 @@ function TableSkeleton() {
 }
 
 function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  const t = useTranslations("issues.table");
+
   return (
     <div className="flex flex-col items-center justify-center py-16">
       <div className="relative">
@@ -55,18 +58,18 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
         </div>
       </div>
       <h3 className="mt-6 text-lg font-semibold tracking-tight">
-        {hasFilters ? "No matching signals" : "All clear"}
+        {hasFilters ? t("emptyFiltered") : t("emptyTitle")}
       </h3>
       <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
-        {hasFilters
-          ? "Try adjusting your filters to see more results."
-          : "No signals detected. Your application is running smoothly."}
+        {hasFilters ? t("emptyFilteredSubtitle") : t("emptySubtitle")}
       </p>
     </div>
   );
 }
 
 function ErrorState({ message }: { message: string }) {
+  const t = useTranslations("issues.table");
+
   return (
     <div className="flex flex-col items-center justify-center py-16">
       <div className="relative">
@@ -76,7 +79,7 @@ function ErrorState({ message }: { message: string }) {
         </div>
       </div>
       <h3 className="mt-6 text-lg font-semibold tracking-tight text-signal-error">
-        Failed to load signals
+        {t("errorTitle")}
       </h3>
       <p className="mt-2 max-w-sm text-center font-mono text-sm text-muted-foreground">
         {message}
@@ -92,6 +95,8 @@ export function IssuesTable({
   isLoading,
   className,
 }: IssuesTableProps) {
+  const t = useTranslations("issues.table");
+
   if (isLoading) {
     return (
       <div
@@ -131,13 +136,13 @@ export function IssuesTable({
       {/* Table header */}
       <div className="flex items-center gap-4 border-b border-issues-border bg-issues-surface/50 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         <div className="w-6 shrink-0" /> {/* Expand toggle */}
-        <div className="w-20 shrink-0">Signal</div>
-        <div className="min-w-0 flex-1 overflow-hidden">Message</div>
-        <div className="hidden w-24 shrink-0 lg:block">Strength</div>
-        <div className="hidden w-40 shrink-0 md:block">Source</div>
-        <div className="hidden w-10 shrink-0 sm:block text-center">Replay</div>
-        <div className="w-16 shrink-0 text-right">Freq</div>
-        <div className="hidden w-16 shrink-0 text-right sm:block">Last</div>
+        <div className="w-20 shrink-0">{t("columnSignal")}</div>
+        <div className="min-w-0 flex-1 overflow-hidden">{t("columnMessage")}</div>
+        <div className="hidden w-24 shrink-0 lg:block">{t("columnStrength")}</div>
+        <div className="hidden w-40 shrink-0 md:block">{t("columnSource")}</div>
+        <div className="hidden w-10 shrink-0 sm:block text-center">{t("columnReplay")}</div>
+        <div className="w-16 shrink-0 text-right">{t("columnFreq")}</div>
+        <div className="hidden w-16 shrink-0 text-right sm:block">{t("columnLast")}</div>
         <div className="w-8 shrink-0" /> {/* Actions */}
       </div>
 

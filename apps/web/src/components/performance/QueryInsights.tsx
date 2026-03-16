@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -39,11 +40,19 @@ interface QueryInsightsProps {
 }
 
 export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUrl }: QueryInsightsProps) {
+  const t = useTranslations("performance.queries.insights");
+
+  function getSeverityLabel(count: number): string {
+    if (count >= 20) return t("severity.critical");
+    if (count >= 10) return t("severity.warning");
+    return t("severity.info");
+  }
+
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Query Insights</CardTitle>
+          <CardTitle className="text-base">{t("title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -61,22 +70,22 @@ export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUr
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Query Insights</CardTitle>
+        <CardTitle className="text-base">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Duplicate Queries */}
         {duplicateQueries.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
-              Duplicate Queries (potential N+1)
+              {t("duplicates")}
             </h4>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50%]">Query</TableHead>
-                  <TableHead className="w-[80px] text-right">Count</TableHead>
-                  <TableHead className="w-[100px] text-right">Total Time</TableHead>
-                  <TableHead className="w-[80px] text-right">Severity</TableHead>
+                  <TableHead className="w-[50%]">{t("columns.query")}</TableHead>
+                  <TableHead className="w-[80px] text-right">{t("columns.count")}</TableHead>
+                  <TableHead className="w-[100px] text-right">{t("columns.totalTime")}</TableHead>
+                  <TableHead className="w-[80px] text-right">{t("columns.severity")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -96,7 +105,7 @@ export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUr
                         variant={duplicateBadgeVariant(q.count)}
                         className={duplicateBadgeClass(q.count)}
                       >
-                        {q.count >= 20 ? "Critical" : q.count >= 10 ? "Warning" : "Info"}
+                        {getSeverityLabel(q.count)}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -112,14 +121,14 @@ export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUr
         {slowQueries.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
-              Slowest Queries
+              {t("slowest")}
             </h4>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50%]">Query</TableHead>
-                  <TableHead className="w-[100px] text-right">Duration</TableHead>
-                  <TableHead className="w-[30%]">Transaction</TableHead>
+                  <TableHead className="w-[50%]">{t("columns.query")}</TableHead>
+                  <TableHead className="w-[100px] text-right">{t("columns.duration")}</TableHead>
+                  <TableHead className="w-[30%]">{t("columns.transaction")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { BarChart3 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface TimelinePoint {
   date: string;
@@ -34,6 +35,8 @@ export function FrequencyChart({
   envBreakdown,
   className,
 }: FrequencyChartProps) {
+  const t = useTranslations("issueDetail.frequencyChart");
+
   // Calculate max for scaling
   const maxCount = Math.max(...timeline.map((t) => t.count), 1);
   const totalEvents = timeline.reduce((sum, t) => sum + t.count, 0);
@@ -53,7 +56,7 @@ export function FrequencyChart({
         <div className="mb-4 flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-pulse-primary" />
           <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-foreground">
-            Frequency
+            {t("title")}
           </h3>
         </div>
 
@@ -92,10 +95,10 @@ export function FrequencyChart({
             {/* Stats */}
             <div className="space-y-2 border-t border-issues-border pt-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Last 30 days</span>
+                <span className="text-muted-foreground">{t("last30days")}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Peak</span>
+                <span className="text-muted-foreground">{t("peak")}</span>
                 <span className="font-mono text-foreground">
                   {peakDay.date
                     ? new Date(peakDay.date).toLocaleDateString("en-US", {
@@ -107,14 +110,14 @@ export function FrequencyChart({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Avg</span>
-                <span className="font-mono text-foreground">{avgPerDay}/day</span>
+                <span className="text-muted-foreground">{t("avg")}</span>
+                <span className="font-mono text-foreground">{t("perDay", { count: avgPerDay })}</span>
               </div>
             </div>
           </>
         ) : (
           <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-            No frequency data
+            {t("noData")}
           </div>
         )}
       </div>
@@ -123,7 +126,7 @@ export function FrequencyChart({
       {envBreakdown && envBreakdown.length > 0 && (
         <div className="rounded-lg border border-issues-border bg-issues-surface/30 p-4">
           <h3 className="mb-4 font-mono text-xs font-semibold uppercase tracking-wider text-foreground">
-            By Environment
+            {t("byEnvironment")}
           </h3>
 
           <div className="space-y-3">

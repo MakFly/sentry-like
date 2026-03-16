@@ -9,6 +9,7 @@ import {
   Chrome,
   Server,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface TagsPanelProps {
   env?: string;
@@ -49,6 +50,7 @@ export function TagsPanel({
   onTagClick,
   className,
 }: TagsPanelProps) {
+  const t = useTranslations("issueDetail.tagsPanel");
   const DeviceIcon = getDeviceIcon(deviceType);
   const hasAnyTag = env || browser || os || deviceType;
 
@@ -59,28 +61,28 @@ export function TagsPanel({
   const tags = [
     {
       key: "env",
-      label: "Environment",
+      label: t("environment"),
       value: env,
       icon: Server,
       colorClass: env ? envColors[env] || "bg-muted/50 text-muted-foreground border-muted" : null,
     },
     {
       key: "browser",
-      label: "Browser",
+      label: t("browser"),
       value: browser,
       icon: Chrome,
       colorClass: "bg-issues-bg/50 text-foreground border-issues-border",
     },
     {
       key: "os",
-      label: "OS",
+      label: t("os"),
       value: os,
       icon: Globe,
       colorClass: "bg-issues-bg/50 text-foreground border-issues-border",
     },
     {
       key: "device",
-      label: "Device",
+      label: t("device"),
       value: deviceType,
       icon: DeviceIcon,
       colorClass: "bg-issues-bg/50 text-foreground border-issues-border",
@@ -90,7 +92,7 @@ export function TagsPanel({
   return (
     <div className={cn("rounded-lg border border-issues-border bg-issues-surface/30 p-4", className)}>
       <h3 className="mb-4 font-mono text-xs font-semibold uppercase tracking-wider text-foreground">
-        Tags
+        {t("title")}
       </h3>
 
       <div className="space-y-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ApdexScore } from "@/server/api/types/performance";
@@ -10,14 +11,6 @@ function getApdexColor(score: number): string {
   if (score >= 0.7) return "text-yellow-500";
   if (score >= 0.5) return "text-orange-500";
   return "text-red-500";
-}
-
-function getApdexLabel(score: number): string {
-  if (score >= 0.94) return "Excellent";
-  if (score >= 0.85) return "Good";
-  if (score >= 0.7) return "Fair";
-  if (score >= 0.5) return "Poor";
-  return "Unacceptable";
 }
 
 function getApdexStrokeColor(score: number): string {
@@ -34,11 +27,21 @@ interface ApdexGaugeProps {
 }
 
 export function ApdexGauge({ data, isLoading }: ApdexGaugeProps) {
+  const t = useTranslations("performance.apdex");
+
+  function getApdexLabel(score: number): string {
+    if (score >= 0.94) return t("excellent");
+    if (score >= 0.85) return t("good");
+    if (score >= 0.7) return t("fair");
+    if (score >= 0.5) return t("poor");
+    return t("unacceptable");
+  }
+
   if (isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Apdex Score</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t("title")}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-4">
           <Skeleton className="h-24 w-24 rounded-full" />
@@ -51,10 +54,10 @@ export function ApdexGauge({ data, isLoading }: ApdexGaugeProps) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Apdex Score</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{t("title")}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-4">
-          <p className="text-sm text-muted-foreground">No data</p>
+          <p className="text-sm text-muted-foreground">{t("noData")}</p>
         </CardContent>
       </Card>
     );
@@ -67,7 +70,7 @@ export function ApdexGauge({ data, isLoading }: ApdexGaugeProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">Apdex Score</CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-6">
@@ -104,19 +107,19 @@ export function ApdexGauge({ data, isLoading }: ApdexGaugeProps) {
             </p>
             <div className="space-y-1 text-xs text-muted-foreground">
               <div className="flex justify-between">
-                <span className="text-green-400">Satisfied (&lt;{threshold}ms)</span>
+                <span className="text-green-400">{t("satisfied", { threshold })}</span>
                 <span className="font-mono">{satisfied}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-yellow-400">Tolerating</span>
+                <span className="text-yellow-400">{t("tolerating")}</span>
                 <span className="font-mono">{tolerating}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-red-400">Frustrated</span>
+                <span className="text-red-400">{t("frustrated")}</span>
                 <span className="font-mono">{frustrated}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-1">
-                <span>Total</span>
+                <span>{t("total")}</span>
                 <span className="font-mono">{total}</span>
               </div>
             </div>

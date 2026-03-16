@@ -10,6 +10,7 @@ import {
   UserPlus,
   Loader2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Member {
   id: string;
@@ -69,6 +70,7 @@ export function AssigneeDropdown({
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("issueDetail.assigneeDropdown");
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -124,13 +126,13 @@ export function AssigneeDropdown({
           <>
             <Avatar member={currentAssignee} size="sm" />
             <span className="text-foreground font-medium max-w-[100px] truncate">
-              {currentAssignee.name || currentAssignee.email || "Assigned"}
+              {currentAssignee.name || currentAssignee.email || t("assigned")}
             </span>
           </>
         ) : (
           <>
             <UserPlus className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Assign</span>
+            <span className="text-muted-foreground">{t("assign")}</span>
           </>
         )}
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -148,7 +150,7 @@ export function AssigneeDropdown({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search members..."
+                placeholder={t("searchPlaceholder")}
                 className="w-full rounded-md border border-issues-border bg-issues-surface py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-pulse-primary focus:outline-none focus:ring-1 focus:ring-pulse-primary"
               />
             </div>
@@ -165,7 +167,7 @@ export function AssigneeDropdown({
                 <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-issues-border">
                   <X className="h-3 w-3 text-muted-foreground" />
                 </div>
-                <span className="text-muted-foreground">Unassign</span>
+                <span className="text-muted-foreground">{t("unassign")}</span>
               </button>
             )}
 
@@ -198,7 +200,7 @@ export function AssigneeDropdown({
 
             {filteredMembers.length === 0 && (
               <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                No members found
+                {t("noMembers")}
               </p>
             )}
           </div>

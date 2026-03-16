@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface DevicePanelProps {
   browser?: string | null;
@@ -40,6 +41,7 @@ export function DevicePanel({
   className,
 }: DevicePanelProps) {
   const [showUserAgent, setShowUserAgent] = useState(false);
+  const t = useTranslations("issueDetail.devicePanel");
   const DeviceIcon = getDeviceIcon(deviceType);
 
   const hasAnyData = browser || os || deviceType;
@@ -53,7 +55,7 @@ export function DevicePanel({
       <div className="mb-4 flex items-center gap-2">
         <DeviceIcon className="h-4 w-4 text-pulse-primary" />
         <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-foreground">
-          Device
+          {t("title")}
         </h3>
       </div>
 
@@ -62,7 +64,7 @@ export function DevicePanel({
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Chrome className="h-3.5 w-3.5" />
-              <span className="text-xs">Browser</span>
+              <span className="text-xs">{t("browser")}</span>
             </div>
             <span className="font-mono text-xs text-foreground">{browser}</span>
           </div>
@@ -72,7 +74,7 @@ export function DevicePanel({
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Globe className="h-3.5 w-3.5" />
-              <span className="text-xs">OS</span>
+              <span className="text-xs">{t("os")}</span>
             </div>
             <span className="font-mono text-xs text-foreground">{os}</span>
           </div>
@@ -82,7 +84,7 @@ export function DevicePanel({
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <DeviceIcon className="h-3.5 w-3.5" />
-              <span className="text-xs">Device</span>
+              <span className="text-xs">{t("device")}</span>
             </div>
             <span className="font-mono text-xs capitalize text-foreground">
               {deviceType}
@@ -97,7 +99,7 @@ export function DevicePanel({
               onClick={() => setShowUserAgent(!showUserAgent)}
               className="flex w-full items-center justify-between text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              <span>User Agent</span>
+              <span>{t("userAgent")}</span>
               {showUserAgent ? (
                 <ChevronDown className="h-3.5 w-3.5" />
               ) : (

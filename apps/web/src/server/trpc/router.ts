@@ -275,10 +275,12 @@ const projectsRouter = router({
   update: protectedProcedure
     .input(z.object({
       id: z.string().uuid(),
-      name: z.string().min(1).max(100)
+      name: z.string().min(1).max(100).optional(),
+      environment: z.enum(["production", "staging", "development"]).optional(),
     }))
     .mutation(async ({ input }) => {
-      return api.projects.update(input.id, { name: input.name });
+      const { id, ...data } = input;
+      return api.projects.update(id, data);
     }),
 
   delete: protectedProcedure

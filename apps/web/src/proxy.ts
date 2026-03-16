@@ -1,7 +1,25 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
 
 import { MONITORING_API_URL } from "@/lib/config";
+import { routing } from "@/i18n/routing";
+
+const intlMiddleware = createIntlMiddleware(routing);
+
+function propagateIntlCookies(intlResponse: NextResponse, response: NextResponse): NextResponse {
+  intlResponse.cookies.getAll().forEach((cookie) => {
+    response.cookies.set(cookie.name, cookie.value);
+  });
+  // Propagate intl headers (x-next-intl-locale)
+  intlResponse.headers.forEach((value, key) => {
+    if (key.startsWith("x-next-intl")) {
+      response.headers.set(key, value);
+    }
+  });
+  return response;
+}
+
 const API_URL = MONITORING_API_URL;
 const API_VERSION = "v1";
 const FAIL_OPEN = process.env.AUTH_FAIL_OPEN === "true" || process.env.NODE_ENV !== "production";
@@ -67,18 +85,26 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const cookieHeader = request.headers.get("cookie") ?? "";
 
+  const isApiRoute = pathname.startsWith("/api");
+  const isStaticRoute = pathname.startsWith("/_next");
+
+  // Skip intl middleware for API routes and static assets — they don't need locale resolution
+  if (isApiRoute || isStaticRoute) {
+    return NextResponse.next();
+  }
+
+  // Run next-intl middleware to resolve locale and set NEXT_LOCALE cookie
+  const intlResponse = intlMiddleware(request);
+
   // Self-hosted: skip marketing page, go straight to login
   if (SELF_HOSTED && pathname === "/") {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/login", request.url)));
   }
 
   const publicRoutes = ["/", "/login", "/signup", "/invite"];
   const isPublicRoute = publicRoutes.some(
     (route) => pathname === route || (route !== "/" && pathname.startsWith(`${route}/`))
   );
-
-  const isApiRoute = pathname.startsWith("/api");
-  const isStaticRoute = pathname.startsWith("/_next");
   const isOnboardingRoute = pathname.startsWith("/onboarding");
 
   const authRoutes = ["/login", "/signup"];
@@ -90,17 +116,17 @@ export async function proxy(request: NextRequest) {
   const hasSessionCookie = sessionToken !== null;
 
   if (hasSessionCookie && isAuthRoute) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 
-  if (isPublicRoute || isApiRoute || isStaticRoute) {
-    return NextResponse.next();
+  if (isPublicRoute) {
+    return intlResponse;
   }
 
   if (!hasSessionCookie) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    return propagateIntlCookies(intlResponse, NextResponse.redirect(loginUrl));
   }
 
   let sessionValidationFailed = false;
@@ -145,7 +171,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!pathname.startsWith("/dashboard") && !isOnboardingRoute) {
-    return NextResponse.next();
+    return intlResponse;
   }
 
   if (pathname === "/dashboard" || pathname === "/dashboard/") {
@@ -166,19 +192,19 @@ export async function proxy(request: NextRequest) {
       }
 
       if (needsOnboarding) {
-        return NextResponse.redirect(new URL("/onboarding", request.url));
+        return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/onboarding", request.url)));
       }
 
       if (orgsRes.ok) {
         const organizations = await orgsRes.json();
         if (organizations && organizations.length > 0) {
-          return NextResponse.redirect(
+          return propagateIntlCookies(intlResponse, NextResponse.redirect(
             new URL(`/dashboard/${organizations[0].slug}`, request.url)
-          );
+          ));
         }
       }
 
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/onboarding", request.url)));
     } catch (error) {
       console.error("Failed to fetch organizations:", error);
       if (!FAIL_OPEN) {
@@ -199,7 +225,7 @@ export async function proxy(request: NextRequest) {
       if (statusRes.ok) {
         const status = await statusRes.json();
         if (!status.needsOnboarding) {
-          return NextResponse.redirect(new URL("/dashboard", request.url));
+          return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/dashboard", request.url)));
         }
       }
     } catch (error) {
@@ -210,7 +236,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return intlResponse;
 }
 
 export const config = {

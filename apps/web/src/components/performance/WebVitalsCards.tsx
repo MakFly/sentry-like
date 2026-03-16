@@ -1,27 +1,22 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { WebVitalSummary } from "@/server/api/types";
 
-const vitalLabels: Record<string, { label: string; unit: string; description: string }> = {
-  LCP: { label: "Largest Contentful Paint", unit: "ms", description: "Loading performance" },
-  FID: { label: "First Input Delay", unit: "ms", description: "Interactivity" },
-  CLS: { label: "Cumulative Layout Shift", unit: "", description: "Visual stability" },
-  TTFB: { label: "Time to First Byte", unit: "ms", description: "Server response" },
-  INP: { label: "Interaction to Next Paint", unit: "ms", description: "Responsiveness" },
+const vitalLabels: Record<string, { label: string; unit: string }> = {
+  LCP: { label: "Largest Contentful Paint", unit: "ms" },
+  FID: { label: "First Input Delay", unit: "ms" },
+  CLS: { label: "Cumulative Layout Shift", unit: "" },
+  TTFB: { label: "Time to First Byte", unit: "ms" },
+  INP: { label: "Interaction to Next Paint", unit: "ms" },
 };
 
 const statusColors = {
   good: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   "needs-improvement": "bg-amber-500/15 text-amber-400 border-amber-500/30",
   poor: "bg-red-500/15 text-red-400 border-red-500/30",
-};
-
-const statusLabels = {
-  good: "Good",
-  "needs-improvement": "Needs Improvement",
-  poor: "Poor",
 };
 
 function formatValue(name: string, value: number): string {
@@ -35,6 +30,14 @@ interface WebVitalsCardsProps {
 }
 
 export function WebVitalsCards({ vitals }: WebVitalsCardsProps) {
+  const t = useTranslations("performance");
+
+  const statusLabels = {
+    good: t("webVitals.status.good"),
+    "needs-improvement": t("webVitals.status.needsImprovement"),
+    poor: t("webVitals.status.poor"),
+  };
+
   const orderedNames = ["LCP", "FID", "CLS", "TTFB", "INP"];
   const orderedVitals = orderedNames.map(
     (name) => vitals.find((v) => v.name === name) || null
@@ -45,11 +48,10 @@ export function WebVitalsCards({ vitals }: WebVitalsCardsProps) {
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-2 py-12 text-center">
           <p className="text-sm font-medium text-muted-foreground">
-            No Web Vitals data available
+            {t("webVitals.noData")}
           </p>
           <p className="max-w-md text-xs text-muted-foreground/70">
-            Web Vitals track browser performance metrics (LCP, FID, CLS). For server-side
-            projects, check the Transactions section below for response times and query performance.
+            {t("webVitals.noDataHint")}
           </p>
         </CardContent>
       </Card>
@@ -72,7 +74,7 @@ export function WebVitalsCards({ vitals }: WebVitalsCardsProps) {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">—</p>
-                <p className="mt-1 text-xs text-muted-foreground">{info?.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t(`webVitals.descriptions.${name}` as Parameters<typeof t>[0])}</p>
               </CardContent>
             </Card>
           );
@@ -90,7 +92,7 @@ export function WebVitalsCards({ vitals }: WebVitalsCardsProps) {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{formatValue(name, vital.avg)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{info?.description}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t(`webVitals.descriptions.${name}` as Parameters<typeof t>[0])}</p>
               <div className="mt-2 flex gap-3 text-xs text-muted-foreground">
                 <span>p50: {formatValue(name, vital.p50)}</span>
                 <span>p75: {formatValue(name, vital.p75)}</span>

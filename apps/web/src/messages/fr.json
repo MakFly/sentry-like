@@ -1,0 +1,1179 @@
+{
+  "common": {
+    "appName": "ErrorWatch",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "confirm": "Confirmer",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "back": "Retour",
+    "next": "Suivant",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat trouvé",
+    "create": "Créer",
+    "edit": "Modifier",
+    "user": "Utilisateur",
+    "logOut": "Se déconnecter",
+    "creating": "Création...",
+    "toggleSidebar": "Afficher/masquer la barre latérale"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "issues": "Problèmes",
+    "logs": "Journaux",
+    "replays": "Rejeux",
+    "stats": "Statistiques",
+    "performance": "Performance",
+    "overview": "Vue d'ensemble",
+    "transactions": "Transactions",
+    "webVitals": "Web Vitals",
+    "databaseQueries": "Requêtes BDD",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "admin": "Admin",
+    "monitoring": "Surveillance",
+    "live": "En direct",
+    "reconnecting": "Reconnexion...",
+    "offline": "Hors ligne",
+    "organization": "Organisation",
+    "project": "Projet",
+    "commandSearch": "Rechercher...",
+    "commandPlaceholder": "Tapez une commande ou recherchez...",
+    "commandNoResults": "Aucun résultat trouvé.",
+    "commandNavigation": "Navigation",
+    "commandHelp": "Aide",
+    "commandQuickActions": "Actions rapides",
+    "commandAccount": "Compte",
+    "commandStatistics": "Statistiques",
+    "commandHelpCenter": "Centre d'aide",
+    "commandDocumentation": "Documentation",
+    "commandGoToDashboard": "Aller au tableau de bord",
+    "commandCreateNewProject": "Créer un nouveau projet"
+  },
+  "organization": {
+    "select": "Sélectionner une organisation",
+    "new": "Nouvelle organisation",
+    "createTitle": "Créer une organisation",
+    "createDescription": "Créez une nouvelle organisation pour gérer des projets et des équipes séparés.",
+    "nameLabel": "Nom de l'organisation",
+    "namePlaceholder": "Mon entreprise",
+    "createdSuccess": "Organisation créée avec succès",
+    "createError": "Échec de la création de l'organisation"
+  },
+  "project": {
+    "select": "Sélectionner un projet",
+    "noProjects": "Aucun projet",
+    "noProjectsYet": "Aucun projet pour l'instant",
+    "new": "Nouveau projet",
+    "createTitle": "Créer un nouveau projet",
+    "createDescription": "Ajoutez un nouveau projet pour surveiller les erreurs",
+    "organizationLabel": "Organisation",
+    "organizationPlaceholder": "Sélectionner une organisation",
+    "nameLabel": "Nom du projet",
+    "namePlaceholder": "Mon application",
+    "environmentLabel": "Environnement",
+    "platformLabel": "Plateforme / Framework",
+    "environmentProduction": "Production",
+    "environmentStaging": "Préproduction",
+    "environmentDevelopment": "Développement",
+    "createSuccess": "Projet créé !",
+    "createSuccessDescription": "\"{name}\" est prêt à recevoir des erreurs.",
+    "createError": "Échec de la création du projet"
+  },
+  "platform": {
+    "fullstack": "Fullstack",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "php": "PHP"
+  },
+  "upgrade": {
+    "title": "Passer à Pro",
+    "limitReached": "Vous avez atteint la limite de {maxItems} {resource} dans votre forfait {plan}.",
+    "currentUsage": "Utilisation actuelle",
+    "proPlan": "Forfait Pro",
+    "featureUnlimited": "Projets & organisations illimités",
+    "featureEvents": "100 000 événements/mois",
+    "featureRetention": "30 jours de rétention des données",
+    "featureSupport": "Support prioritaire",
+    "featureAlerts": "Alertes & intégrations avancées",
+    "price": "29 €",
+    "pricePerMonth": "/mois",
+    "billingNote": "Facturation mensuelle. Annulez à tout moment.",
+    "maybeLater": "Plus tard",
+    "upgradeNow": "Passer à Pro",
+    "starting": "Démarrage...",
+    "checkoutError": "Échec du démarrage du paiement",
+    "checkoutUrlUnavailable": "URL de paiement indisponible"
+  },
+  "noProject": {
+    "title": "Aucun projet configuré",
+    "descriptionWithOrg": "Créez votre premier projet pour commencer à surveiller les erreurs de vos applications.",
+    "descriptionWithoutOrg": "Vous devez compléter l'intégration pour créer votre organisation et votre premier projet.",
+    "createProjectTitle": "Créer un projet",
+    "createProjectDescription": "Un projet représente une application que vous souhaitez surveiller",
+    "featureAlerts": "Recevez des alertes d'erreurs en temps réel",
+    "featureStackTraces": "Suivez les traces de pile et le contexte",
+    "featureFrameworks": "Compatible avec 9+ frameworks",
+    "createFirstProject": "Créer votre premier projet",
+    "completeOnboarding": "Compléter l'intégration"
+  },
+  "placeholderDashboard": {
+    "loadingDashboard": "Chargement de votre tableau de bord...",
+    "dashboardTitle": "Tableau de bord",
+    "dashboardOverview": "Vue d'ensemble de la surveillance des erreurs de votre application",
+    "statUnresolved": "Non résolus",
+    "statEventsToday": "Événements aujourd'hui",
+    "statNewIssues": "Nouveaux problèmes (24h)",
+    "statAvgResponse": "Temps de réponse moy.",
+    "recentErrorsTitle": "Erreurs récentes",
+    "recentErrorsDescription": "Derniers problèmes de vos applications",
+    "overlayTitle": "Aucun projet configuré",
+    "overlayDescription": "Complétez la configuration pour commencer à surveiller les erreurs de vos applications.",
+    "completeSetup": "Compléter la configuration"
+  },
+  "onboarding": {
+    "steps": {
+      "workspace": "Espace de travail",
+      "platform": "Plateforme",
+      "setup": "Configuration"
+    },
+    "setupStep": {
+      "title": "Bienvenue sur ErrorWatch",
+      "subtitle": "Configurons votre espace de travail pour commencer à surveiller les erreurs",
+      "orgNameLabel": "Nom de l'organisation",
+      "orgNamePlaceholder": "Mon Entreprise",
+      "orgNameHint": "C'est le nom de votre équipe ou entreprise",
+      "projectNameLabel": "Nom du projet",
+      "projectNamePlaceholder": "Mon Application",
+      "projectNameHint": "L'application que vous souhaitez surveiller",
+      "environmentLabel": "Environnement",
+      "envProduction": "Production",
+      "envStaging": "Pré-production",
+      "envDevelopment": "Développement",
+      "continueButton": "Continuer",
+      "orgNameRequired": "Le nom de l'organisation est requis",
+      "projectNameRequired": "Le nom du projet est requis",
+      "projectNameSameAsOrg": "Le nom du projet ne peut pas être identique au nom de l'organisation"
+    },
+    "platformStep": {
+      "title": "Sélectionnez votre plateforme",
+      "subtitle": "Choisissez le framework ou la plateforme pour votre projet",
+      "backButton": "Retour",
+      "createButton": "Créer l'espace de travail",
+      "creatingButton": "Création en cours..."
+    },
+    "apikeyStep": {
+      "title": "Tout est prêt !",
+      "subtitle": "Suivez ces étapes pour intégrer ErrorWatch",
+      "workspaceCreated": "Espace de travail créé !",
+      "apiKeyLabel": "Votre clé API",
+      "saveKeyWarning": "Sauvegardez cette clé maintenant — vous ne pourrez plus la voir !",
+      "goToDashboard": "Aller au tableau de bord"
+    },
+    "errors": {
+      "failedToCreate": "Échec de la création de l'espace de travail"
+    },
+    "invite": {
+      "loading": "Chargement de l'invitation...",
+      "invalidTitle": "Invitation invalide",
+      "invalidOrExpired": "Invitation invalide ou expirée",
+      "goToLogin": "Aller à la connexion",
+      "successTitle": "Bienvenue dans l'équipe !",
+      "successJoined": "Vous avez rejoint <strong>{orgName}</strong> avec succès",
+      "redirecting": "Redirection vers le tableau de bord...",
+      "invitedTitle": "Vous êtes invité !",
+      "invitedSubtitle": "Vous avez été invité à rejoindre une organisation",
+      "roleLabel": "Rôle :",
+      "invitationSentTo": "Invitation envoyée à :",
+      "pleaseSignIn": "Veuillez vous connecter pour accepter cette invitation",
+      "signIn": "Se connecter",
+      "signUp": "S'inscrire",
+      "acceptButton": "Accepter l'invitation",
+      "acceptingButton": "Acceptation...",
+      "failedToAccept": "Échec de l'acceptation de l'invitation"
+    }
+  },
+  "performance": {
+    "overview": "Vue d'ensemble des performances",
+    "title": "Performance",
+    "dateRange": {
+      "last24h": "24 dernières heures",
+      "last7d": "7 derniers jours",
+      "last30d": "30 derniers jours",
+      "last90d": "90 derniers jours",
+      "last6m": "6 derniers mois",
+      "lastYear": "Dernière année"
+    },
+    "serverResponseTime": "Temps de réponse serveur ({label})",
+    "throughputLabel": "Débit",
+    "throughputUnit": "req/min",
+    "errorRate": "Taux d'erreur",
+    "aboveThreshold": "Au-dessus du seuil",
+    "subPages": {
+      "transactions": {
+        "title": "Transactions",
+        "description": "Consultez toutes les transactions, groupées ou individuelles, avec filtres et pagination."
+      },
+      "webVitals": {
+        "title": "Web Vitals",
+        "description": "Métriques Core Web Vitals : LCP, FID, CLS, TTFB, INP."
+      },
+      "databaseQueries": {
+        "title": "Requêtes BDD",
+        "description": "Requêtes dupliquées (N+1), requêtes lentes et analyse d'impact par endpoint."
+      }
+    },
+    "transactions": {
+      "title": "Transactions",
+      "noTransactions": "Aucune transaction trouvée.",
+      "noData": "Aucune donnée de transaction pour l'instant.",
+      "tabAll": "Toutes les transactions",
+      "tabSlowest": "Les plus lentes",
+      "pageOf": "Page {page} sur {total}",
+      "totalCount": "{count} au total",
+      "grouped": "Groupées",
+      "individual": "Individuelles",
+      "backToTransactions": "Retour aux transactions",
+      "notFound": "Transaction introuvable.",
+      "columns": {
+        "name": "Nom",
+        "op": "Op.",
+        "count": "Nombre",
+        "avg": "Moy.",
+        "min": "Min",
+        "max": "Max",
+        "status": "Statut",
+        "latest": "Dernière",
+        "duration": "Durée",
+        "date": "Date"
+      }
+    },
+    "slowestTransactions": {
+      "title": "Transactions les plus lentes"
+    },
+    "webVitals": {
+      "title": "Web Vitals",
+      "noData": "Aucune donnée Web Vitals disponible",
+      "noDataHint": "Les Web Vitals mesurent les performances navigateur (LCP, FID, CLS). Pour les projets serveur, consultez la section Transactions pour les temps de réponse et les performances des requêtes.",
+      "status": {
+        "good": "Bon",
+        "needsImprovement": "À améliorer",
+        "poor": "Mauvais"
+      },
+      "descriptions": {
+        "LCP": "Performance de chargement",
+        "FID": "Interactivité",
+        "CLS": "Stabilité visuelle",
+        "TTFB": "Réponse serveur",
+        "INP": "Réactivité"
+      }
+    },
+    "apdex": {
+      "title": "Score Apdex",
+      "noData": "Aucune donnée",
+      "excellent": "Excellent",
+      "good": "Bon",
+      "fair": "Acceptable",
+      "poor": "Médiocre",
+      "unacceptable": "Inacceptable",
+      "satisfied": "Satisfaits (<{threshold}ms)",
+      "tolerating": "Tolérants",
+      "frustrated": "Frustrés",
+      "total": "Total"
+    },
+    "queries": {
+      "title": "Requêtes BDD",
+      "insights": {
+        "title": "Analyse des requêtes",
+        "duplicates": "Requêtes dupliquées (N+1 potentiel)",
+        "slowest": "Requêtes les plus lentes",
+        "columns": {
+          "query": "Requête",
+          "count": "Nombre",
+          "totalTime": "Temps total",
+          "severity": "Sévérité",
+          "duration": "Durée",
+          "transaction": "Transaction"
+        },
+        "severity": {
+          "critical": "Critique",
+          "warning": "Avertissement",
+          "info": "Info"
+        }
+      },
+      "endpointImpact": {
+        "title": "Endpoints les plus impactants",
+        "columns": {
+          "endpoint": "Endpoint",
+          "count": "Nombre",
+          "avg": "Moy.",
+          "totalTime": "Temps total",
+          "impact": "% Impact",
+          "errors": "Erreurs"
+        }
+      }
+    },
+    "transactionDetail": {
+      "duration": "Durée",
+      "operation": "Opération",
+      "environment": "Environnement",
+      "spans": "Spans",
+      "traceId": "Trace ID",
+      "breakdown": "Répartition",
+      "queryStats": {
+        "title": "Statistiques des requêtes",
+        "total": "Total des requêtes",
+        "unique": "Requêtes uniques",
+        "totalTime": "Temps total des requêtes"
+      },
+      "n1Detected": {
+        "sdk": "Requêtes N+1 détectées par le SDK",
+        "pattern": "Motif N+1 détecté",
+        "description": "La même requête a été exécutée plusieurs fois dans cette requête :"
+      },
+      "waterfall": {
+        "title": "Waterfall des spans",
+        "noSpans": "Aucun span enregistré pour cette transaction.",
+        "operation": "Opération",
+        "timeline": "Chronologie",
+        "durationDesc": "Durée / Description / Temps relatif",
+        "normal": "Normal",
+        "repeated": "Répété",
+        "n1Suspect": "Suspect N+1"
+      }
+    }
+  },
+  "replays": {
+    "title": "Rejeux de session",
+    "subtitle": "Regardez les sessions utilisateur pour comprendre les erreurs",
+    "sessions": "sessions",
+    "failedToLoad": "Échec du chargement des rejeux",
+    "noMatchingSessions": "Aucune session correspondante. Ajustez vos filtres.",
+    "noSessionsYet": "Aucun rejeu de session enregistré pour l'instant.",
+    "sessionNotFound": "Session introuvable",
+    "sessionNotFoundDesc": "Ce rejeu de session a peut-être été supprimé ou n'existe pas.",
+    "backToReplays": "Retour aux rejeux",
+    "noEventsRecorded": "Aucun événement enregistré",
+    "noEventsDesc": "Cette session ne contient aucun événement enregistré. L'utilisateur a peut-être quitté la page avant que des interactions soient capturées.",
+    "filters": {
+      "searchByUrl": "Rechercher par URL...",
+      "allBrowsers": "Tous les navigateurs",
+      "allOS": "Tous les OS",
+      "allTime": "Toutes les périodes",
+      "timeRange": "Période",
+      "allSeverity": "Toutes les sévérités",
+      "clear": "Effacer",
+      "last24h": "24 dernières heures",
+      "last7d": "7 derniers jours",
+      "last30d": "30 derniers jours",
+      "last90d": "90 derniers jours",
+      "severityFatal": "Fatal",
+      "severityError": "Erreur",
+      "severityWarning": "Avertissement",
+      "severityInfo": "Info",
+      "severityDebug": "Debug"
+    }
+  },
+  "help": {
+    "title": "Centre d'aide",
+    "subtitle": "Apprenez à utiliser ErrorWatch efficacement",
+    "quickStart": {
+      "title": "Démarrage rapide",
+      "subtitle": "Commencez avec ErrorWatch en quelques minutes",
+      "dashboardOverview": {
+        "title": "Vue d'ensemble du tableau de bord",
+        "description": "Comprendre le tableau de bord principal et ses métriques"
+      },
+      "managingIssues": {
+        "title": "Gestion des problèmes",
+        "description": "Apprendre à suivre et résoudre les erreurs"
+      },
+      "sessionReplays": {
+        "title": "Rejeux de session",
+        "description": "Rejouer des sessions utilisateur pour comprendre les erreurs"
+      },
+      "statistics": {
+        "title": "Statistiques et analyses",
+        "description": "Analyser les tendances et les patterns d'erreurs"
+      }
+    },
+    "documentation": {
+      "title": "Documentation",
+      "gettingStarted": {
+        "title": "Premiers pas",
+        "description": "Guide d'installation et de configuration"
+      },
+      "sdkIntegration": {
+        "title": "Intégration du SDK",
+        "description": "Intégrer avec votre framework"
+      },
+      "apiReference": {
+        "title": "Référence API",
+        "description": "Documentation complète de l'API"
+      },
+      "configuration": {
+        "title": "Configuration",
+        "description": "Configurer la surveillance et les alertes"
+      }
+    },
+    "commonTasks": {
+      "title": "Tâches courantes",
+      "managingProjects": {
+        "title": "Gestion des projets",
+        "description": "Créer, configurer et supprimer des projets. Utilisez le sélecteur de projet dans la barre latérale pour changer de projet."
+      },
+      "managingTeam": {
+        "title": "Gestion des membres de l'équipe",
+        "description": "Invitez des membres dans votre organisation. Allez dans Paramètres > Équipe pour gérer les accès."
+      },
+      "settingUpAlerts": {
+        "title": "Configuration des alertes",
+        "description": "Configurez des alertes pour être notifié des erreurs. Allez dans Paramètres > Alertes pour définir vos préférences de notification."
+      }
+    },
+    "moreHelp": {
+      "title": "Besoin d'aide ?",
+      "subtitle": "Vous ne trouvez pas ce que vous cherchez ? Notre équipe est là pour vous aider.",
+      "openIssue": "Ouvrir un ticket",
+      "fullDocumentation": "Documentation complète"
+    }
+  },
+  "logs": {
+    "title": "Journaux en direct",
+    "live": "En direct",
+    "reconnecting": "Reconnexion",
+    "paused": "En pause",
+    "streaming": "En cours",
+    "sampledDrops": "drops échantillonnés : {count}",
+    "resume": "Reprendre",
+    "pause": "Pause",
+    "refreshing": "Actualisation...",
+    "refresh": "Actualiser",
+    "allLevels": "Tous les niveaux",
+    "allChannels": "Tous les canaux",
+    "searchMessage": "Rechercher un message",
+    "loadingLogs": "Chargement des journaux...",
+    "noLogs": "Aucun journal pour le filtre actuel."
+  },
+  "marketing": {
+    "nav": {
+      "features": "Fonctionnalités",
+      "howItWorks": "Comment ça marche",
+      "pricing": "Tarifs",
+      "docs": "Documentation",
+      "dashboard": "Tableau de bord",
+      "signIn": "Se connecter",
+      "getStarted": "Commencer",
+      "signOut": "Se déconnecter"
+    },
+    "footer": {
+      "tagline": "Surveillance d'erreurs auto-hébergée pour les applications modernes.",
+      "allRightsReserved": "Tous droits réservés.",
+      "product": "Produit",
+      "resources": "Ressources",
+      "company": "Entreprise",
+      "links": {
+        "features": "Fonctionnalités",
+        "pricing": "Tarifs",
+        "changelog": "Nouveautés",
+        "documentation": "Documentation",
+        "apiReference": "Référence API",
+        "github": "GitHub",
+        "about": "À propos",
+        "blog": "Blog",
+        "contact": "Contact"
+      }
+    },
+    "hero": {
+      "badge1": "Open Source",
+      "badge2": "Auto-hébergé",
+      "badge3": "Temps réel",
+      "titleLine1": "La surveillance d'erreurs pour",
+      "titleLine2": "les applications modernes",
+      "subtitle": "L'alternative auto-hébergée à Sentry. Détectez, analysez et résolvez les erreurs de vos applications grâce à des stack traces complètes, des alertes en temps réel et des tableaux de bord élégants.",
+      "ctaPrimary": "Démarrer gratuitement",
+      "ctaSecondary": "Voir comment ça marche",
+      "trustBar": "Adopté par des développeurs de startups et de grandes entreprises",
+      "dashboardPreview": "Tableau de bord ErrorWatch",
+      "stats": {
+        "unresolved": "Non résolues",
+        "eventsToday": "Événements aujourd'hui",
+        "new24h": "Nouvelles (24h)",
+        "resolved": "Résolues"
+      }
+    },
+    "features": {
+      "title": "Tout ce dont vous avez besoin pour",
+      "titleHighlight": "déboguer plus vite",
+      "subtitle": "Des fonctionnalités puissantes pour détecter, analyser et résoudre les erreurs de vos applications.",
+      "items": {
+        "0": {
+          "title": "Suivi d'erreurs en temps réel",
+          "description": "Capturez les erreurs au moment où elles surviennent, avec stack traces complètes, données de requête et contexte d'environnement."
+        },
+        "1": {
+          "title": "Tableau de bord élégant",
+          "description": "Surveillez la santé de votre application grâce à des graphiques, tendances et insights actionnables en un coup d'œil."
+        },
+        "2": {
+          "title": "Multi-tenant",
+          "description": "Organisez les erreurs par organisation et par projet. Invitez des membres d'équipe avec des accès basés sur les rôles."
+        },
+        "3": {
+          "title": "Écosystème de SDKs",
+          "description": "Support natif pour Symfony, Next.js, React, Vue, Nuxt, Hono, Fastify et bien plus encore."
+        },
+        "4": {
+          "title": "Auto-hébergé",
+          "description": "Gardez le contrôle de vos données. Déployez sur votre propre infrastructure avec Docker en quelques minutes."
+        },
+        "5": {
+          "title": "Sécurisé par défaut",
+          "description": "Aucun partage de données avec des tiers. Vos données d'erreurs restent sur vos serveurs, en permanence."
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "Opérationnel en",
+      "titleHighlight": "quelques minutes",
+      "subtitle": "Trois étapes simples pour commencer à surveiller les erreurs de vos applications.",
+      "steps": {
+        "0": {
+          "title": "Installez le SDK",
+          "description": "Ajoutez ErrorWatch à votre projet avec une seule commande. Compatible avec npm, yarn, bun et composer."
+        },
+        "1": {
+          "title": "Configurez votre endpoint",
+          "description": "Pointez le SDK vers votre serveur ErrorWatch auto-hébergé ou notre offre cloud."
+        },
+        "2": {
+          "title": "Surveillez et résolvez",
+          "description": "Les erreurs sont capturées automatiquement. Visualisez-les dans votre tableau de bord et résolvez les problèmes rapidement."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Des tarifs simples,",
+      "titleHighlight": "sans surprise",
+      "subtitle": "Démarrez gratuitement avec l'auto-hébergement, ou laissez-nous gérer l'infrastructure.",
+      "popular": "Populaire",
+      "tiers": {
+        "0": {
+          "name": "Gratuit",
+          "description": "Auto-hébergé, gratuit pour toujours",
+          "price": "0 €",
+          "period": "pour toujours",
+          "cta": "Déployer maintenant",
+          "features": {
+            "0": "Erreurs illimitées",
+            "1": "Projets illimités",
+            "2": "Stack traces complètes",
+            "3": "Surveillance en temps réel",
+            "4": "Auto-hébergé sur votre infra",
+            "5": "Support communautaire"
+          }
+        },
+        "1": {
+          "name": "Pro",
+          "description": "Hébergement cloud géré",
+          "price": "29 €",
+          "period": "/mois",
+          "cta": "Essai gratuit",
+          "features": {
+            "0": "Tout ce qui est dans Gratuit",
+            "1": "Infrastructure gérée",
+            "2": "SLA de disponibilité à 99,9 %",
+            "3": "Support prioritaire",
+            "4": "Analytiques avancées",
+            "5": "Collaboration d'équipe"
+          }
+        },
+        "2": {
+          "name": "Entreprise",
+          "description": "Solutions sur mesure",
+          "price": "Sur devis",
+          "period": "",
+          "cta": "Contacter les ventes",
+          "features": {
+            "0": "Tout ce qui est dans Pro",
+            "1": "Infrastructure dédiée",
+            "2": "Intégrations personnalisées",
+            "3": "Garantie de SLA",
+            "4": "Support téléphonique 24h/24",
+            "5": "Option on-premise"
+          }
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Adoré par les",
+      "titleHighlight": "développeurs",
+      "subtitle": "Découvrez ce que les développeurs disent d'ErrorWatch.",
+      "items": {
+        "0": {
+          "quote": "ErrorWatch a complètement transformé notre façon de gérer les erreurs en production. L'option auto-hébergée nous permet de garder un contrôle total sur nos données.",
+          "author": "Sarah Chen",
+          "role": "CTO",
+          "company": "TechStartup Inc"
+        },
+        "1": {
+          "quote": "Enfin une alternative à Sentry vraiment simple à auto-héberger. La mise en place a pris moins de 10 minutes avec Docker.",
+          "author": "Marcus Johnson",
+          "role": "Lead Developer",
+          "company": "DevAgency"
+        },
+        "2": {
+          "quote": "Le support multi-tenant est parfait pour notre agence. Nous pouvons surveiller tous les projets clients depuis un tableau de bord unique.",
+          "author": "Emily Rodriguez",
+          "role": "Engineering Manager",
+          "company": "WebWorks Studio"
+        }
+      }
+    },
+    "cta": {
+      "title": "Prêt à livrer en toute confiance ?",
+      "subtitle": "Commencez à surveiller vos applications dès aujourd'hui. Déployez en minutes, déboguez en secondes.",
+      "primary": "Démarrer gratuitement",
+      "secondary": "Voir sur GitHub"
+    }
+  },
+  "settings": {
+    "tabs": {
+      "general": "Général",
+      "alerts": "Alertes",
+      "apiKeys": "Clés API",
+      "billing": "Facturation",
+      "data": "Données",
+      "organizations": "Organisations"
+    },
+    "general": {
+      "projectCardTitle": "Projet",
+      "projectCardDescription": "Configuration du projet",
+      "projectNameLabel": "Nom du projet",
+      "projectNamePlaceholder": "Mon application",
+      "timezoneLabel": "Fuseau horaire",
+      "timezonePlaceholder": "Sélectionner un fuseau horaire",
+      "profileCardTitle": "Profil",
+      "profileCardDescription": "Vos informations personnelles",
+      "emailLabel": "Email",
+      "verified": "Vérifié",
+      "nameLabel": "Nom",
+      "namePlaceholder": "Votre nom",
+      "dsnCardTitle": "DSN",
+      "dsnCardDescription": "Point d'entrée pour le signalement d'erreurs",
+      "dsnUrlLabel": "URL du serveur de surveillance",
+      "dsnUrlPlaceholder": "https://votre-serveur.com",
+      "dsnSymfonyComment": "# Config Symfony",
+      "securityCardTitle": "Sécurité",
+      "securityCardDescription": "Paramètres d'authentification",
+      "passwordLabel": "Mot de passe",
+      "passwordSet": "Défini",
+      "passwordEnabled": "Authentification par mot de passe activée",
+      "oauthOnly": "OAuth uniquement",
+      "oauthDescription": "Utilisation de Google, GitHub, etc.",
+      "sessionsCardTitle": "Sessions actives",
+      "sessionsCardDescription": "Gérez vos sessions de connexion",
+      "revokeAll": "Révoquer tout",
+      "noActiveSessions": "Aucune session active",
+      "unknownIp": "IP inconnue",
+      "expired": "Expiré",
+      "saveChanges": "Enregistrer les modifications",
+      "dangerZoneTitle": "Zone de danger",
+      "dangerZoneDescription": "Actions irréversibles et destructives",
+      "deleteProjectTitle": "Supprimer le projet",
+      "deleteProjectDescription": "Supprimer {name} et toutes ses données",
+      "deleteOrgTitle": "Supprimer l'organisation",
+      "deleteOrgDescription": "Supprimer {name} et tous ses projets",
+      "revokeSessionTitle": "Révoquer la session ?",
+      "revokeSessionDescription": "Cela déconnectera cet appareil immédiatement.",
+      "revokeAllTitle": "Révoquer toutes les sessions ?",
+      "revokeAllDescription": "Cela déconnectera tous les appareils sauf le vôtre.",
+      "revoke": "Révoquer",
+      "deleteProjectDialogTitle": "Supprimer le projet ?",
+      "deleteProjectDialogDescription": "Cela supprimera définitivement {name} ainsi que toutes ses données (erreurs, événements, replays). Cette action est irréversible.",
+      "deleting": "Suppression...",
+      "deleteProjectConfirm": "Supprimer le projet",
+      "deleteOrgDialogTitle": "Supprimer l'organisation ?",
+      "deleteOrgDialogDescription": "Cela supprimera définitivement l'organisation {name}.",
+      "deleteOrgWillDelete": "Cela supprimera :",
+      "deleteOrgProjects": "Tous les projets ({count} projet{plural})",
+      "deleteOrgEvents": "Tous les événements et groupes d'erreurs",
+      "deleteOrgReplays": "Tous les replays de session",
+      "deleteOrgSettings": "Tous les paramètres et configurations",
+      "deleteOrgMembers": "Tous les membres perdront leur accès",
+      "deleteOrgCannotUndo": "Cette action est irréversible.",
+      "deleteOrgTypeToConfirm": "Tapez {name} pour confirmer",
+      "deleteOrgConfirm": "Supprimer l'organisation",
+      "toastProjectDeleted": "Projet supprimé",
+      "toastProjectDeleteFailed": "Échec de la suppression du projet",
+      "toastSessionRevoked": "Session révoquée",
+      "toastSessionsRevoked": "{count} session(s) révoquée(s)",
+      "toastOrgDeleted": "Organisation supprimée",
+      "toastOrgDeleteFailed": "Échec de la suppression de l'organisation",
+      "toastDsnCopied": "DSN copié dans le presse-papiers",
+      "toastSettingsSaved": "Paramètres enregistrés",
+      "toastSettingsFailed": "Échec de l'enregistrement des paramètres",
+      "environmentLabel": "Environnement",
+      "environmentProduction": "Production",
+      "environmentStaging": "Préproduction",
+      "environmentDevelopment": "Développement"
+    },
+    "alerts": {
+      "emailCardTitle": "Notifications par email",
+      "emailCardDescription": "Recevoir des alertes par email",
+      "emailAddressLabel": "Adresse email",
+      "emailPlaceholder": "alertes@exemple.com",
+      "emailDigestNote": "Emails récapitulatifs envoyés toutes les heures",
+      "slackCardTitle": "Intégration Slack",
+      "slackCardDescription": "Envoyer des alertes sur Slack",
+      "slackWebhookLabel": "URL du webhook",
+      "slackWebhookPlaceholder": "https://hooks.slack.com/...",
+      "slackTestConnection": "Tester la connexion",
+      "thresholdCardTitle": "Seuil d'alerte",
+      "thresholdCardDescription": "Nombre minimum d'événements avant de déclencher les notifications",
+      "thresholdEventsPerHour": "événements par heure",
+      "saveChanges": "Enregistrer les modifications",
+      "toastSaved": "Paramètres d'alertes enregistrés",
+      "toastFailed": "Échec de l'enregistrement des alertes"
+    },
+    "apiKeys": {
+      "cardTitle": "Clés API",
+      "cardDescription": "Gérez les clés d'authentification pour l'intégration SDK",
+      "keyNamePlaceholder": "Nom de la clé (ex : SDK Production)",
+      "creating": "Création...",
+      "newKey": "Nouvelle clé",
+      "keyCreatedTitle": "Clé créée avec succès",
+      "keyCreatedDescription": "Copiez votre clé maintenant. Vous ne pourrez plus la voir.",
+      "dismiss": "Fermer",
+      "createdLabel": "Créée",
+      "usedLabel": "Utilisée",
+      "neverUsed": "Jamais",
+      "noKeysTitle": "Aucune clé API",
+      "noKeysDescription": "Créez-en une pour authentifier votre SDK",
+      "deleteKeyTitle": "Supprimer la clé API ?",
+      "deleteKeyDescription": "Les applications utilisant cette clé cesseront de fonctionner immédiatement.",
+      "toastCreated": "Clé API créée",
+      "toastDeleted": "Clé API supprimée",
+      "toastCopied": "Copié dans le presse-papiers"
+    },
+    "billing": {
+      "currentPlanTitle": "Forfait actuel",
+      "currentPlanDescription": "Gérez votre abonnement",
+      "retentionDays": "{days} jours de rétention",
+      "selfHosted": "Auto-hébergé",
+      "active": "Actif",
+      "free": "Gratuit",
+      "projectsQuota": "{count} projets",
+      "usersQuota": "{count} utilisateurs",
+      "unlimited": "Illimité",
+      "selfHostedNote": "Mode auto-hébergé - toutes les fonctionnalités débloquées.",
+      "manageBilling": "Gérer la facturation",
+      "upgradeToPro": "Passer à Pro",
+      "stripeNotConfigured": "Stripe non configuré. Ajoutez les clés pour activer la facturation.",
+      "monthlyUsageTitle": "Utilisation mensuelle",
+      "monthlyUsageDescription": "Événements suivis ce mois-ci",
+      "eventsLabel": "Événements",
+      "unlimitedEvents": "Événements illimités sur votre forfait",
+      "eventsRemaining": "{count} événements restants"
+    },
+    "data": {
+      "eventIngestionTitle": "Ingestion d'événements",
+      "eventIngestionEnabled": "Les événements sont reçus",
+      "eventIngestionDisabled": "Tous les événements entrants seront rejetés (HTTP 403)",
+      "eventIngestionEnabledNote": "Les SDKs peuvent envoyer des événements d'erreur à ce projet.",
+      "eventIngestionDisabledNote": "Les SDKs recevront des erreurs HTTP 403. Utilisez ceci pour tester le blocage ou mettre en pause temporairement l'ingestion.",
+      "retentionTitle": "Rétention des données",
+      "retentionDescription": "Durée de conservation des données d'erreurs",
+      "retentionPeriodLabel": "Période de rétention",
+      "retentionNote": "Les événements de plus de {days} jours seront supprimés.",
+      "autoResolveTitle": "Résolution automatique",
+      "autoResolveDescription": "Résoudre automatiquement les problèmes inactifs",
+      "inactivityPeriodLabel": "Période d'inactivité",
+      "autoResolveNote": "Les problèmes inactifs depuis {days} jours seront résolus.",
+      "saveChanges": "Enregistrer les modifications",
+      "toastSaved": "Paramètres de données enregistrés",
+      "toastFailed": "Échec de l'enregistrement"
+    },
+    "organizations": {
+      "cardTitle": "Organisations",
+      "cardDescription": "Gérez vos organisations et membres d'équipe",
+      "noOrgsTitle": "Aucune organisation",
+      "noOrgsDescription": "Créez-en une pour commencer",
+      "membersButton": "Membres",
+      "deleteConfirm": "Supprimer cette organisation ?",
+      "membersCount": "Membres ({count})",
+      "noMembersYet": "Aucun membre pour l'instant",
+      "removeMemberConfirm": "Supprimer {email} ?"
+    },
+    "dialogs": {
+      "createOrg": {
+        "triggerButton": "Nouvelle organisation",
+        "title": "Créer une organisation",
+        "description": "Les organisations vous permettent de regrouper des projets et de gérer les accès d'équipe.",
+        "nameLabel": "Nom",
+        "namePlaceholder": "Mon entreprise",
+        "cancel": "Annuler",
+        "creating": "Création...",
+        "create": "Créer",
+        "toastSuccess": "Organisation créée avec succès",
+        "toastFailed": "Échec de la création de l'organisation"
+      },
+      "inviteMember": {
+        "triggerButton": "Inviter",
+        "title": "Inviter un membre",
+        "description": "Envoyez une invitation pour rejoindre cette organisation.",
+        "emailLabel": "Email",
+        "emailPlaceholder": "collegue@entreprise.com",
+        "inviteMethodLabel": "Méthode d'invitation",
+        "methodToken": "Lien (Token)",
+        "methodDirect": "Direct",
+        "directNote": "Ajouter directement l'utilisateur à l'organisation. Crée un compte avec un mot de passe temporaire.",
+        "sending": "Envoi...",
+        "sendInvite": "Envoyer l'invitation",
+        "addMember": "Ajouter le membre",
+        "cancel": "Annuler",
+        "invitationSentTo": "Invitation envoyée à {email}",
+        "userAddedSuccess": "Utilisateur ajouté avec succès",
+        "tempPasswordLabel": "Mot de passe temporaire :",
+        "done": "Terminé"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "badge": "Bon retour",
+      "title": "Connectez-vous à ErrorWatch",
+      "noAccount": "Pas encore de compte ?",
+      "signUpLink": "S'inscrire",
+      "devPickUser": "Dev : Choisir un utilisateur",
+      "devSelectPlaceholder": "Sélectionner un utilisateur...",
+      "emailLabel": "Email",
+      "emailPlaceholder": "nom@entreprise.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Entrez votre mot de passe",
+      "submitButton": "Se connecter",
+      "devAutoFill": "Dev : Remplissage auto",
+      "orContinueWith": "Ou continuer avec",
+      "ssoNotConfigured": "Connexion {provider} non configurée. Ajoutez les identifiants OAuth dans le .env",
+      "ssoFailed": "Connexion {provider} échouée",
+      "loginFailed": "Échec de la connexion",
+      "panelTitle": "Surveillez vos erreurs en temps réel",
+      "panelSubtitle": "Rejoignez les développeurs qui utilisent ErrorWatch pour détecter, déboguer et résoudre les erreurs applicatives plus rapidement.",
+      "feature1": "Suivi des erreurs en temps réel",
+      "feature2": "Analyse des stack traces",
+      "feature3": "Regroupement intelligent des problèmes"
+    },
+    "signup": {
+      "badge": "Commencer",
+      "title": "Créez votre compte",
+      "hasAccount": "Déjà un compte ?",
+      "signInLink": "Se connecter",
+      "nameLabel": "Nom complet",
+      "namePlaceholder": "Jean Dupont",
+      "emailLabel": "Email",
+      "emailPlaceholder": "nom@entreprise.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Min. 8 caractères",
+      "confirmLabel": "Confirmation",
+      "confirmPlaceholder": "Confirmation",
+      "submitButton": "Créer un compte",
+      "devAutoFill": "Dev : Remplissage auto",
+      "orSignUpWith": "Ou s'inscrire avec",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "ssoNotConfigured": "Inscription {provider} non configurée. Ajoutez les identifiants OAuth dans le .env",
+      "ssoFailed": "Inscription {provider} échouée",
+      "signupFailed": "Échec de l'inscription",
+      "panelTitle": "Commencez à surveiller dès aujourd'hui",
+      "panelSubtitle": "Rejoignez des milliers de développeurs qui font confiance à ErrorWatch pour maintenir leurs applications en bonne santé.",
+      "feature1": "Mise en place en moins de 5 minutes",
+      "feature2": "Membres d'équipe illimités",
+      "feature3": "Analyses et statistiques détaillées"
+    }
+  },
+  "dashboard": {
+    "attentionQueue": {
+      "allClear": "Tout est bon",
+      "noErrors": "Aucune erreur nécessitant une attention",
+      "requiresAttention": "Nécessite une attention",
+      "viewAll": "Voir tout →"
+    },
+    "statusTile": {
+      "critical": "CRITIQUE",
+      "unresolved": "NON RÉSOLU",
+      "today": "AUJOURD'HUI",
+      "new24h": "NOUVEAU 24H"
+    },
+    "healthStrip": {
+      "errorRate": "Taux d'erreur :",
+      "events": "Événements :",
+      "health": "Santé :",
+      "outOf100": "/100"
+    },
+    "errorSeverity": {
+      "title": "Sévérité des erreurs",
+      "total": "total"
+    },
+    "overview": {
+      "pulse": "Activité (24 dernières heures)",
+      "peak": "Pic :",
+      "avg": "Moy. :",
+      "perHour": "/h",
+      "environments": "Environnements",
+      "noData": "Aucune donnée"
+    }
+  },
+  "stats": {
+    "title": "Statistiques",
+    "heroChart": {
+      "title": "Événements dans le temps",
+      "subtitle": "Fréquence des erreurs sur les {range} derniers",
+      "range24h": "24 heures",
+      "range7d": "7 jours",
+      "range30d": "30 jours",
+      "totalEvents": "Total des événements",
+      "newGroups": "Nouveaux groupes",
+      "noData": "Aucune donnée disponible pour cette période",
+      "legendEvents": "Événements",
+      "legendGroups": "Nouveaux groupes",
+      "tooltipTime": "Heure : {value}"
+    },
+    "distribution": {
+      "title": "Distribution par environnement",
+      "subtitle": "Nombre d'erreurs par environnement",
+      "noData": "Aucune donnée d'environnement"
+    },
+    "resolution": {
+      "title": "Métriques de résolution",
+      "subtitle": "Performance de l'équipe et résolution des problèmes",
+      "meanTimeToResolve": "Temps moyen de résolution",
+      "meanTimeSublabel": "Moyenne sur tous les problèmes",
+      "resolutionRate": "Taux de résolution",
+      "resolutionRateSublabel": "Problèmes résolus dans les délais",
+      "resolvedThisMonth": "Résolus ce mois-ci",
+      "resolvedThisMonthSublabel": "Total des problèmes fermés"
+    },
+    "insights": {
+      "sectionTitle": "Insights",
+      "sectionSubtitle": "Schémas détectés dans vos données",
+      "noDataTitle": "Aucune donnée",
+      "noDataMessage": "Commencez à envoyer des erreurs pour voir les insights",
+      "errorsIncreasingTitle": "Erreurs en hausse",
+      "errorsDecreasingTitle": "Erreurs en baisse",
+      "errorsIncreasingMessage": "{percent}% d'erreurs en plus vs la semaine dernière",
+      "errorsDecreasingMessage": "{percent}% d'erreurs en moins vs la semaine dernière",
+      "peakErrorDayTitle": "Jour de pic d'erreurs",
+      "peakErrorDayMessage": "Les {day}s concentrent le plus d'erreurs",
+      "mostStableDayTitle": "Jour le plus stable",
+      "mostStableDayMessage": "Les {day}s ont le moins d'erreurs",
+      "productionHeavyTitle": "Dominance production",
+      "productionHeavyMessage": "{percent}% des erreurs proviennent de la production",
+      "recentSpikeTitle": "Pic récent",
+      "recentSpikeMessage": "Les erreurs d'aujourd'hui sont {multiplier}x au-dessus de la moyenne",
+      "lookingStableTitle": "Situation stable",
+      "lookingStableMessage": "Aucun schéma significatif ou anomalie détecté",
+      "perDay": "~{count}/jour",
+      "errorsCount": "{count} erreurs",
+      "changePositive": "+{percent}%",
+      "changeNegative": "{percent}%"
+    }
+  },
+  "issues": {
+    "header": {
+      "title": "Problèmes",
+      "subtitle": "Signaux entrants nécessitant votre attention",
+      "signals": "signaux"
+    },
+    "table": {
+      "columnSignal": "Signal",
+      "columnMessage": "Message",
+      "columnStrength": "Intensité",
+      "columnSource": "Source",
+      "columnReplay": "Rejeu",
+      "columnFreq": "Fréq.",
+      "columnLast": "Dernier",
+      "emptyTitle": "Tout va bien",
+      "emptyFiltered": "Aucun signal correspondant",
+      "emptySubtitle": "Aucun signal détecté. Votre application fonctionne correctement.",
+      "emptyFilteredSubtitle": "Essayez d ajuster vos filtres pour voir plus de résultats.",
+      "errorTitle": "Échec du chargement des signaux"
+    },
+    "row": {
+      "fullMessage": "Message complet",
+      "quickActions": "Actions rapides",
+      "resolve": "Résoudre",
+      "ignore": "Ignorer",
+      "viewDetails": "Voir les détails",
+      "sourceLocation": "Emplacement source",
+      "events": "événements"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher des signaux...",
+      "clear": "Effacer",
+      "allEnvs": "Tous les envs",
+      "production": "Production",
+      "staging": "Préproduction",
+      "development": "Développement",
+      "allTime": "Toute période",
+      "last24h": "24 dernières heures",
+      "last7d": "7 derniers jours",
+      "last30d": "30 derniers jours",
+      "last90d": "90 derniers jours",
+      "allStatus": "Tous les statuts",
+      "open": "Ouvert",
+      "resolved": "Résolu",
+      "ignored": "Ignoré",
+      "allSources": "Toutes les sources",
+      "sourceHTTP": "HTTP",
+      "sourceCLI": "CLI",
+      "sourceQueue": "File d'attente",
+      "sourceDeprecation": "Dépréciation"
+    },
+    "page": {
+      "selected": "{count} sélectionné(s)",
+      "bulkResolve": "Résoudre",
+      "bulkIgnore": "Ignorer",
+      "bulkReopen": "Rouvrir",
+      "bulkMerge": "Fusionner",
+      "exportButton": "Exporter",
+      "exportCSV": "Exporter CSV",
+      "exportJSON": "Exporter JSON",
+      "noMatchingSignals": "Aucun signal correspondant. Essayez d ajuster vos filtres.",
+      "noSignals": "Aucun signal détecté. Votre application fonctionne correctement.",
+      "updateSuccess": "{count} problème(s) mis à jour vers {status}",
+      "updateError": "Échec de la mise à jour des problèmes",
+      "mergeSuccess": "Fusionné {count} problème(s) en 1",
+      "mergeError": "Échec de la fusion des problèmes"
+    }
+  },
+  "issueDetail": {
+    "profile": {
+      "backToSignalDeck": "Retour au tableau des signaux",
+      "events": "Événements",
+      "firstSeen": "Première occurrence",
+      "lastSeen": "Dernière occurrence",
+      "trend": "Tendance",
+      "resolve": "Résoudre",
+      "ignore": "Ignorer",
+      "reopen": "Rouvrir",
+      "unignore": "Ne plus ignorer",
+      "resolvedBy": "Résolu par",
+      "justNow": "à l instant",
+      "minutesAgo": "il y a {n}min",
+      "hoursAgo": "il y a {n}h",
+      "daysAgo": "il y a {n}j"
+    },
+    "navigator": {
+      "title": "Événements ({count})",
+      "replay": "rejeu",
+      "replays": "rejeux",
+      "noReplay": "pas de rejeu",
+      "noEvents": "Aucun événement enregistré"
+    },
+    "stackTrace": {
+      "title": "Trace de pile",
+      "frames": "{count} cadres",
+      "showVendor": "Afficher vendor ({count})",
+      "hideVendor": "Masquer vendor ({count})",
+      "raw": "Brut",
+      "parsed": "Analysé",
+      "noFrames": "Aucun cadre de pile trouvé",
+      "source": "source",
+      "vendor": "vendor",
+      "in": "dans"
+    },
+    "eventTimeline": {
+      "title": "Chronologie des événements",
+      "actions": "{count} actions",
+      "showEarlier": "Afficher {count} événements précédents",
+      "noBreadcrumbs": "Aucun fil d'Ariane enregistré",
+      "replay": "Rejeu"
+    },
+    "contextCards": {
+      "environment": "Environnement",
+      "device": "Appareil",
+      "release": "Version",
+      "context": "Contexte",
+      "firstSeenIn": "Première occurrence dans",
+      "noContext": "Aucune donnée de contexte disponible"
+    },
+    "occurrenceChart": {
+      "occurrences": "Occurrences",
+      "firstSeen": "Première occurrence",
+      "lastSeen": "Dernière occurrence",
+      "users": "Utilisateurs",
+      "last30days": "30 derniers jours",
+      "events": "événements"
+    },
+    "eventLog": {
+      "title": "Journal des événements",
+      "total": "{count} au total",
+      "noEvents": "Aucun événement trouvé",
+      "breadcrumbs": "Fils d'Ariane",
+      "stackTrace": "Trace de pile",
+      "moreFrames": "... ({count} cadres supplémentaires)",
+      "prev": "← Précédent",
+      "next": "Suivant →",
+      "page": "Page {current} sur {total}"
+    },
+    "breadcrumbsSection": {
+      "title": "Parcours utilisateur",
+      "actionsCount": "{count} actions avant l erreur",
+      "error": "Erreur"
+    },
+    "assigneeDropdown": {
+      "assign": "Assigner",
+      "unassign": "Désassigner",
+      "searchPlaceholder": "Rechercher des membres...",
+      "noMembers": "Aucun membre trouvé",
+      "assigned": "Assigné"
+    },
+    "devicePanel": {
+      "title": "Appareil",
+      "browser": "Navigateur",
+      "os": "Système",
+      "device": "Appareil",
+      "userAgent": "Agent utilisateur"
+    },
+    "tagsPanel": {
+      "title": "Étiquettes",
+      "environment": "Environnement",
+      "browser": "Navigateur",
+      "os": "Système",
+      "device": "Appareil"
+    },
+    "frequencyChart": {
+      "title": "Fréquence",
+      "last30days": "30 derniers jours",
+      "peak": "Pic",
+      "avg": "Moy.",
+      "perDay": "{count}/jour",
+      "noData": "Aucune donnée de fréquence",
+      "byEnvironment": "Par environnement"
+    },
+    "releasesPanel": {
+      "title": "Versions",
+      "firstSeenIn": "Première occurrence dans",
+      "moreReleases": "+{count} versions supplémentaires"
+    },
+    "errorPage": {
+      "signalNotFound": "Signal introuvable",
+      "signalNotFoundDesc": "Cette erreur n existe pas ou a été supprimée.",
+      "returnToIssues": "Retour aux problèmes",
+      "back": "problèmes"
+    },
+    "header": {
+      "issues": "problèmes",
+      "resolve": "Résoudre",
+      "ignore": "Ignorer",
+      "reopen": "Rouvrir",
+      "unignore": "Ne plus ignorer",
+      "assign": "Assigner",
+      "unassign": "Désassigner",
+      "by": "par"
+    }
+  }
+}

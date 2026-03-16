@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Table,
   TableBody,
@@ -111,6 +112,7 @@ export function TransactionsTable({
   baseUrl,
   onPageChange,
 }: TransactionsTableProps) {
+  const t = useTranslations("performance");
   const router = useRouter();
   const [viewMode, setViewMode] = useState<"grouped" | "individual">("grouped");
   const groupedTransactions = groupTransactions(transactions);
@@ -119,10 +121,10 @@ export function TransactionsTable({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Transactions</CardTitle>
+          <CardTitle className="text-base">{t("transactions.title")}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8">
-          <p className="text-sm text-muted-foreground">No transactions found.</p>
+          <p className="text-sm text-muted-foreground">{t("transactions.noTransactions")}</p>
         </CardContent>
       </Card>
     );
@@ -133,7 +135,7 @@ export function TransactionsTable({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Transactions</CardTitle>
+        <CardTitle className="text-base">{t("transactions.title")}</CardTitle>
         <div className="flex items-center gap-4">
           {hasDuplicates && (
             <div className="flex items-center gap-1">
@@ -144,7 +146,7 @@ export function TransactionsTable({
                 className="h-7 gap-1"
               >
                 <Layers className="h-3 w-3" />
-                Grouped
+                {t("transactions.grouped")}
               </Button>
               <Button
                 variant={viewMode === "individual" ? "default" : "outline"}
@@ -152,12 +154,12 @@ export function TransactionsTable({
                 onClick={() => setViewMode("individual")}
                 className="h-7"
               >
-                Individual
+                {t("transactions.individual")}
               </Button>
             </div>
           )}
           <span className="text-xs text-muted-foreground">
-            {pagination.total} total
+            {t("transactions.totalCount", { count: pagination.total })}
           </span>
         </div>
       </CardHeader>
@@ -166,20 +168,20 @@ export function TransactionsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Op</TableHead>
-                <TableHead className="text-right">Count</TableHead>
-                <TableHead className="text-right">Avg</TableHead>
-                <TableHead className="text-right">Min</TableHead>
-                <TableHead className="text-right">Max</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Latest</TableHead>
+                <TableHead>{t("transactions.columns.name")}</TableHead>
+                <TableHead>{t("transactions.columns.op")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.count")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.avg")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.min")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.max")}</TableHead>
+                <TableHead>{t("transactions.columns.status")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.latest")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {groupedTransactions.map((g) => {
                 const dominantStatus = Object.entries(g.statuses).sort((a, b) => b[1] - a[1])[0]?.[0] || "ok";
-                const allIssues = g.transactions.flatMap((t) => parsePerformanceIssues(t.tags));
+                const allIssues = g.transactions.flatMap((txn) => parsePerformanceIssues(txn.tags));
                 const hasN1 = allIssues.includes("n_plus_one");
                 const hasSlow = allIssues.includes("slow_query");
                 return (
@@ -235,26 +237,26 @@ export function TransactionsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Op</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Duration</TableHead>
-                <TableHead className="text-right">Date</TableHead>
+                <TableHead>{t("transactions.columns.name")}</TableHead>
+                <TableHead>{t("transactions.columns.op")}</TableHead>
+                <TableHead>{t("transactions.columns.status")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.duration")}</TableHead>
+                <TableHead className="text-right">{t("transactions.columns.date")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((t) => {
-                const issues = parsePerformanceIssues(t.tags);
+              {transactions.map((txn) => {
+                const issues = parsePerformanceIssues(txn.tags);
                 const hasN1 = issues.includes("n_plus_one");
                 const hasSlow = issues.includes("slow_query");
                 return (
                 <TableRow
-                  key={t.id}
+                  key={txn.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`${baseUrl}/performance/transactions/${t.id}`)}
+                  onClick={() => router.push(`${baseUrl}/performance/transactions/${txn.id}`)}
                 >
                   <TableCell className="max-w-[250px] truncate font-medium">
-                    <span className="hover:underline">{t.name}</span>
+                    <span className="hover:underline">{txn.name}</span>
                     {hasN1 && (
                       <Badge variant="outline" className="ml-2 bg-amber-500/15 text-amber-600 border-amber-500/30 text-[10px] px-1.5 py-0">
                         N+1
@@ -268,22 +270,22 @@ export function TransactionsTable({
                   </TableCell>
                   <TableCell>
                     <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
-                      {t.op}
+                      {txn.op}
                     </span>
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant="outline"
-                      className={statusColors[t.status || "ok"] || statusColors.ok}
+                      className={statusColors[txn.status || "ok"] || statusColors.ok}
                     >
-                      {t.status || "ok"}
+                      {txn.status || "ok"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {formatDuration(t.duration)}
+                    {formatDuration(txn.duration)}
                   </TableCell>
                   <TableCell className="text-right text-xs text-muted-foreground">
-                    {formatDate(t.startTimestamp)}
+                    {formatDate(txn.startTimestamp)}
                   </TableCell>
                 </TableRow>
                 );
@@ -295,7 +297,7 @@ export function TransactionsTable({
         {pagination.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Page {pagination.page} of {pagination.totalPages}
+              {t("transactions.pageOf", { page: pagination.page, total: pagination.totalPages })}
             </p>
             <div className="flex gap-2">
               <Button

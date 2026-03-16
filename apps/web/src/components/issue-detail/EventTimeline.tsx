@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type BreadcrumbCategory = "ui" | "navigation" | "console" | "http" | "user" | "error";
 
@@ -152,8 +153,8 @@ function TimelineItem({
                 "text-sm truncate",
                 isError ? "text-signal-error font-medium" : "text-foreground"
               )} title={breadcrumb.message || breadcrumb.type || config.label}>
-                {(breadcrumb.message || breadcrumb.type || config.label).length > 100 
-                  ? `${(breadcrumb.message || breadcrumb.type || config.label).slice(0, 100).trim()}...` 
+                {(breadcrumb.message || breadcrumb.type || config.label).length > 100
+                  ? `${(breadcrumb.message || breadcrumb.type || config.label).slice(0, 100).trim()}...`
                   : (breadcrumb.message || breadcrumb.type || config.label)}
               </span>
             </div>
@@ -202,6 +203,7 @@ export function EventTimeline({
   className,
 }: EventTimelineProps) {
   const [showAll, setShowAll] = useState(false);
+  const t = useTranslations("issueDetail.eventTimeline");
 
   // Parse breadcrumbs
   let breadcrumbs: Breadcrumb[] = [];
@@ -240,10 +242,10 @@ export function EventTimeline({
       <div className="px-4 py-3 border-b border-issues-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Event Timeline
+            {t("title")}
           </h2>
           <span className="px-1.5 py-0.5 rounded bg-muted/10 text-[10px] font-mono text-muted-foreground">
-            {breadcrumbs.length} actions
+            {t("actions", { count: breadcrumbs.length })}
           </span>
         </div>
 
@@ -253,7 +255,7 @@ export function EventTimeline({
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/30 text-violet-300 font-mono text-xs font-medium hover:bg-violet-500/20 transition-all"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
-            Replay
+            {t("replay")}
           </Link>
         )}
       </div>
@@ -265,13 +267,13 @@ export function EventTimeline({
             onClick={() => setShowAll(true)}
             className="w-full mb-4 py-2 rounded-lg border border-dashed border-issues-border text-xs text-muted-foreground hover:text-foreground hover:border-issues-border/80 transition-colors"
           >
-            Show {hiddenCount} earlier events
+            {t("showEarlier", { count: hiddenCount })}
           </button>
         )}
 
         {displayBreadcrumbs.length === 0 && !errorMessage ? (
           <p className="text-center py-8 text-sm text-muted-foreground">
-            No breadcrumbs recorded
+            {t("noBreadcrumbs")}
           </p>
         ) : (
           <>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -44,6 +45,8 @@ export function ReplaysFiltersRow({
   hasActiveFilters,
   className,
 }: ReplaysFiltersRowProps) {
+  const t = useTranslations("replays.filters");
+
   return (
     <div
       className={cn(
@@ -56,7 +59,7 @@ export function ReplaysFiltersRow({
         <Film className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search by URL..."
+          placeholder={t("searchByUrl")}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className={cn(
@@ -79,10 +82,10 @@ export function ReplaysFiltersRow({
       {/* Browser */}
       <Select value={browser} onValueChange={onBrowserChange}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
-          <SelectValue placeholder="Browser" />
+          <SelectValue placeholder={t("allBrowsers")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All browsers</SelectItem>
+          <SelectItem value="all">{t("allBrowsers")}</SelectItem>
           <SelectItem value="Chrome">Chrome</SelectItem>
           <SelectItem value="Safari">Safari</SelectItem>
           <SelectItem value="Firefox">Firefox</SelectItem>
@@ -93,10 +96,10 @@ export function ReplaysFiltersRow({
       {/* OS */}
       <Select value={os} onValueChange={onOsChange}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
-          <SelectValue placeholder="OS" />
+          <SelectValue placeholder={t("allOS")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All OS</SelectItem>
+          <SelectItem value="all">{t("allOS")}</SelectItem>
           <SelectItem value="Windows">Windows</SelectItem>
           <SelectItem value="macOS">macOS</SelectItem>
           <SelectItem value="Linux">Linux</SelectItem>
@@ -108,52 +111,52 @@ export function ReplaysFiltersRow({
       {/* Date Range */}
       <Select value={dateRange} onValueChange={(v) => onDateRangeChange(v as DateRange)}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
-          <SelectValue placeholder="Time range" />
+          <SelectValue placeholder={t("timeRange")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All time</SelectItem>
-          <SelectItem value="24h">Last 24h</SelectItem>
-          <SelectItem value="7d">Last 7 days</SelectItem>
-          <SelectItem value="30d">Last 30 days</SelectItem>
-          <SelectItem value="90d">Last 90 days</SelectItem>
+          <SelectItem value="all">{t("allTime")}</SelectItem>
+          <SelectItem value="24h">{t("last24h")}</SelectItem>
+          <SelectItem value="7d">{t("last7d")}</SelectItem>
+          <SelectItem value="30d">{t("last30d")}</SelectItem>
+          <SelectItem value="90d">{t("last90d")}</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Severity */}
       <Select value={severity} onValueChange={onSeverityChange}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
-          <SelectValue placeholder="Severity" />
+          <SelectValue placeholder={t("allSeverity")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All severity</SelectItem>
+          <SelectItem value="all">{t("allSeverity")}</SelectItem>
           <SelectItem value="fatal">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-fatal" />
-              Fatal
+              {t("severityFatal")}
             </span>
           </SelectItem>
           <SelectItem value="error">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-error" />
-              Error
+              {t("severityError")}
             </span>
           </SelectItem>
           <SelectItem value="warning">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-warning" />
-              Warning
+              {t("severityWarning")}
             </span>
           </SelectItem>
           <SelectItem value="info">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-info" />
-              Info
+              {t("severityInfo")}
             </span>
           </SelectItem>
           <SelectItem value="debug">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-debug" />
-              Debug
+              {t("severityDebug")}
             </span>
           </SelectItem>
         </SelectContent>
@@ -166,7 +169,7 @@ export function ReplaysFiltersRow({
           className="flex items-center gap-1.5 rounded-lg border border-issues-border bg-issues-surface/30 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-issues-surface hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
-          Clear
+          {t("clear")}
         </button>
       )}
     </div>

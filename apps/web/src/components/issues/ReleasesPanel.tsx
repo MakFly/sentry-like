@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Package, Tag } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Release {
   version: string;
@@ -20,6 +21,8 @@ export function ReleasesPanel({
   firstSeenIn,
   className,
 }: ReleasesPanelProps) {
+  const t = useTranslations("issueDetail.releasesPanel");
+
   if (!releases || releases.length === 0) {
     return null;
   }
@@ -34,7 +37,7 @@ export function ReleasesPanel({
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-pulse-primary" />
           <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-foreground">
-            Releases
+            {t("title")}
           </h3>
         </div>
       </div>
@@ -43,7 +46,7 @@ export function ReleasesPanel({
       {firstSeenIn && firstSeenIn !== "unknown" && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-pulse-secondary/30 bg-pulse-secondary/10 px-3 py-2">
           <Tag className="h-3.5 w-3.5 text-pulse-secondary" />
-          <span className="text-xs text-muted-foreground">First seen in</span>
+          <span className="text-xs text-muted-foreground">{t("firstSeenIn")}</span>
           <span className="font-mono text-xs font-semibold text-pulse-secondary">
             {firstSeenIn}
           </span>
@@ -83,7 +86,7 @@ export function ReleasesPanel({
 
         {displayReleases.length > 5 && (
           <p className="text-center text-xs text-muted-foreground">
-            +{displayReleases.length - 5} more releases
+            {t("moreReleases", { count: displayReleases.length - 5 })}
           </p>
         )}
       </div>

@@ -15,10 +15,12 @@ import {
   Wrench,
   Terminal,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import {
@@ -39,6 +41,7 @@ import { useSSEStatus } from "@/components/sse-provider";
 export function ErrorWatchSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
+  const t = useTranslations("navigation");
   const { currentOrgSlug } = useCurrentOrganization();
   const { currentProjectSlug } = useCurrentProject();
   const { data: session, isLoading: sessionLoading } = trpc.auth.getSession.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
@@ -54,7 +57,7 @@ export function ErrorWatchSidebar({
     if (!currentOrgSlug) {
       return [
         {
-          title: "Dashboard",
+          title: t("dashboard"),
           url: "/dashboard",
           icon: LayoutDashboard,
           isActive: pathname === "/dashboard",
@@ -67,7 +70,7 @@ export function ErrorWatchSidebar({
       const orgUrl = `/dashboard/${currentOrgSlug}`;
       return [
         {
-          title: "Dashboard",
+          title: t("dashboard"),
           url: orgUrl,
           icon: LayoutDashboard,
           isActive: pathname === orgUrl,
@@ -77,49 +80,49 @@ export function ErrorWatchSidebar({
 
     return [
       {
-        title: "Dashboard",
+        title: t("dashboard"),
         url: baseUrl,
         icon: LayoutDashboard,
         isActive: pathname === baseUrl,
       },
       {
-        title: "Issues",
+        title: t("issues"),
         url: `${baseUrl}/issues`,
         icon: Bug,
         isActive: pathname.startsWith(`${baseUrl}/issues`),
       },
       {
-        title: "Logs",
+        title: t("logs"),
         url: `${baseUrl}/logs`,
         icon: Terminal,
         isActive: pathname.startsWith(`${baseUrl}/logs`),
       },
       {
-        title: "Replays",
+        title: t("replays"),
         url: `${baseUrl}/replays`,
         icon: Film,
         isActive: pathname.startsWith(`${baseUrl}/replays`),
       },
       {
-        title: "Stats",
+        title: t("stats"),
         url: `${baseUrl}/stats`,
         icon: BarChart3,
         isActive: pathname.startsWith(`${baseUrl}/stats`),
       },
       {
-        title: "Performance",
+        title: t("performance"),
         url: `${baseUrl}/performance`,
         icon: Gauge,
         isActive: pathname.startsWith(`${baseUrl}/performance`),
         children: [
-          { title: "Overview", url: `${baseUrl}/performance`, isActive: pathname === `${baseUrl}/performance` },
-          { title: "Transactions", url: `${baseUrl}/performance/transactions`, isActive: pathname.startsWith(`${baseUrl}/performance/transactions`) },
-          { title: "Web Vitals", url: `${baseUrl}/performance/web-vitals`, isActive: pathname === `${baseUrl}/performance/web-vitals` },
-          { title: "Database Queries", url: `${baseUrl}/performance/queries`, isActive: pathname === `${baseUrl}/performance/queries` },
+          { title: t("overview"), url: `${baseUrl}/performance`, isActive: pathname === `${baseUrl}/performance` },
+          { title: t("transactions"), url: `${baseUrl}/performance/transactions`, isActive: pathname.startsWith(`${baseUrl}/performance/transactions`) },
+          { title: t("webVitals"), url: `${baseUrl}/performance/web-vitals`, isActive: pathname === `${baseUrl}/performance/web-vitals` },
+          { title: t("databaseQueries"), url: `${baseUrl}/performance/queries`, isActive: pathname === `${baseUrl}/performance/queries` },
         ],
       },
     ];
-  }, [currentOrgSlug, baseUrl, pathname]);
+  }, [currentOrgSlug, baseUrl, pathname, t]);
 
   const isDev = process.env.NODE_ENV !== "production";
 
@@ -130,12 +133,12 @@ export function ErrorWatchSidebar({
     }
     const items = [
       {
-        title: "Settings",
+        title: t("settings"),
         url: `${baseUrl}/settings`,
         icon: Settings,
       },
       {
-        title: "Help",
+        title: t("help"),
         url: `${baseUrl}/help`,
         icon: HelpCircle,
       },
@@ -143,14 +146,14 @@ export function ErrorWatchSidebar({
 
     if (isDev) {
       items.push({
-        title: "Admin",
+        title: t("admin"),
         url: `${baseUrl}/admin`,
         icon: Wrench,
       });
     }
 
     return items;
-  }, [baseUrl, isDev]);
+  }, [baseUrl, isDev, t]);
 
   const user = React.useMemo(
     () => ({
@@ -181,7 +184,7 @@ export function ErrorWatchSidebar({
                     ErrorWatch
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    Monitoring
+                    {t("monitoring")}
                   </span>
                 </div>
               </Link>
@@ -194,14 +197,14 @@ export function ErrorWatchSidebar({
         {/* Organization & Project Selectors */}
         <div className="space-y-1 px-2 py-2">
           <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Organization
+            {t("organization")}
           </p>
           <OrganizationSwitcher />
         </div>
 
         <div className="space-y-1 px-2 pb-2">
           <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Project
+            {t("project")}
           </p>
           <ProjectSelector />
         </div>
@@ -214,6 +217,11 @@ export function ErrorWatchSidebar({
       </SidebarContent>
 
       <SidebarFooter>
+        {/* Language Switcher */}
+        <div className="px-2 pb-1">
+          <LocaleSwitcher />
+        </div>
+
         {/* Live Status */}
         <div className="px-2 pb-2">
           <div className={`flex items-center gap-2 rounded-lg px-3 py-2 ${
@@ -243,10 +251,10 @@ export function ErrorWatchSidebar({
                   : "text-muted-foreground"
             }`}>
               {sseStatus === "connected"
-                ? "Live"
+                ? t("live")
                 : sseStatus === "connecting"
-                  ? "Reconnecting..."
-                  : "Offline"}
+                  ? t("reconnecting")
+                  : t("offline")}
             </span>
           </div>
         </div>

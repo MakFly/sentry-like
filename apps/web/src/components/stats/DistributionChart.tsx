@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import {
   Bar,
   BarChart,
@@ -32,6 +33,7 @@ const envColors: Record<string, string> = {
 };
 
 export function DistributionChart({ data, className }: DistributionChartProps) {
+  const t = useTranslations("stats.distribution");
   const chartConfig: ChartConfig = data.reduce((acc, item) => {
     acc[item.env] = {
       label: item.env.charAt(0).toUpperCase() + item.env.slice(1),
@@ -56,7 +58,7 @@ export function DistributionChart({ data, className }: DistributionChartProps) {
           className
         )}
       >
-        <p className="text-sm text-muted-foreground">No environment data</p>
+        <p className="text-sm text-muted-foreground">{t("noData")}</p>
       </div>
     );
   }
@@ -70,10 +72,10 @@ export function DistributionChart({ data, className }: DistributionChartProps) {
     >
       <div className="mb-6">
         <h3 className="font-mono text-sm font-semibold uppercase tracking-wider text-foreground">
-          Distribution by Environment
+          {t("title")}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Error count across environments
+          {t("subtitle")}
         </p>
       </div>
 

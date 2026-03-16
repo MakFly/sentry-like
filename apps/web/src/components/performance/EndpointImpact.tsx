@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { EndpointImpact as EndpointImpactType } from "@/server/api/types/performance";
@@ -16,11 +17,13 @@ interface EndpointImpactProps {
 }
 
 export function EndpointImpact({ data, isLoading }: EndpointImpactProps) {
+  const t = useTranslations("performance.queries.endpointImpact");
+
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Top Endpoints by Impact</CardTitle>
+          <CardTitle className="text-base">{t("title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -38,19 +41,19 @@ export function EndpointImpact({ data, isLoading }: EndpointImpactProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Top Endpoints by Impact</CardTitle>
+        <CardTitle className="text-base">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="pb-2 font-medium">Endpoint</th>
-                <th className="pb-2 font-medium text-right">Count</th>
-                <th className="pb-2 font-medium text-right">Avg</th>
-                <th className="pb-2 font-medium text-right">Total Time</th>
-                <th className="pb-2 font-medium text-right">% Impact</th>
-                <th className="pb-2 font-medium text-right">Errors</th>
+                <th className="pb-2 font-medium">{t("columns.endpoint")}</th>
+                <th className="pb-2 font-medium text-right">{t("columns.count")}</th>
+                <th className="pb-2 font-medium text-right">{t("columns.avg")}</th>
+                <th className="pb-2 font-medium text-right">{t("columns.totalTime")}</th>
+                <th className="pb-2 font-medium text-right">{t("columns.impact")}</th>
+                <th className="pb-2 font-medium text-right">{t("columns.errors")}</th>
               </tr>
             </thead>
             <tbody>

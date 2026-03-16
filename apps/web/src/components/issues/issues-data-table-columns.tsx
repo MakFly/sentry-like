@@ -175,8 +175,12 @@ export function createIssuesColumns({
         </Button>
       ),
       cell: ({ row }) => (
-        <IssueMessageViewer row={row} orgSlug={orgSlug} projectSlug={projectSlug} maxLength={80} />
+        <div className="min-w-0 max-w-[300px] lg:max-w-[500px]">
+          <IssueMessageViewer row={row} orgSlug={orgSlug} projectSlug={projectSlug} maxLength={50} />
+        </div>
       ),
+      size: 400,
+      maxSize: 500,
     },
     {
       accessorKey: "strength",
@@ -469,9 +473,9 @@ function IssueMessageViewer({
       <DialogTrigger asChild>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-left hover:text-foreground"
+          className="block min-w-0 max-w-full text-left hover:text-foreground"
         >
-          <span className="truncate text-sm font-medium" title={message}>
+          <span className="block truncate text-sm font-medium" title={message}>
             {truncatedMessage}
           </span>
         </button>

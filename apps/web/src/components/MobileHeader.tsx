@@ -1,9 +1,11 @@
 "use client";
 
 import { Menu, Zap } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useSidebar } from "./SidebarContext";
 
 export default function MobileHeader() {
+  const t = useTranslations("common");
   const { toggle } = useSidebar();
 
   return (
@@ -11,7 +13,7 @@ export default function MobileHeader() {
       <button
         onClick={toggle}
         className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-secondary transition-colors"
-        aria-label="Toggle sidebar"
+        aria-label={t("toggleSidebar")}
       >
         <Menu className="h-5 w-5 text-foreground" />
       </button>

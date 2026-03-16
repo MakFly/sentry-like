@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface HealthStripProps {
   errorRate: number; // Percentage 0-100
@@ -15,6 +16,7 @@ export function HealthStrip({
   totalEvents,
   className,
 }: HealthStripProps) {
+  const t = useTranslations("dashboard.healthStrip");
   // Determine color based on health score
   const getHealthColor = (score: number) => {
     if (score >= 90) return "bg-status-healthy";
@@ -57,7 +59,7 @@ export function HealthStrip({
         <div className="flex items-center gap-6">
           {/* Error rate */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Error Rate:</span>
+            <span className="text-sm text-muted-foreground">{t("errorRate")}</span>
             <span className="font-mono text-sm font-semibold text-foreground">
               {errorRate.toFixed(1)}%
             </span>
@@ -91,7 +93,7 @@ export function HealthStrip({
 
           {/* Total events */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Events:</span>
+            <span className="text-sm text-muted-foreground">{t("events")}</span>
             <span className="font-mono text-sm font-semibold text-foreground">
               {totalEvents.toLocaleString()}
             </span>
@@ -100,7 +102,7 @@ export function HealthStrip({
 
         {/* Health score */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Health:</span>
+          <span className="text-sm text-muted-foreground">{t("health")}</span>
           <span
             className={cn(
               "font-mono text-lg font-bold",
@@ -109,7 +111,7 @@ export function HealthStrip({
           >
             {healthScore}
           </span>
-          <span className="text-sm text-muted-foreground">/100</span>
+          <span className="text-sm text-muted-foreground">{t("outOf100")}</span>
         </div>
       </div>
     </div>

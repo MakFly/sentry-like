@@ -19,8 +19,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export function OrganizationSwitcher() {
+  const t = useTranslations("organization");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -35,12 +38,12 @@ export function OrganizationSwitcher() {
       setShowCreateDialog(false);
       setOrgName("");
       refetch();
-      toast.success("Organization created successfully");
+      toast.success(t("createdSuccess"));
       // Redirect to the new organization's dashboard
       router.push(`/dashboard/${newOrg.slug}`);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create organization");
+      toast.error(error.message || t("createError"));
     },
   });
 
@@ -86,7 +89,7 @@ export function OrganizationSwitcher() {
           {currentOrg?.name?.substring(0, 2).toUpperCase() || "??"}
         </div>
         <span className="flex-1 truncate text-sm font-medium">
-          {currentOrg?.name || "Select Organization"}
+          {currentOrg?.name || t("select")}
         </span>
         <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
       </button>
@@ -134,7 +137,7 @@ export function OrganizationSwitcher() {
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-primary hover:bg-primary/10"
             >
               <Plus className="h-4 w-4" />
-              <span>New Organization</span>
+              <span>{t("new")}</span>
               {canCreateResult && !canCreateResult.allowed && (
                 <Crown className="ml-auto h-3 w-3 text-amber-400" />
               )}
@@ -147,9 +150,9 @@ export function OrganizationSwitcher() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Organization</DialogTitle>
+            <DialogTitle>{t("createTitle")}</DialogTitle>
             <DialogDescription>
-              Create a new organization to manage separate projects and teams.
+              {t("createDescription")}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -162,12 +165,12 @@ export function OrganizationSwitcher() {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="org-name">Organization Name</Label>
+              <Label htmlFor="org-name">{t("nameLabel")}</Label>
               <Input
                 id="org-name"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                placeholder="My Company"
+                placeholder={t("namePlaceholder")}
                 autoFocus
               />
             </div>
@@ -177,13 +180,13 @@ export function OrganizationSwitcher() {
                 variant="outline"
                 onClick={() => setShowCreateDialog(false)}
               >
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={createMutation.isPending || !orgName.trim()}
               >
-                {createMutation.isPending ? "Creating..." : "Create"}
+                {createMutation.isPending ? tCommon("creating") : tCommon("create")}
               </Button>
             </div>
           </form>

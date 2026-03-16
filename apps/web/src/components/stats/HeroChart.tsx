@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import {
   Area,
   AreaChart,
@@ -23,24 +24,32 @@ interface HeroChartProps {
   className?: string;
 }
 
-const chartConfig = {
-  events: {
-    label: "Events",
-    color: "hsl(var(--primary))",
-  },
-  groups: {
-    label: "New Groups",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig;
-
 export function HeroChart({ data, range, className }: HeroChartProps) {
+  const t = useTranslations("stats.heroChart");
+
+  const chartConfig = {
+    events: {
+      label: t("legendEvents"),
+      color: "hsl(var(--primary))",
+    },
+    groups: {
+      label: t("legendGroups"),
+      color: "hsl(var(--chart-2))",
+    },
+  } satisfies ChartConfig;
+
   const formatDate = (date: string) => {
     if (range === "24h") {
       return date.slice(11, 16);
     }
     const d = new Date(date);
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const getRangeLabel = () => {
+    if (range === "24h") return t("range24h");
+    if (range === "7d") return t("range7d");
+    return t("range30d");
   };
 
   // Calculate totals
@@ -58,11 +67,10 @@ export function HeroChart({ data, range, className }: HeroChartProps) {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-foreground">
-            Events Over Time
+            {t("title")}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Error frequency in the last{" "}
-            {range === "24h" ? "24 hours" : range === "7d" ? "7 days" : "30 days"}
+            {t("subtitle", { range: getRangeLabel() })}
           </p>
         </div>
 
@@ -72,13 +80,13 @@ export function HeroChart({ data, range, className }: HeroChartProps) {
             <p className="font-mono text-2xl font-bold text-primary">
               {totalEvents.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground">Total Events</p>
+            <p className="text-xs text-muted-foreground">{t("totalEvents")}</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-2xl font-bold text-muted-foreground">
               {totalGroups.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground">New Groups</p>
+            <p className="text-xs text-muted-foreground">{t("newGroups")}</p>
           </div>
         </div>
       </div>
@@ -141,7 +149,7 @@ export function HeroChart({ data, range, className }: HeroChartProps) {
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => {
-                      if (range === "24h") return `Time: ${value}`;
+                      if (range === "24h") return t("tooltipTime", { value });
                       return new Date(value).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",
@@ -170,7 +178,7 @@ export function HeroChart({ data, range, className }: HeroChartProps) {
         </ChartContainer>
       ) : (
         <div className="flex h-[350px] items-center justify-center text-muted-foreground">
-          No data available for this period
+          {t("noData")}
         </div>
       )}
 
@@ -178,11 +186,11 @@ export function HeroChart({ data, range, className }: HeroChartProps) {
       <div className="mt-4 flex items-center justify-center gap-8">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-primary" />
-          <span className="text-sm text-muted-foreground">Events</span>
+          <span className="text-sm text-muted-foreground">{t("legendEvents")}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "hsl(var(--chart-2))" }} />
-          <span className="text-sm text-muted-foreground">New Groups</span>
+          <span className="text-sm text-muted-foreground">{t("legendGroups")}</span>
         </div>
       </div>
     </div>

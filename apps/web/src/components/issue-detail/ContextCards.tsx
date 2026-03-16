@@ -10,6 +10,7 @@ import {
   Globe,
   Package,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Release {
   version: string;
@@ -84,6 +85,7 @@ export function ContextCards({
   firstSeenIn,
   className,
 }: ContextCardsProps) {
+  const t = useTranslations("issueDetail.contextCards");
   const DeviceIcon = getDeviceIcon(deviceType);
   const envCfg = env ? envConfig[env] || { color: "text-muted-foreground", dot: "bg-muted-foreground" } : null;
 
@@ -94,7 +96,7 @@ export function ContextCards({
     <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-4", className)}>
       {/* Environment */}
       {env && envCfg && (
-        <Card title="Environment" icon={Server}>
+        <Card title={t("environment")} icon={Server}>
           <div className="flex items-center gap-2">
             <span className={cn("h-2 w-2 rounded-full animate-pulse", envCfg.dot)} />
             <span className={cn("font-mono text-sm font-medium", envCfg.color)}>
@@ -106,7 +108,7 @@ export function ContextCards({
 
       {/* Device */}
       {hasDevice && (
-        <Card title="Device" icon={DeviceIcon}>
+        <Card title={t("device")} icon={DeviceIcon}>
           <div className="space-y-2">
             {browser && (
               <div className="flex items-center gap-2 text-sm">
@@ -132,12 +134,12 @@ export function ContextCards({
 
       {/* Release */}
       {hasRelease && (
-        <Card title="Release" icon={Package}>
+        <Card title={t("release")} icon={Package}>
           <div className="space-y-2">
             {/* First seen in */}
             {firstSeenIn && firstSeenIn !== "unknown" && (
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] text-muted-foreground">First seen in</span>
+                <span className="text-[10px] text-muted-foreground">{t("firstSeenIn")}</span>
                 <span className="font-mono text-xs font-medium text-pulse-primary">
                   {firstSeenIn}
                 </span>
@@ -169,8 +171,8 @@ export function ContextCards({
 
       {/* Fallback if nothing */}
       {!env && !hasDevice && !hasRelease && (
-        <Card title="Context" icon={Server} className="col-span-full">
-          <p className="text-sm text-muted-foreground italic">No context data available</p>
+        <Card title={t("context")} icon={Server} className="col-span-full">
+          <p className="text-sm text-muted-foreground italic">{t("noContext")}</p>
         </Card>
       )}
     </div>

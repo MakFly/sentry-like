@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useState, useRef } from "react";
 import type { ErrorLevel, IssueStatus } from "@/server/api";
+import { useTranslations } from "next-intl";
 
 interface Member {
   id: string;
@@ -123,6 +124,7 @@ function AssigneeButton({
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const t = useTranslations("issueDetail.header");
   const assignee = members.find(m => m.id === assignedTo);
 
   if (!onAssign) return null;
@@ -154,7 +156,7 @@ function AssigneeButton({
           )}
         >
           <User className="h-3.5 w-3.5" />
-          <span>{assignee?.name || "Assign"}</span>
+          <span>{assignee?.name || t("assign")}</span>
           <ChevronDown className="h-3 w-3" />
         </button>
       </div>
@@ -174,7 +176,7 @@ function AssigneeButton({
                 onClick={() => { onAssign(null); setOpen(false); }}
                 className="w-full px-3 py-2 text-left text-xs text-muted-foreground hover:bg-issues-surface border-b border-issues-border"
               >
-                Unassign
+                {t("unassign")}
               </button>
             )}
             {members.map(m => (
@@ -216,6 +218,7 @@ export function IssueHeader({
   resolvedBy,
   resolvedAt,
 }: IssueHeaderProps) {
+  const t = useTranslations("issueDetail.header");
   const levelCfg = levelConfig[level];
   const statusCfg = statusConfig[status];
   const resolver = members.find(m => m.id === resolvedBy);
@@ -243,7 +246,7 @@ export function IssueHeader({
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="font-mono">issues</span>
+                <span className="font-mono">{t("issues")}</span>
               </Link>
 
               <span className={cn(
@@ -295,7 +298,7 @@ export function IssueHeader({
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-medium hover:bg-emerald-500/20 transition-all disabled:opacity-50"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    Resolve
+                    {t("resolve")}
                   </button>
                   <button
                     onClick={() => onStatusChange("ignored")}
@@ -303,7 +306,7 @@ export function IssueHeader({
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/10 border border-issues-border text-muted-foreground font-mono text-xs font-medium hover:bg-muted/20 hover:text-foreground transition-all disabled:opacity-50"
                   >
                     <EyeOff className="h-4 w-4" />
-                    Ignore
+                    {t("ignore")}
                   </button>
                 </>
               )}
@@ -315,11 +318,11 @@ export function IssueHeader({
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/10 border border-issues-border text-muted-foreground font-mono text-xs font-medium hover:bg-muted/20 hover:text-foreground transition-all disabled:opacity-50"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    Reopen
+                    {t("reopen")}
                   </button>
                   {resolver && resolvedAt && (
                     <span className="text-xs text-muted-foreground">
-                      by <span className="text-foreground">{resolver.name}</span>
+                      {t("by")} <span className="text-foreground">{resolver.name}</span>
                     </span>
                   )}
                 </div>
@@ -331,7 +334,7 @@ export function IssueHeader({
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/10 border border-issues-border text-muted-foreground font-mono text-xs font-medium hover:bg-muted/20 hover:text-foreground transition-all disabled:opacity-50"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Unignore
+                  {t("unignore")}
                 </button>
               )}
             </div>

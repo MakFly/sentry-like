@@ -4,6 +4,7 @@ import {
   LogOutIcon,
   MoreVerticalIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Avatar,
@@ -49,6 +50,7 @@ export function NavUser({
   } | null
   loading?: boolean
 }) {
+  const t = useTranslations("common")
   const { isMobile } = useSidebar()
 
   if (loading || !user) {
@@ -78,13 +80,13 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
                 <Avatar className="h-8 w-8 rounded-full border-2 border-transparent hover:border-violet-500/50 transition-colors">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarImage src={user.image || undefined} alt={user.name || t("user")} />
                   <AvatarFallback className="bg-violet-600 text-white text-xs font-medium rounded-full">
                     {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name || "User"}</span>
+                <span className="truncate font-medium">{user.name || t("user")}</span>
                 <span className="truncate text-xs text-muted-foreground">
                   {user.email}
                 </span>
@@ -101,13 +103,13 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-full border-2 border-transparent hover:border-violet-500/50 transition-colors">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarImage src={user.image || undefined} alt={user.name || t("user")} />
                   <AvatarFallback className="bg-violet-600 text-white text-xs font-medium rounded-full">
                     {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name || "User"}</span>
+                  <span className="truncate font-medium">{user.name || t("user")}</span>
                   <span className="truncate text-xs text-muted-foreground">
                     {user.email}
                   </span>
@@ -128,7 +130,7 @@ export function NavUser({
               className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
             >
               <LogOutIcon />
-              Log out
+              {t("logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

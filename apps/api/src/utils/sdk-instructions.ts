@@ -23,14 +23,14 @@ error_monitoring:
     name: "Laravel",
     icon: "laravel",
     category: "php",
-    package: "makfly/error-monitoring-laravel",
-    installCommand: "composer require makfly/error-monitoring-laravel",
-    configSnippet: (apiKey: string, endpoint: string) => `// config/error-monitoring.php
-return [
-    'api_key' => '${apiKey}',
-    'endpoint' => '${endpoint}',
-    'environment' => env('APP_ENV', 'production'),
-];`,
+    package: "errorwatch/sdk-laravel",
+    installCommand: "composer require errorwatch/sdk-laravel",
+    configSnippet: (apiKey: string, endpoint: string) => `# .env
+ERRORWATCH_ENABLED=true
+ERRORWATCH_ENDPOINT=${endpoint}
+ERRORWATCH_API_KEY=${apiKey}
+ERRORWATCH_LOG_LEVEL=debug
+ERRORWATCH_LOGGING_ENABLED=true`,
   },
   react: {
     name: "React",

@@ -10,6 +10,7 @@ import {
   Code2,
   Package,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface StackFrame {
   file: string;
@@ -126,6 +127,7 @@ function FrameItem({
   defaultExpanded: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const t = useTranslations("issueDetail.stackTrace");
 
   return (
     <div className={cn(
@@ -177,14 +179,14 @@ function FrameItem({
 
           {isHighlighted && (
             <span className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider bg-signal-warning/20 text-signal-warning border border-signal-warning/30">
-              source
+              {t("source")}
             </span>
           )}
 
           {frame.isVendor && (
             <span className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider bg-muted/20 text-muted-foreground border border-issues-border flex items-center gap-1">
               <Package className="h-2.5 w-2.5" />
-              vendor
+              {t("vendor")}
             </span>
           )}
         </div>
@@ -209,7 +211,7 @@ function FrameItem({
           {/* Function info */}
           {frame.function && frame.function !== "(anonymous)" && (
             <div className="ml-8 mt-2">
-              <span className="text-xs text-muted-foreground">in </span>
+              <span className="text-xs text-muted-foreground">{t("in")} </span>
               <code className="font-mono text-xs text-foreground">{frame.function}</code>
             </div>
           )}
@@ -228,6 +230,7 @@ export function StackTraceViewer({
   const [showVendor, setShowVendor] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("issueDetail.stackTrace");
 
   const frames = useMemo(() => parseStackTrace(stack), [stack]);
   const displayFrames = showVendor ? frames : frames.filter(f => !f.isVendor);
@@ -249,10 +252,10 @@ export function StackTraceViewer({
         <div className="flex items-center gap-3">
           <Code2 className="h-4 w-4 text-muted-foreground" />
           <h2 className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Stack Trace
+            {t("title")}
           </h2>
           <span className="px-1.5 py-0.5 rounded bg-muted/10 text-[10px] font-mono text-muted-foreground">
-            {displayFrames.length} frames
+            {t("frames", { count: displayFrames.length })}
           </span>
         </div>
 
@@ -267,7 +270,7 @@ export function StackTraceViewer({
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {showVendor ? "Hide" : "Show"} vendor ({vendorCount})
+              {showVendor ? t("hideVendor", { count: vendorCount }) : t("showVendor", { count: vendorCount })}
             </button>
           )}
 
@@ -280,7 +283,7 @@ export function StackTraceViewer({
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {showRaw ? "Parsed" : "Raw"}
+            {showRaw ? t("parsed") : t("raw")}
           </button>
 
           <button
@@ -308,7 +311,7 @@ export function StackTraceViewer({
         <div>
           {displayFrames.length === 0 ? (
             <p className="p-4 text-center text-sm text-muted-foreground">
-              No stack frames found
+              {t("noFrames")}
             </p>
           ) : (
             displayFrames.map((frame, index) => {

@@ -14,6 +14,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import type { ErrorLevel } from "@/server/api";
+import { useTranslations } from "next-intl";
 
 interface IssueRowProps {
   fingerprint: string;
@@ -99,6 +100,7 @@ export function IssueRow({
   className,
 }: IssueRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const t = useTranslations("issues.row");
   const config = levelConfig[level];
   const { dir, file: fileName } = formatFilePath(file);
 
@@ -196,7 +198,7 @@ export function IssueRow({
             {count.toLocaleString()}
           </span>
           <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-            events
+            {t("events")}
           </span>
         </div>
 
@@ -224,7 +226,7 @@ export function IssueRow({
             {/* Full message */}
             <div>
               <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Full Message
+                {t("fullMessage")}
               </h4>
               <p className="rounded-md bg-issues-bg p-3 font-mono text-sm text-foreground">
                 {message}
@@ -234,23 +236,23 @@ export function IssueRow({
             {/* Quick actions */}
             <div>
               <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Quick Actions
+                {t("quickActions")}
               </h4>
               <div className="flex flex-wrap gap-2">
                 <button className="flex items-center gap-1.5 rounded-md border border-signal-info/30 bg-signal-info/10 px-3 py-1.5 text-sm text-signal-info transition-colors hover:bg-signal-info/20">
                   <CheckCircle className="h-4 w-4" />
-                  Resolve
+                  {t("resolve")}
                 </button>
                 <button className="flex items-center gap-1.5 rounded-md border border-muted-foreground/30 bg-muted/10 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/20">
                   <XCircle className="h-4 w-4" />
-                  Ignore
+                  {t("ignore")}
                 </button>
                 <Link
                   href={`/dashboard/${orgSlug}/issues/${fingerprint}`}
                   className="flex items-center gap-1.5 rounded-md border border-pulse-primary/30 bg-pulse-primary/10 px-3 py-1.5 text-sm text-pulse-primary transition-colors hover:bg-pulse-primary/20"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  View Details
+                  {t("viewDetails")}
                 </Link>
               </div>
             </div>
@@ -259,7 +261,7 @@ export function IssueRow({
           {/* File location */}
           <div className="mt-4">
             <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Source Location
+              {t("sourceLocation")}
             </h4>
             <code className="rounded-md bg-issues-bg px-3 py-2 font-mono text-sm text-pulse-muted">
               {file}:{line}

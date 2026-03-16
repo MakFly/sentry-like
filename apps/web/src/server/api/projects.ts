@@ -30,7 +30,7 @@ export const create = async (data: { name: string; organizationId: string; envir
   });
 };
 
-export const update = async (id: string, data: { name?: string }): Promise<Project> => {
+export const update = async (id: string, data: { name?: string; environment?: string }): Promise<Project> => {
   return fetchAPI<Project>(`/projects/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),

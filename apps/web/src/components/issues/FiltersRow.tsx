@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, Radio } from "lucide-react";
+import { X, Radio } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type DateRange = "24h" | "7d" | "30d" | "90d" | "all";
 
@@ -43,6 +44,8 @@ export function FiltersRow({
   hasActiveFilters,
   className,
 }: FiltersRowProps) {
+  const t = useTranslations("issues.filters");
+
   return (
     <div
       className={cn(
@@ -55,7 +58,7 @@ export function FiltersRow({
         <Radio className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-pulse-muted" />
         <input
           type="text"
-          placeholder="Search signals..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className={cn(
@@ -78,26 +81,26 @@ export function FiltersRow({
       {/* Environment */}
       <Select value={environment} onValueChange={onEnvironmentChange}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[140px]">
-          <SelectValue placeholder="Environment" />
+          <SelectValue placeholder={t("allEnvs")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All envs</SelectItem>
+          <SelectItem value="all">{t("allEnvs")}</SelectItem>
           <SelectItem value="prod">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-fatal" />
-              Production
+              {t("production")}
             </span>
           </SelectItem>
           <SelectItem value="staging">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-warning" />
-              Staging
+              {t("staging")}
             </span>
           </SelectItem>
           <SelectItem value="dev">
             <span className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-signal-info" />
-              Development
+              {t("development")}
             </span>
           </SelectItem>
         </SelectContent>
@@ -106,27 +109,27 @@ export function FiltersRow({
       {/* Date Range */}
       <Select value={dateRange} onValueChange={(v) => onDateRangeChange(v as DateRange)}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
-          <SelectValue placeholder="Time range" />
+          <SelectValue placeholder={t("allTime")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All time</SelectItem>
-          <SelectItem value="24h">Last 24h</SelectItem>
-          <SelectItem value="7d">Last 7 days</SelectItem>
-          <SelectItem value="30d">Last 30 days</SelectItem>
-          <SelectItem value="90d">Last 90 days</SelectItem>
+          <SelectItem value="all">{t("allTime")}</SelectItem>
+          <SelectItem value="24h">{t("last24h")}</SelectItem>
+          <SelectItem value="7d">{t("last7d")}</SelectItem>
+          <SelectItem value="30d">{t("last30d")}</SelectItem>
+          <SelectItem value="90d">{t("last90d")}</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Status */}
       <Select value={status} onValueChange={onStatusChange}>
         <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[120px]">
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder={t("allStatus")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All status</SelectItem>
-          <SelectItem value="open">Open</SelectItem>
-          <SelectItem value="resolved">Resolved</SelectItem>
-          <SelectItem value="ignored">Ignored</SelectItem>
+          <SelectItem value="all">{t("allStatus")}</SelectItem>
+          <SelectItem value="open">{t("open")}</SelectItem>
+          <SelectItem value="resolved">{t("resolved")}</SelectItem>
+          <SelectItem value="ignored">{t("ignored")}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -134,14 +137,14 @@ export function FiltersRow({
       {onSourceChange && (
         <Select value={source || "all"} onValueChange={onSourceChange}>
           <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[130px]">
-            <SelectValue placeholder="Source" />
+            <SelectValue placeholder={t("allSources")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All sources</SelectItem>
-            <SelectItem value="http">HTTP</SelectItem>
-            <SelectItem value="cli">CLI</SelectItem>
-            <SelectItem value="messenger">Queue</SelectItem>
-            <SelectItem value="deprecation">Deprecation</SelectItem>
+            <SelectItem value="all">{t("allSources")}</SelectItem>
+            <SelectItem value="http">{t("sourceHTTP")}</SelectItem>
+            <SelectItem value="cli">{t("sourceCLI")}</SelectItem>
+            <SelectItem value="messenger">{t("sourceQueue")}</SelectItem>
+            <SelectItem value="deprecation">{t("sourceDeprecation")}</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -153,7 +156,7 @@ export function FiltersRow({
           className="flex items-center gap-1.5 rounded-lg border border-issues-border bg-issues-surface/30 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-issues-surface hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
-          Clear
+          {t("clear")}
         </button>
       )}
     </div>

@@ -3,19 +3,22 @@ import "./globals.css";
 import { TRPCProvider } from "@/lib/trpc/provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
+import { getLocale } from "next-intl/server";
 
 export const metadata: Metadata = {
   title: "ErrorWatch - Error Monitoring",
   description: "Self-hosted error monitoring for modern applications",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en" className="dark" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang={locale} className="dark" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="min-h-screen overflow-x-hidden bg-background text-foreground antialiased">
         <NuqsAdapter>
           <TRPCProvider>

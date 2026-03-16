@@ -29,8 +29,10 @@ import {
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { trpc } from "@/lib/trpc/client";
+import { useTranslations } from "next-intl";
 
 export function CommandMenu() {
+  const t = useTranslations("navigation");
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -69,27 +71,27 @@ export function CommandMenu() {
         className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted transition-colors w-full max-w-[280px]"
       >
         <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Search...</span>
+        <span className="flex-1 text-left">{t("commandSearch")}</span>
         <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-50">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Type a command or search..." />
+        <CommandInput placeholder={t("commandPlaceholder")} />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandEmpty>{t("commandNoResults")}</CommandEmpty>
 
           {currentOrgSlug && currentProjectSlug && (
             <>
-              <CommandGroup heading="Navigation">
+              <CommandGroup heading={t("commandNavigation")}>
                 <CommandItem
                   onSelect={() =>
                     runCommand(() => router.push(`${baseUrl}`))
                   }
                 >
                   <LayoutDashboard className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
+                  <span>{t("dashboard")}</span>
                   <CommandShortcut>⌘D</CommandShortcut>
                 </CommandItem>
                 <CommandItem
@@ -98,7 +100,7 @@ export function CommandMenu() {
                   }
                 >
                   <Bug className="mr-2 h-4 w-4" />
-                  <span>Issues</span>
+                  <span>{t("issues")}</span>
                   <CommandShortcut>⌘I</CommandShortcut>
                 </CommandItem>
                 <CommandItem
@@ -107,7 +109,7 @@ export function CommandMenu() {
                   }
                 >
                   <Film className="mr-2 h-4 w-4" />
-                  <span>Replays</span>
+                  <span>{t("replays")}</span>
                   <CommandShortcut>⌘R</CommandShortcut>
                 </CommandItem>
                 <CommandItem
@@ -116,7 +118,7 @@ export function CommandMenu() {
                   }
                 >
                   <BarChart3 className="mr-2 h-4 w-4" />
-                  <span>Statistics</span>
+                  <span>{t("commandStatistics")}</span>
                   <CommandShortcut>⌘S</CommandShortcut>
                 </CommandItem>
                 <CommandItem
@@ -125,21 +127,21 @@ export function CommandMenu() {
                   }
                 >
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>{t("settings")}</span>
                   <CommandShortcut>⌘,</CommandShortcut>
                 </CommandItem>
               </CommandGroup>
 
               <CommandSeparator />
 
-              <CommandGroup heading="Help">
+              <CommandGroup heading={t("commandHelp")}>
                 <CommandItem
                   onSelect={() =>
                     runCommand(() => router.push(`${baseUrl}/help`))
                   }
                 >
                   <HelpCircle className="mr-2 h-4 w-4" />
-                  <span>Help Center</span>
+                  <span>{t("commandHelpCenter")}</span>
                   <CommandShortcut>?</CommandShortcut>
                 </CommandItem>
                 <CommandItem
@@ -148,7 +150,7 @@ export function CommandMenu() {
                   }
                 >
                   <FileText className="mr-2 h-4 w-4" />
-                  <span>Documentation</span>
+                  <span>{t("commandDocumentation")}</span>
                 </CommandItem>
               </CommandGroup>
 
@@ -156,14 +158,14 @@ export function CommandMenu() {
             </>
           )}
 
-          <CommandGroup heading="Quick Actions">
+          <CommandGroup heading={t("commandQuickActions")}>
             <CommandItem
               onSelect={() =>
                 runCommand(() => router.push("/dashboard"))
               }
             >
               <Zap className="mr-2 h-4 w-4" />
-              <span>Go to Dashboard</span>
+              <span>{t("commandGoToDashboard")}</span>
             </CommandItem>
             <CommandItem
               onSelect={() =>
@@ -171,7 +173,7 @@ export function CommandMenu() {
               }
             >
               <Plus className="mr-2 h-4 w-4" />
-              <span>Create New Project</span>
+              <span>{t("commandCreateNewProject")}</span>
               <CommandShortcut>⌘P</CommandShortcut>
             </CommandItem>
           </CommandGroup>
@@ -179,7 +181,7 @@ export function CommandMenu() {
           {session?.user && (
             <>
               <CommandSeparator />
-              <CommandGroup heading="Account">
+              <CommandGroup heading={t("commandAccount")}>
                 <CommandItem>
                   <User className="mr-2 h-4 w-4" />
                   <span>{session.user.name}</span>

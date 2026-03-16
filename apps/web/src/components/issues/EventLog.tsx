@@ -13,6 +13,7 @@ import {
   Play,
 } from "lucide-react";
 import { BreadcrumbsTimeline } from "@/components/BreadcrumbsTimeline";
+import { useTranslations } from "next-intl";
 
 interface EventLogEvent {
   id: string;
@@ -66,8 +67,10 @@ function EventRow({
   projectSlug: string;
 }) {
   const [expanded, setExpanded] = useState(index === 0);
+  const t = useTranslations("issueDetail.eventLog");
   const hasBreadcrumbs = event.breadcrumbs && event.breadcrumbs !== "null";
   const hasReplay = !!event.sessionId;
+  const stackLines = event.stack.split("\n");
 
   return (
     <div
@@ -154,7 +157,7 @@ function EventRow({
             <div>
               <h4 className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <Activity className="h-3.5 w-3.5" />
-                Breadcrumbs
+                {t("breadcrumbs")}
               </h4>
               <BreadcrumbsTimeline breadcrumbs={event.breadcrumbs} maxItems={15} />
             </div>
@@ -164,13 +167,13 @@ function EventRow({
           <div>
             <h4 className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <Terminal className="h-3.5 w-3.5" />
-              Stack Trace
+              {t("stackTrace")}
             </h4>
             <pre className="scrollbar-thin max-h-48 overflow-auto rounded-lg bg-issues-bg p-3 font-mono text-xs text-muted-foreground">
-              {event.stack.split("\n").slice(0, 10).join("\n")}
-              {event.stack.split("\n").length > 10 && (
+              {stackLines.slice(0, 10).join("\n")}
+              {stackLines.length > 10 && (
                 <span className="text-pulse-muted">
-                  {"\n"}... ({event.stack.split("\n").length - 10} more frames)
+                  {"\n"}{t("moreFrames", { count: stackLines.length - 10 })}
                 </span>
               )}
             </pre>
@@ -210,6 +213,8 @@ export function EventLog({
   isLoading,
   className,
 }: EventLogProps) {
+  const t = useTranslations("issueDetail.eventLog");
+
   return (
     <div
       className={cn(
@@ -220,10 +225,10 @@ export function EventLog({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-issues-border bg-issues-surface/50 px-4 py-3">
         <h3 className="font-mono text-sm font-semibold uppercase tracking-wider text-foreground">
-          Event Log
+          {t("title")}
         </h3>
         <span className="text-xs text-muted-foreground">
-          {totalCount.toLocaleString()} total
+          {t("total", { count: totalCount.toLocaleString() })}
         </span>
       </div>
 
@@ -243,7 +248,7 @@ export function EventLog({
         </div>
       ) : (
         <div className="py-12 text-center text-sm text-muted-foreground">
-          No events found
+          {t("noEvents")}
         </div>
       )}
 
@@ -255,11 +260,11 @@ export function EventLog({
             disabled={currentPage === 1}
             className="rounded-md border border-issues-border bg-issues-surface px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-issues-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
-            ← Prev
+            {t("prev")}
           </button>
 
           <span className="px-4 text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
+            {t("page", { current: currentPage, total: totalPages })}
           </span>
 
           <button
@@ -267,7 +272,7 @@ export function EventLog({
             disabled={currentPage === totalPages}
             className="rounded-md border border-issues-border bg-issues-surface px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-issues-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Next →
+            {t("next")}
           </button>
         </div>
       )}
