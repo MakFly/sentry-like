@@ -105,8 +105,12 @@ export async function proxy(request: NextRequest) {
   } else {
     try {
       const sessionRes = await fetch(`${API_URL}/api/auth/get-session`, {
-        headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+        headers: {
+          ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+          Origin: request.headers.get("origin") || undefined,
+        },
         cache: "no-store",
+        credentials: "include",
       });
 
       if (!sessionRes.ok) {
@@ -120,10 +124,9 @@ export async function proxy(request: NextRequest) {
         return invalidateSessionAndRedirect(request, pathname);
       }
 
-      const validUserId: string = userId!;
+      userId = sessionData.user.id;
       if (sessionToken) {
-        const token: string = sessionToken;
-        setSessionCache(token, validUserId);
+        setSessionCache(sessionToken, userId);
       }
     } catch (error) {
       console.error("[Middleware] Failed to validate session:", error);
