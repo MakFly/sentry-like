@@ -67,16 +67,16 @@ docker compose up -d
 
 ```bash
 # Monitoring Server
-cp apps/monitoring-server/.env.example apps/monitoring-server/.env
+cp apps/api/.env.example apps/api/.env
 
 # Dashboard
-cp apps/dashboard/.env.example apps/dashboard/.env
+cp apps/web/.env.example apps/web/.env
 ```
 
 ### 4. Setup Database
 
 ```bash
-cd apps/monitoring-server
+cd apps/api
 bunx drizzle-kit push
 ```
 
@@ -385,7 +385,7 @@ make dev-api        # API on 3333
 make dev-dashboard  # Dashboard on 4001
 ```
 
-Set `apps/monitoring-server/.env` using:
+Set `apps/api/.env` using:
 
 ```bash
 DATABASE_URL=postgresql://errorwatch:errorwatch_dev_password@localhost:55432/errorwatch
@@ -396,7 +396,7 @@ REDIS_URL=redis://localhost:56379
 
 - `ECONNREFUSED` to DB/Redis: verify `DOCKER_POSTGRES_PORT` / `DOCKER_REDIS_PORT` and matching `DATABASE_URL` / `REDIS_URL`
 - `502` from Caddy: verify PM2 apps are running on `127.0.0.1:3333` and `127.0.0.1:4001`
-- Migration errors: run `cd apps/monitoring-server && DATABASE_URL=... bun run db:migrate`
+- Migration errors: run `cd apps/api && DATABASE_URL=... bun run db:migrate`
 - App boot failures: inspect `bunx pm2 logs` first, then `docker compose ... logs postgres redis`
 
 For the VPS-focused guide, see [deploy/README.md](./deploy/README.md).
@@ -433,7 +433,7 @@ bun test
 bun run build
 
 # Database migrations
-cd apps/monitoring-server && bunx drizzle-kit push
+cd apps/api && bunx drizzle-kit push
 ```
 
 ## CI/CD

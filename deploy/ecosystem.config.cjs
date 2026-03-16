@@ -4,7 +4,7 @@ module.exports = {
   apps: [
     {
       name: "errorwatch-api",
-      cwd: `${ROOT}/apps/monitoring-server`,
+      cwd: `${ROOT}/apps/api`,
       script: "bun",
       args: "run src/index.ts",
       interpreter: "none",
@@ -28,7 +28,7 @@ module.exports = {
     },
     {
       name: "errorwatch-dashboard",
-      cwd: `${ROOT}/apps/dashboard`,
+      cwd: `${ROOT}/apps/web`,
       script: "node_modules/next/dist/bin/next",
       args: "start -p 4001",
       interpreter: "node",

@@ -1,5 +1,5 @@
 {
-  "name": "@apps/monitoring-server",
+  "name": "@apps/api",
   "version": "1.0.0",
   "type": "module",
   "scripts": {

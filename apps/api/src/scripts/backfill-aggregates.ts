@@ -4,7 +4,7 @@
  * @description One-shot script to populate hourly and daily aggregation tables
  * from existing raw performance data (last 30 days).
  *
- * Usage: bun run apps/monitoring-server/src/scripts/backfill-aggregates.ts
+ * Usage: bun run apps/api/src/scripts/backfill-aggregates.ts
  */
 import {
   aggregateHourlyMetrics,

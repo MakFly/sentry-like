@@ -47,8 +47,8 @@ build: ## Build all apps for production
 
 clean: ## Clean build artifacts
 	@echo "$(YELLOW)Cleaning...$(RESET)"
-	@rm -rf apps/dashboard/.next
-	@rm -rf apps/monitoring-server/dist
+	@rm -rf apps/web/.next
+	@rm -rf apps/api/dist
 
 dev: ## Show dev instructions
 	@echo "$(CYAN)=== Development ===$(RESET)"
@@ -58,10 +58,10 @@ dev: ## Show dev instructions
 	@$(MAKE) infra-check
 
 dev-api: ## Start API server (port 3333)
-	@cd apps/monitoring-server && bun run dev:standalone
+	@cd apps/api && bun run dev:standalone
 
 dev-dashboard: ## Start dashboard (port 4001)
-	@cd apps/dashboard && bun run dev:standalone
+	@cd apps/web && bun run dev:standalone
 
 start: ## Start all dev services
 	@$(MAKE) dev
@@ -100,10 +100,10 @@ db-create: ## Create database (dev)
 		docker compose -f $(COMPOSE_DEV) exec postgres psql -U errorwatch -c "CREATE DATABASE errorwatch;"
 
 db-push: ## Push schema to database
-	@cd apps/monitoring-server && bun run db:push
+	@cd apps/api && bun run db:push
 
 db-migrate: ## Run migrations
-	@cd apps/monitoring-server && bun run db:migrate
+	@cd apps/api && bun run db:migrate
 
 db-reset: ## Reset database
 	@echo "$(YELLOW)Resetting database...$(RESET)"

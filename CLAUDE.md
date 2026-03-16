@@ -21,8 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Component | Location | Port | Stack |
 |-----------|----------|------|-------|
-| Monitoring Server | `apps/monitoring-server/` | 3333 | Hono.js 4, Drizzle ORM, PostgreSQL, BetterAuth |
-| Dashboard | `apps/dashboard/` | 4001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
+| API Server | `apps/api/` | 3333 | Hono.js 4, Drizzle ORM, PostgreSQL, BetterAuth |
+| Web Dashboard | `apps/web/` | 4001 | Next.js 16, tRPC 11, shadcn/ui, TailwindCSS |
 | SDK Universal | `packages/sdk/` | - | TypeScript |
 | SDK React | `packages/sdk/` (via exports) | - | React 18+ / 19+ |
 | SDK Vue | `packages/sdk/` (via exports) | - | Vue 3+ |
@@ -44,8 +44,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 sentry-like/
 ├── apps/
-│   ├── dashboard/                 # Next.js 16 frontend
-│   └── monitoring-server/         # Hono.js API server + BullMQ workers
+│   ├── web/                       # Next.js 16 frontend
+│   └── api/                       # Hono.js API server + BullMQ workers
 ├── packages/
 │   ├── sdk/                       # Universal SDK (Browser + React + Vue)
 │   ├── shared/                    # Shared types & Zod schemas
@@ -66,7 +66,7 @@ sentry-like/
 
 ---
 
-## Monitoring Server (`apps/monitoring-server/`)
+## API Server (`apps/api/`)
 
 ### Database Schema
 
@@ -104,7 +104,7 @@ Uses **BetterAuth** (`src/auth.ts`):
 ### Commands
 
 ```bash
-cd apps/monitoring-server
+cd apps/api
 bun install
 make docker-up       # Start PostgreSQL & Redis first (from root)
 bun run db:push      # Push schema to PostgreSQL
@@ -113,7 +113,7 @@ bun run dev:standalone  # Port 3333
 
 ---
 
-## Dashboard (`apps/dashboard/`)
+## Web Dashboard (`apps/web/`)
 
 ### Route Structure
 
@@ -157,7 +157,7 @@ Server Component → getServerCaller()   ─────────────
 ### Commands
 
 ```bash
-cd apps/dashboard
+cd apps/web
 bun install
 bun run dev:standalone  # Port 4001
 ```
@@ -371,7 +371,7 @@ resolve-bugs/
 
 - **NO `middleware.ts`** - Next.js 16 utilise `src/proxy.ts` à la place
 - Le proxy gère : authentification, redirection, validation de session
-- Voir `apps/dashboard/src/proxy.ts` pour la logique de routing
+- Voir `apps/web/src/proxy.ts` pour la logique de routing
 
 ---
 

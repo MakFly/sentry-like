@@ -66,7 +66,7 @@ docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgre
   " 2>/dev/null || true
 
 echo "[3/4] Running migrations..."
-cd apps/monitoring-server
+cd apps/api
 DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:55432/${POSTGRES_DB}" bun run db:push
 
 echo "[4/4] Database reset complete!"

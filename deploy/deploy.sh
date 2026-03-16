@@ -116,7 +116,7 @@ docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml exec -T postgre
 
 echo "[6/10] Run migrations"
 (
-  cd apps/monitoring-server
+  cd apps/api
   export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${DOCKER_POSTGRES_PORT}/${POSTGRES_DB}"
   bun run db:push
 )

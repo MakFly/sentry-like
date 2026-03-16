@@ -12,7 +12,7 @@
     "docker:flush": "docker exec errorwatch-redis-dev redis-cli FLUSHALL",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "db:push": "turbo run db:push --filter=@apps/monitoring-server"
+    "db:push": "turbo run db:push --filter=@apps/api"
   },
   "devDependencies": {
     "turbo": "^2.3.0"

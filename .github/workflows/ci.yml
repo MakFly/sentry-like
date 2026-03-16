@@ -57,7 +57,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Run monitoring-server tests
+      - name: Run API tests
         env:
           REDIS_URL: redis://127.0.0.1:6379
-        run: bun test apps/monitoring-server/tests
+        run: bun test apps/api/tests

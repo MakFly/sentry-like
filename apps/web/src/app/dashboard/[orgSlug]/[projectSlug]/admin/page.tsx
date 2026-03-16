@@ -230,7 +230,7 @@ export default function AdminPage() {
               </p>
               <p className="mt-2"># Backfill 30 days (one-shot script)</p>
               <p className="text-foreground">
-                bun run apps/monitoring-server/src/scripts/backfill-aggregates.ts
+                bun run apps/api/src/scripts/backfill-aggregates.ts
               </p>
             </div>
           </div>
