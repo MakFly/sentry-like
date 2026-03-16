@@ -1,0 +1,19 @@
+[allowlist]
+description = "Ignore known non-sensitive placeholders/examples"
+paths = [
+  '''^\.env\.production\.example$''',
+  '''^deploy/\.env\.production\.example$''',
+  '''^examples/.*''',
+  '''^packages/sdk-laravel/tests/TestCase\.php$''',
+  '''^examples/example-symfony/var/cache/.*'''
+]
+regexes = [
+  '''CHANGE_ME''',
+  '''GENERATE_STRONG_''',
+  '''sk_live_x+''',
+  '''whsec_x+''',
+  '''re_x+''',
+  '''your_api_key_here''',
+  '''your-api-key-here''',
+  '''ew_admin_'''
+]

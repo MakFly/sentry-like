@@ -196,11 +196,19 @@ Recommended production topology:
 - **PostgreSQL + Redis** run in Docker (`docker-compose.prod.yml`)
 - **Caddy** handles TLS termination and reverse proxy
 
-This is exactly what the one-shot script automates:
+This is exactly what the deploy scripts automate:
 
-- [deploy/oneshot-deploy.sh](./deploy/oneshot-deploy.sh)
+- [deploy/first-init-deploy.sh](./deploy/first-init-deploy.sh)
+- [deploy/deploy.sh](./deploy/deploy.sh)
 - [deploy/ecosystem.config.cjs](./deploy/ecosystem.config.cjs)
 - [deploy/Caddyfile](./deploy/Caddyfile)
+- [deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md)
+
+### Security Hardening Guide
+
+For a complete production firewall and SSH protection setup (UFW + Fail2ban + Docker `DOCKER-USER` allowlist enforcement), follow:
+
+- [Security Hardening: UFW + Fail2ban](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md)
 
 ### Requirements
 
@@ -217,7 +225,7 @@ Required software:
 - Bun 1.x
 - PM2
 
-### Production (One-Shot) Setup
+### Production Setup
 
 1. Clone on your VPS:
 
@@ -248,10 +256,16 @@ openssl rand -base64 24   # API_KEY_HASH_SECRET
 # Open inbound 80/tcp and 443/tcp
 ```
 
-5. Run one-shot deploy:
+5. Run first deployment:
 
 ```bash
-./deploy/oneshot-deploy.sh .env.production
+./deploy/first-init-deploy.sh .env.production
+```
+
+6. For updates:
+
+```bash
+./deploy/deploy.sh .env.production
 ```
 
 ### Dynamic Docker Ports (Conflict-Free)
@@ -333,7 +347,25 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f red
 
 # Re-deploy after updates
 git pull
-./deploy/oneshot-deploy.sh .env.production
+./deploy/deploy.sh .env.production
+```
+
+### Releases (Tags + GitHub Release)
+
+Use the release helper script from a clean `main` branch:
+
+```bash
+# Auto bump from latest semver tag
+./scripts/release.sh --type patch
+
+# Or explicit version
+./scripts/release.sh --version v0.4.1 --notes "Bugfix release"
+```
+
+Dry-run preview:
+
+```bash
+./scripts/release.sh --type minor --dry-run
 ```
 
 ### Local Self-Hosted (Without Production Proxy)
@@ -403,6 +435,26 @@ bun run build
 # Database migrations
 cd apps/monitoring-server && bunx drizzle-kit push
 ```
+
+## CI/CD
+
+GitHub Actions workflows are included:
+
+- `CI` (`.github/workflows/ci.yml`): lint + build + API tests
+- `Security` (`.github/workflows/security.yml`): secret scan + dependency review
+- `CD Production` (`.github/workflows/cd-production.yml`): deploy to `/opt/errorwatch` via SSH
+
+### Required GitHub Secrets (for CD)
+
+Set these in repository settings:
+
+- `PROD_HOST` (example: `51.158.55.137`)
+- `PROD_USER` (example: `kaubree`)
+- `PROD_SSH_KEY` (private key for deploy user)
+
+### Recommended Protection
+
+Configure a GitHub Environment named `production` and require manual approval before deployment.
 
 ## Contributing
 

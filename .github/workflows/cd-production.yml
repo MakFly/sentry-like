@@ -1,0 +1,65 @@
+name: CD Production
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Preflight (CD config)
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check required deployment secrets
+        id: check
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PROD_HOST}" ] && [ -n "${PROD_USER}" ] && [ -n "${PROD_SSH_KEY}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "CD secrets present."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CD skipped: missing PROD_HOST/PROD_USER/PROD_SSH_KEY"
+          fi
+
+  deploy:
+    name: Deploy to production
+    needs: preflight
+    if: ${{ needs.preflight.outputs.ready == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            export PATH="$HOME/.bun/bin:$PATH"
+            cd /opt/errorwatch
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "[ERROR] Working tree is dirty on server. Aborting deploy."
+              git status --short
+              exit 1
+            fi
+            git fetch origin main --tags
+            git pull --ff-only origin main
+            ./deploy/deploy.sh .env.production
