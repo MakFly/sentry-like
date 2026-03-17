@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import { createSSRHelpers } from "@/server/trpc/router";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { DashboardProviders } from "./providers";
 
-export default async function DashboardLayout({
+async function PrefetchedDashboard({
   children,
 }: {
   children: React.ReactNode;
@@ -25,5 +26,17 @@ export default async function DashboardLayout({
         {children}
       </DashboardProviders>
     </HydrationBoundary>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense>
+      <PrefetchedDashboard>{children}</PrefetchedDashboard>
+    </Suspense>
   );
 }

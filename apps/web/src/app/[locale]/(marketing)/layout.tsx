@@ -301,7 +301,7 @@ function Footer() {
           viewport={{ once: true }}
         >
           <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} ErrorWatch. {t("footer.allRightsReserved")}
+            &copy; 2026 ErrorWatch. {t("footer.allRightsReserved")}
           </p>
         </motion.div>
       </div>

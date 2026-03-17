@@ -76,6 +76,13 @@ app.use("/api/v1/event", cors({
   allowMethods: ["POST", "OPTIONS"],
   allowHeaders: ["Content-Type", "X-API-Key", "X-Content-Encoding", "X-Session-ID"],
 }));
+// Cron checkin endpoint — can receive requests from any server-side client
+app.use("/api/v1/cron/checkin", cors({
+  origin: "*",
+  allowMethods: ["POST", "OPTIONS"],
+  allowHeaders: ["Content-Type", "X-API-Key"],
+}));
+
 // Error-triggered replay endpoint (new Sentry-like architecture)
 app.use("/api/v1/replay/error", cors({
   origin: "*",
@@ -312,6 +319,7 @@ import { replayWorker } from "./queue/workers/replay.worker";
 import { alertWorker } from "./queue/workers/alert.worker";
 import { aggregationWorker, scheduleAggregationJobs } from "./queue/workers/aggregation.worker";
 import { metricsWorker } from "./queue/workers/metrics.worker";
+import { cronMonitorWorker, scheduleCronMonitorJobs } from "./queue/workers/cron-monitor.worker";
 import { isRedisAvailable } from "./queue/connection";
 
 // Check Redis and start workers
@@ -332,16 +340,20 @@ import { isRedisAvailable } from "./queue/connection";
     return;
   }
 
-  // Schedule aggregation cron jobs in parallel with worker startup log
-  await scheduleAggregationJobs();
+  // Schedule recurring jobs in parallel
+  await Promise.all([
+    scheduleAggregationJobs(),
+    scheduleCronMonitorJobs(),
+  ]);
 
   logger.info("BullMQ workers started", {
-    queues: ["events", "replays", "alerts", "aggregation", "metrics"],
+    queues: ["events", "replays", "alerts", "aggregation", "metrics", "cron-monitor"],
     eventConcurrency: eventWorker.opts.concurrency,
     replayConcurrency: replayWorker.opts.concurrency,
     alertConcurrency: alertWorker.opts.concurrency,
     aggregationConcurrency: aggregationWorker.opts.concurrency,
     metricsConcurrency: metricsWorker.opts.concurrency,
+    cronMonitorConcurrency: cronMonitorWorker.opts.concurrency,
   });
 })();
 
@@ -367,6 +379,7 @@ const shutdown = async (signal: string) => {
       alertWorker.close(),
       aggregationWorker.close(),
       metricsWorker.close(),
+      cronMonitorWorker.close(),
     ]);
     logger.info("Workers closed");
 

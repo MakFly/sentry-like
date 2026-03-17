@@ -569,6 +569,50 @@ export const transactionAggregatesDaily = pgTable("transaction_aggregates_daily"
 }));
 
 // ============================================
+// Cron Monitoring Tables
+// ============================================
+
+export const cronMonitors = pgTable("cron_monitors", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  schedule: text("schedule"), // crontab expression, nullable
+  timezone: text("timezone").notNull().default("UTC"),
+  toleranceMinutes: integer("tolerance_minutes").notNull().default(5),
+  status: text("status").notNull().default("active"), // active, paused, disabled
+  lastCheckinAt: timestamp("last_checkin_at", { withTimezone: true }),
+  lastCheckinStatus: text("last_checkin_status"), // ok, in_progress, error, missed
+  nextExpectedAt: timestamp("next_expected_at", { withTimezone: true }),
+  env: text("env"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+}, (table) => ({
+  projectSlugIdx: uniqueIndex("idx_cron_monitors_project_slug").on(table.projectId, table.slug),
+  nextExpectedIdx: index("idx_cron_monitors_next_expected").on(table.nextExpectedAt),
+}));
+
+export const cronCheckins = pgTable("cron_checkins", {
+  id: text("id").primaryKey(),
+  monitorId: text("monitor_id")
+    .notNull()
+    .references(() => cronMonitors.id, { onDelete: "cascade" }),
+  status: text("status").notNull(), // ok, in_progress, error, missed
+  duration: integer("duration"), // ms
+  env: text("env"),
+  checkinId: text("checkin_id"), // correlation start/finish
+  payload: jsonb("payload"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (table) => ({
+  monitorCreatedIdx: index("idx_cron_checkins_monitor_created").on(table.monitorId, table.createdAt),
+  checkinIdIdx: index("idx_cron_checkins_checkin_id").on(table.checkinId),
+}));
+
+// ============================================
 // System Metrics Tables
 // ============================================
 

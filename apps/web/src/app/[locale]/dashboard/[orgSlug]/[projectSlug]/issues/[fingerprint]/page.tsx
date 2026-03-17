@@ -135,14 +135,6 @@ export default function IssueDetailPage() {
 
   return (
     <div className="min-h-screen bg-issues-bg p-4 md:p-6 lg:p-8 space-y-6">
-      <Link
-        href={`/dashboard/${currentOrgSlug}/${currentProjectSlug}/issues`}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        <span className="font-mono">← {t("back")}</span>
-      </Link>
-
       {/* Header */}
       <IssueHeader
         message={group.message}
@@ -152,6 +144,7 @@ export default function IssueDetailPage() {
         status={group.status || "open"}
         statusCode={group.statusCode}
         orgSlug={currentOrgSlug || ""}
+        projectSlug={currentProjectSlug || ""}
         onStatusChange={(status) =>
           updateStatusMutation.mutate({ fingerprint, status: status as "open" | "resolved" | "ignored" })
         }

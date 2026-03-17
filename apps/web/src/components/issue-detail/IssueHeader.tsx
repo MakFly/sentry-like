@@ -31,6 +31,7 @@ interface IssueHeaderProps {
   status: IssueStatus;
   statusCode?: number | null;
   orgSlug: string;
+  projectSlug: string;
   onStatusChange: (status: IssueStatus) => void;
   isUpdating?: boolean;
   // Assignment
@@ -209,6 +210,7 @@ export function IssueHeader({
   status,
   statusCode,
   orgSlug,
+  projectSlug,
   onStatusChange,
   isUpdating,
   assignedTo,
@@ -242,7 +244,7 @@ export function IssueHeader({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <Link
-                href={`/dashboard/${orgSlug}/issues`}
+                href={`/dashboard/${orgSlug}/${projectSlug}/issues`}
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
               >
                 <ArrowLeft className="h-4 w-4" />

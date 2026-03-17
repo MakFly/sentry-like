@@ -84,6 +84,7 @@ export function SdkInstructions({ instructions, apiKey, className }: SdkInstruct
           {instructions.icon === "fastify" && "⚡"}
           {instructions.icon === "symfony" && "♪"}
           {instructions.icon === "laravel" && "◈"}
+          {instructions.icon === "metrics" && "📊"}
         </div>
         <div>
           <h3 className="font-semibold text-foreground">Setup {instructions.name}</h3>

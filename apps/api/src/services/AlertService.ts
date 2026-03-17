@@ -56,6 +56,18 @@ export const AlertService = {
     if (data.channel === "webhook" && !data.config.webhookUrl) {
       throw new Error("Webhook channel requires webhook URL");
     }
+    if (data.channel === "discord" && !data.config.discordWebhook) {
+      throw new Error("Discord channel requires webhook URL");
+    }
+    if (data.channel === "telegram" && (!data.config.telegramBotToken || !data.config.telegramChatId)) {
+      throw new Error("Telegram channel requires bot token and chat ID");
+    }
+    if (data.channel === "github" && (!data.config.githubToken || !data.config.githubRepo)) {
+      throw new Error("GitHub channel requires token and repository");
+    }
+    if (data.channel === "gitlab" && (!data.config.gitlabToken || !data.config.gitlabProjectId)) {
+      throw new Error("GitLab channel requires token and project ID");
+    }
 
     const rule = await createRule({
       projectId: data.projectId,

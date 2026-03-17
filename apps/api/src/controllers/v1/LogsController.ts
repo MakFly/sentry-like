@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, lt } from "drizzle-orm";
 import type { Context } from "hono";
 import { z } from "zod";
 import { db } from "../../db/connection";
@@ -189,7 +189,7 @@ export const tail = async (c: Context) => {
       conditions.push(eq(applicationLogs.channel, queryInput.channel));
     }
     if (queryInput.search?.trim()) {
-      conditions.push(sql`LOWER(${applicationLogs.message}) LIKE ${`%${queryInput.search.toLowerCase()}%`}`);
+      conditions.push(ilike(applicationLogs.message, `%${queryInput.search}%`));
     }
 
     const rows = await db

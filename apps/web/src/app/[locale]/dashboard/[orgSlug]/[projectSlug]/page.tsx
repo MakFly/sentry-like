@@ -12,6 +12,7 @@ import {
   ErrorSeverityChart,
 } from "@/components/dashboard";
 import Sparkline from "@/components/Sparkline";
+import { InfraOverviewCards } from "@/components/infrastructure";
 import { useStatsQueries } from "@/hooks/useStatsQueries";
 import { trpc } from "@/lib/trpc/client";
 
@@ -24,6 +25,16 @@ function DashboardContent() {
 
   // Fetch stats when we have a project
   const { stats, timeline, envBreakdown, severityBreakdown } = useStatsQueries(currentProjectId);
+
+  // Fetch infrastructure latest for overview cards
+  const { data: infraLatest } = trpc.infrastructure.getLatest.useQuery(
+    { projectId: currentProjectId! },
+    { enabled: !!currentProjectId }
+  );
+  const { data: infraHosts } = trpc.infrastructure.getHosts.useQuery(
+    { projectId: currentProjectId! },
+    { enabled: !!currentProjectId }
+  );
 
   // Fetch attention items with composite scoring
   const { data: attentionItems } = trpc.attention.getTop.useQuery(
@@ -82,6 +93,15 @@ function DashboardContent() {
         <StatusTile type="today" value={statsData.todayEvents} delta="+12%" />
         <StatusTile type="new24h" value={statsData.newIssues24h} />
       </div>
+
+      {/* Infrastructure Overview */}
+      {infraLatest && infraLatest.length > 0 && (
+        <InfraOverviewCards
+          latest={infraLatest}
+          hostCount={infraHosts?.length ?? 0}
+          baseUrl={`/dashboard/${currentOrgSlug}/${currentProject?.slug}`}
+        />
+      )}
 
       {/* Pulse Section */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">

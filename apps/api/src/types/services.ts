@@ -1,11 +1,19 @@
-export type AlertChannel = "email" | "slack" | "webhook";
+export type AlertChannel = "email" | "slack" | "webhook" | "discord" | "telegram" | "github" | "gitlab";
 export type AlertRuleConfig = {
   email?: string;
   slackWebhook?: string;
   webhookUrl?: string;
+  discordWebhook?: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  githubToken?: string;
+  githubRepo?: string; // "owner/repo"
+  gitlabToken?: string;
+  gitlabProjectId?: string;
+  gitlabUrl?: string; // default "https://gitlab.com"
 };
 
-export type AlertRuleType = "new_error" | "threshold" | "regression";
+export type AlertRuleType = "new_error" | "threshold" | "regression" | "cron_missed";
 
 export type CreateAlertRuleInput = {
   projectId: string;
@@ -122,3 +130,12 @@ export type TimelinePoint = {
 };
 
 export type TimelineRange = "24h" | "7d" | "30d";
+
+export type CronAlertEmailData = {
+  to: string;
+  projectName: string;
+  monitorName: string;
+  monitorSlug: string;
+  status: "error" | "missed";
+  dashboardUrl: string;
+};

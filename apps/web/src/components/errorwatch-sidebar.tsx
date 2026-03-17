@@ -14,6 +14,8 @@ import {
   LayoutDashboard,
   Wrench,
   Terminal,
+  Clock,
+  Server,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -120,6 +122,18 @@ export function ErrorWatchSidebar({
           { title: t("webVitals"), url: `${baseUrl}/performance/web-vitals`, isActive: pathname === `${baseUrl}/performance/web-vitals` },
           { title: t("databaseQueries"), url: `${baseUrl}/performance/queries`, isActive: pathname === `${baseUrl}/performance/queries` },
         ],
+      },
+      {
+        title: t("infrastructure"),
+        url: `${baseUrl}/infrastructure`,
+        icon: Server,
+        isActive: pathname.startsWith(`${baseUrl}/infrastructure`),
+      },
+      {
+        title: t("crons"),
+        url: `${baseUrl}/crons`,
+        icon: Clock,
+        isActive: pathname.startsWith(`${baseUrl}/crons`),
       },
     ];
   }, [currentOrgSlug, baseUrl, pathname, t]);

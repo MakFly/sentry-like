@@ -7,7 +7,7 @@ interface PlatformConfig {
   id: Platform;
   name: string;
   icon: string;
-  category: "fullstack" | "frontend" | "backend" | "php";
+  category: "fullstack" | "frontend" | "backend" | "php" | "infrastructure";
 }
 
 const PLATFORMS: PlatformConfig[] = [
@@ -24,6 +24,8 @@ const PLATFORMS: PlatformConfig[] = [
   // PHP
   { id: "symfony", name: "Symfony", icon: "♪", category: "php" },
   { id: "laravel", name: "Laravel", icon: "◈", category: "php" },
+  // Infrastructure
+  { id: "metrics-agent", name: "Metrics Agent", icon: "📊", category: "infrastructure" },
 ];
 
 const CATEGORIES = {
@@ -31,6 +33,7 @@ const CATEGORIES = {
   frontend: { label: "Frontend", color: "text-cyan-400" },
   backend: { label: "Backend", color: "text-green-400" },
   php: { label: "PHP", color: "text-red-400" },
+  infrastructure: { label: "Infrastructure", color: "text-orange-400" },
 };
 
 interface PlatformSelectorProps {

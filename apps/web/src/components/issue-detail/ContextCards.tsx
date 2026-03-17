@@ -35,7 +35,7 @@ const envConfig: Record<string, { color: string; dot: string }> = {
   dev: { color: "text-signal-info", dot: "bg-signal-info" },
   development: { color: "text-signal-info", dot: "bg-signal-info" },
   test: { color: "text-muted-foreground", dot: "bg-muted-foreground" },
-  local: { color: "text-muted", dot: "bg-muted" },
+  local: { color: "text-blue-400", dot: "bg-blue-400" },
 };
 
 function getDeviceIcon(deviceType: string | null | undefined) {

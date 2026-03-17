@@ -160,6 +160,30 @@ fastify.register(errorMonitoring, {
 
 fastify.listen({ port: 3000 });`,
   },
+  "metrics-agent": {
+    name: "Metrics Agent",
+    icon: "metrics",
+    category: "infrastructure",
+    package: "errorwatch/sdk-metrics",
+    installCommand: `# Download and build from source
+git clone https://github.com/MakFly/errorwatch-sdk-metrics.git
+cd errorwatch-sdk-metrics
+go build -o sdk-metrics .`,
+    configSnippet: (apiKey: string, endpoint: string) => `# sdk-metrics.yaml
+endpoint: "${endpoint}"
+api_key: "${apiKey}"
+host_id: "my-server"
+hostname: "my-server"
+collection_interval: 10
+tags:
+  env: production
+  role: api
+transport:
+  use_sse: false
+  retry_interval: 5
+  max_retries: 10
+  buffer_size: 100`,
+  },
 } as const;
 
 export type Platform = keyof typeof PLATFORMS;

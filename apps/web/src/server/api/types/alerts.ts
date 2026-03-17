@@ -1,10 +1,18 @@
 export type AlertRuleType = "new_error" | "threshold" | "regression";
-export type AlertChannel = "email" | "slack" | "webhook";
+export type AlertChannel = "email" | "slack" | "webhook" | "discord" | "telegram" | "github" | "gitlab";
 
 export type AlertRuleConfig = {
   email?: string;
   slackWebhook?: string;
   webhookUrl?: string;
+  discordWebhook?: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  githubToken?: string;
+  githubRepo?: string;
+  gitlabToken?: string;
+  gitlabProjectId?: string;
+  gitlabUrl?: string;
 };
 
 export type AlertRule = {
@@ -32,4 +40,3 @@ export type Notification = {
   sentAt: Date | null;
   createdAt: Date;
 };
-

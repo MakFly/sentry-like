@@ -32,11 +32,19 @@ export const create = async (c: AuthContext) => {
     type: z.enum(["new_error", "threshold", "regression"]),
     threshold: z.number().optional(),
     windowMinutes: z.number().optional(),
-    channel: z.enum(["email", "slack", "webhook"]),
+    channel: z.enum(["email", "slack", "webhook", "discord", "telegram", "github", "gitlab"]),
     config: z.object({
       email: z.string().email().optional(),
       slackWebhook: z.string().url().optional(),
       webhookUrl: z.string().url().optional(),
+      discordWebhook: z.string().url().optional(),
+      telegramBotToken: z.string().optional(),
+      telegramChatId: z.string().optional(),
+      githubToken: z.string().optional(),
+      githubRepo: z.string().optional(),
+      gitlabToken: z.string().optional(),
+      gitlabProjectId: z.string().optional(),
+      gitlabUrl: z.string().url().optional(),
     }),
   });
 
@@ -60,6 +68,18 @@ export const create = async (c: AuthContext) => {
     }
     if (input.channel === "webhook" && !input.config.webhookUrl) {
       return c.json({ error: "Webhook channel requires webhook URL" }, 400);
+    }
+    if (input.channel === "discord" && !input.config.discordWebhook) {
+      return c.json({ error: "Discord channel requires webhook URL" }, 400);
+    }
+    if (input.channel === "telegram" && (!input.config.telegramBotToken || !input.config.telegramChatId)) {
+      return c.json({ error: "Telegram channel requires bot token and chat ID" }, 400);
+    }
+    if (input.channel === "github" && (!input.config.githubToken || !input.config.githubRepo)) {
+      return c.json({ error: "GitHub channel requires token and repository" }, 400);
+    }
+    if (input.channel === "gitlab" && (!input.config.gitlabToken || !input.config.gitlabProjectId)) {
+      return c.json({ error: "GitLab channel requires token and project ID" }, 400);
     }
 
     const rule = await AlertService.create(userId, input);
@@ -85,12 +105,20 @@ export const update = async (c: AuthContext) => {
     type: z.enum(["new_error", "threshold", "regression"]).optional(),
     threshold: z.number().optional(),
     windowMinutes: z.number().optional(),
-    channel: z.enum(["email", "slack", "webhook"]).optional(),
+    channel: z.enum(["email", "slack", "webhook", "discord", "telegram", "github", "gitlab"]).optional(),
     config: z
       .object({
         email: z.string().email().optional(),
         slackWebhook: z.string().url().optional(),
         webhookUrl: z.string().url().optional(),
+        discordWebhook: z.string().url().optional(),
+        telegramBotToken: z.string().optional(),
+        telegramChatId: z.string().optional(),
+        githubToken: z.string().optional(),
+        githubRepo: z.string().optional(),
+        gitlabToken: z.string().optional(),
+        gitlabProjectId: z.string().optional(),
+        gitlabUrl: z.string().url().optional(),
       })
       .optional(),
     enabled: z.boolean().optional(),

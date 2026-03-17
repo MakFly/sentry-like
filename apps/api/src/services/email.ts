@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import logger from "../logger";
-import type { ErrorAlertEmailData, ThresholdAlertEmailData, RegressionAlertEmailData, InvitationEmailData } from "../types/services";
+import type { ErrorAlertEmailData, ThresholdAlertEmailData, RegressionAlertEmailData, InvitationEmailData, CronAlertEmailData } from "../types/services";
 
 // Lazy initialization - only create Resend instance when needed
 let resend: Resend | null = null;
@@ -418,6 +418,108 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<{ 
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     logger.error("Invitation email exception", { error: message, to: data.to });
+    return { success: false, error: message };
+  }
+}
+
+export async function sendCronMissedAlertEmail(data: CronAlertEmailData): Promise<{ success: boolean; error?: string }> {
+  const client = getResend();
+  if (!client) {
+    logger.warn("RESEND_API_KEY not configured, skipping email");
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const statusLabel = data.status === "missed" ? "Missed" : "Failed";
+  const badgeColor = data.status === "missed" ? "#f59e0b" : "#ef4444";
+  const badgeBg = data.status === "missed" ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)";
+  const badgeBorder = data.status === "missed" ? "rgba(245, 158, 11, 0.3)" : "rgba(239, 68, 68, 0.3)";
+
+  try {
+    const { error } = await client.emails.send({
+      from: FROM_EMAIL,
+      to: data.to,
+      subject: `[${data.projectName}] Cron Monitor ${statusLabel}: ${data.monitorName}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cron Monitor Alert</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0a0a0b; color: #e4e4e7; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 12px 20px; border-radius: 12px;">
+        <span style="font-size: 20px; font-weight: bold; color: white;">ErrorWatch</span>
+      </div>
+    </div>
+
+    <!-- Alert Badge -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span style="display: inline-block; background-color: ${badgeBg}; color: ${badgeColor}; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid ${badgeBorder};">
+        Cron Monitor ${statusLabel}
+      </span>
+    </div>
+
+    <!-- Main Content -->
+    <div style="background-color: #18181b; border: 1px solid #27272a; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+      <div style="margin-bottom: 20px;">
+        <p style="color: #a1a1aa; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px 0;">Monitor</p>
+        <p style="font-size: 16px; font-weight: 600; color: white; margin: 0;">${escapeHtml(data.monitorName)}</p>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <p style="color: #a1a1aa; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px 0;">Slug</p>
+        <p style="font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 13px; color: #a78bfa; margin: 0;">${escapeHtml(data.monitorSlug)}</p>
+      </div>
+
+      <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 100px; background-color: #09090b; border-radius: 8px; padding: 12px;">
+          <p style="color: #a1a1aa; font-size: 11px; text-transform: uppercase; margin: 0 0 4px 0;">Project</p>
+          <p style="font-size: 14px; font-weight: 500; color: white; margin: 0;">${escapeHtml(data.projectName)}</p>
+        </div>
+        <div style="flex: 1; min-width: 100px; background-color: #09090b; border-radius: 8px; padding: 12px;">
+          <p style="color: #a1a1aa; font-size: 11px; text-transform: uppercase; margin: 0 0 4px 0;">Status</p>
+          <p style="font-size: 14px; font-weight: 600; color: ${badgeColor}; margin: 0; text-transform: uppercase;">${data.status}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin-bottom: 32px;">
+      <a href="${data.dashboardUrl}/dashboard"
+         style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 14px;">
+        View Dashboard
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; border-top: 1px solid #27272a; padding-top: 24px;">
+      <p style="color: #52525b; font-size: 12px; margin: 0;">
+        Sent by <a href="${data.dashboardUrl}" style="color: #a78bfa; text-decoration: none;">ErrorWatch</a>
+      </p>
+      <p style="color: #3f3f46; font-size: 11px; margin: 8px 0 0 0;">
+        You're receiving this because you have cron monitor alerts enabled for this project.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
+    });
+
+    if (error) {
+      logger.error("Failed to send cron alert email", { error: error.message, to: data.to });
+      return { success: false, error: error.message };
+    }
+
+    logger.info("Cron alert email sent", { to: data.to, monitorSlug: data.monitorSlug, status: data.status });
+    return { success: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    logger.error("Cron alert email exception", { error: message, to: data.to });
     return { success: false, error: message };
   }
 }

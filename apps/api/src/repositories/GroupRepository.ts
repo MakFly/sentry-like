@@ -411,11 +411,15 @@ export const GroupRepository = {
       .orderBy(errorEvents.createdAt)
       .limit(1);
 
+    // Filter out events with no release version
+    const withVersion = releases.filter((r) => r.release && r.release.trim() !== "");
+    const versionedTotal = withVersion.reduce((sum, r) => sum + r.count, 0);
+
     return {
-      releases: releases.map((r) => ({
-        version: r.release || "unknown",
+      releases: withVersion.map((r) => ({
+        version: r.release!,
         count: r.count,
-        percentage: total > 0 ? Math.round((r.count / total) * 100) : 0,
+        percentage: versionedTotal > 0 ? Math.round((r.count / versionedTotal) * 100) : 0,
       })),
       firstSeenIn: firstEvent[0]?.release || null,
     };

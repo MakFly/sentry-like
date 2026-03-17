@@ -1,6 +1,6 @@
 import type { PlanType } from './billing';
 
-export type Platform = "symfony" | "laravel" | "vuejs" | "react" | "nextjs" | "nuxtjs" | "nodejs" | "hono" | "fastify";
+export type Platform = "symfony" | "laravel" | "vuejs" | "react" | "nextjs" | "nuxtjs" | "nodejs" | "hono" | "fastify" | "metrics-agent";
 
 export type Project = {
   id: string;

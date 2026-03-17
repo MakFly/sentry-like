@@ -5,8 +5,6 @@ import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
-export const dynamic = 'force-dynamic';
-
 import data from "./data.json"
 
 export default function Page() {

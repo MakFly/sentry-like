@@ -266,7 +266,7 @@ const projectsRouter = router({
       name: z.string().min(1).max(100),
       organizationId: z.string().uuid(),
       environment: z.enum(["production", "staging", "development"]).optional(),
-      platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify"])
+      platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify", "metrics-agent"])
     }))
     .mutation(async ({ input }) => {
       return api.projects.create(input);
@@ -342,7 +342,7 @@ const onboardingRouter = router({
       organizationName: z.string().min(1).max(100),
       projectName: z.string().min(1).max(100),
       environment: z.enum(["production", "staging", "development"]).optional(),
-      platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify"])
+      platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify", "metrics-agent"])
     }))
     .mutation(async ({ input }) => {
       return api.onboarding.setup(input);
@@ -392,11 +392,19 @@ const alertsRouter = router({
       type: z.enum(["new_error", "threshold", "regression"]),
       threshold: z.number().positive().optional(),
       windowMinutes: z.number().positive().optional(),
-      channel: z.enum(["email", "slack", "webhook"]),
+      channel: z.enum(["email", "slack", "webhook", "discord", "telegram", "github", "gitlab"]),
       config: z.object({
         email: z.string().email().optional(),
         slackWebhook: z.string().url().optional(),
         webhookUrl: z.string().url().optional(),
+        discordWebhook: z.string().url().optional(),
+        telegramBotToken: z.string().optional(),
+        telegramChatId: z.string().optional(),
+        githubToken: z.string().optional(),
+        githubRepo: z.string().optional(),
+        gitlabToken: z.string().optional(),
+        gitlabProjectId: z.string().optional(),
+        gitlabUrl: z.string().url().optional(),
       }),
     }))
     .mutation(async ({ input }) => {
@@ -411,11 +419,19 @@ const alertsRouter = router({
         type: z.enum(["new_error", "threshold", "regression"]).optional(),
         threshold: z.number().positive().optional(),
         windowMinutes: z.number().positive().optional(),
-        channel: z.enum(["email", "slack", "webhook"]).optional(),
+        channel: z.enum(["email", "slack", "webhook", "discord", "telegram", "github", "gitlab"]).optional(),
         config: z.object({
           email: z.string().email().optional(),
           slackWebhook: z.string().url().optional(),
           webhookUrl: z.string().url().optional(),
+          discordWebhook: z.string().url().optional(),
+          telegramBotToken: z.string().optional(),
+          telegramChatId: z.string().optional(),
+          githubToken: z.string().optional(),
+          githubRepo: z.string().optional(),
+          gitlabToken: z.string().optional(),
+          gitlabProjectId: z.string().optional(),
+          gitlabUrl: z.string().url().optional(),
         }).optional(),
         enabled: z.boolean().optional(),
       }),
@@ -678,6 +694,74 @@ const logsRouter = router({
 });
 
 /**
+ * Cron Monitoring router - protected
+ */
+const cronRouter = router({
+  getMonitors: protectedProcedure
+    .input(z.object({ projectId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      return api.cron.getMonitors(input.projectId);
+    }),
+
+  getMonitor: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      return api.cron.getMonitor(input.id);
+    }),
+
+  createMonitor: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      name: z.string().min(1).max(100),
+      slug: z.string().min(1).max(100),
+      schedule: z.string().optional(),
+      timezone: z.string().optional(),
+      toleranceMinutes: z.number().int().positive().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      return api.cron.createMonitor(input);
+    }),
+
+  updateMonitor: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      updates: z.object({
+        name: z.string().min(1).max(100).optional(),
+        slug: z.string().min(1).max(100).optional(),
+        schedule: z.string().optional(),
+        timezone: z.string().optional(),
+        toleranceMinutes: z.number().int().positive().optional(),
+        status: z.enum(["active", "paused", "disabled"]).optional(),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      return api.cron.updateMonitor(input.id, input.updates);
+    }),
+
+  deleteMonitor: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      return api.cron.deleteMonitor(input.id);
+    }),
+
+  getCheckins: protectedProcedure
+    .input(z.object({
+      monitorId: z.string(),
+      page: z.number().int().positive().optional(),
+      limit: z.number().int().positive().max(100).optional(),
+    }))
+    .query(async ({ input }) => {
+      return api.cron.getCheckins(input.monitorId, input.page, input.limit);
+    }),
+
+  getTimeline: protectedProcedure
+    .input(z.object({ monitorId: z.string() }))
+    .query(async ({ input }) => {
+      return api.cron.getTimeline(input.monitorId);
+    }),
+});
+
+/**
  * Attention router - protected
  * Returns prioritized error groups based on composite score
  */
@@ -689,6 +773,33 @@ const attentionRouter = router({
     }).optional())
     .query(async ({ input }) => {
       return api.attention.getTop(input?.projectId, input?.limit ?? 8);
+    }),
+});
+
+/**
+ * Infrastructure Monitoring router - protected
+ */
+const infrastructureRouter = router({
+  getHosts: protectedProcedure
+    .input(z.object({ projectId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      return api.infrastructure.getHosts(input.projectId);
+    }),
+
+  getLatest: protectedProcedure
+    .input(z.object({ projectId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      return api.infrastructure.getLatest(input.projectId);
+    }),
+
+  getHistory: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      hostId: z.string(),
+      dateRange: z.enum(["1h", "6h", "24h", "7d"]),
+    }))
+    .query(async ({ input }) => {
+      return api.infrastructure.getHistory(input.projectId, input.hostId, input.dateRange);
     }),
 });
 
@@ -712,6 +823,8 @@ export const appRouter = router({
   performance: performanceRouter,
   logs: logsRouter,
   attention: attentionRouter,
+  cron: cronRouter,
+  infrastructure: infrastructureRouter,
   admin: adminRouter,
 });
 

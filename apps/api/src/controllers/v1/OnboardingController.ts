@@ -16,7 +16,7 @@ export const setup = async (c: AuthContext) => {
     organizationName: z.string().min(1).max(100),
     projectName: z.string().min(1).max(100),
     environment: z.enum(["production", "staging", "development"]).optional().default("production"),
-    platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify"]),
+    platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify", "metrics-agent"]),
   });
 
   try {

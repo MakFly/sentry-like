@@ -21,6 +21,8 @@ import export_ from "./export";
 import logs from "./logs";
 import metrics from "./metrics";
 import metricsSse from "./metrics-sse";
+import cron from "./cron";
+import infrastructure from "./infrastructure";
 
 const v1 = new Hono();
  
@@ -46,5 +48,7 @@ v1.route("/export", export_);
 v1.route("/logs", logs);
 v1.route("/metrics", metrics);
 v1.route("/metrics-sse", metricsSse);
+v1.route("/cron", cron);
+v1.route("/infrastructure", infrastructure);
 
 export default v1;

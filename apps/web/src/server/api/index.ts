@@ -22,6 +22,8 @@ import * as userApi from './user';
 import * as performanceApi from './performance';
 import * as logsApi from './logs';
 import * as attentionApi from './attention';
+import * as cronApi from './cron';
+import * as infrastructureApi from './infrastructure';
 
 export const api = {
   auth: {
@@ -123,5 +125,19 @@ export const api = {
   },
   attention: {
     getTop: attentionApi.getTop,
+  },
+  cron: {
+    getMonitors: cronApi.getMonitors,
+    getMonitor: cronApi.getMonitor,
+    createMonitor: cronApi.createMonitor,
+    updateMonitor: cronApi.updateMonitor,
+    deleteMonitor: cronApi.deleteMonitor,
+    getCheckins: cronApi.getCheckins,
+    getTimeline: cronApi.getTimeline,
+  },
+  infrastructure: {
+    getHosts: infrastructureApi.getHosts,
+    getLatest: infrastructureApi.getLatest,
+    getHistory: infrastructureApi.getHistory,
   },
 };

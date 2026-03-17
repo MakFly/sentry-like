@@ -1,7 +1,7 @@
 import { eq, and, gt, desc } from "drizzle-orm";
 import { db } from "../db/connection";
 import { alertRules, notifications, errorGroups, errorEvents, projects } from "../db/schema";
-import { sendErrorAlertEmail, sendThresholdAlertEmail, sendRegressionAlertEmail } from "./email";
+import { sendErrorAlertEmail, sendThresholdAlertEmail, sendRegressionAlertEmail, sendCronMissedAlertEmail } from "./email";
 import logger from "../logger";
 import type { AlertRuleType, AlertChannel, AlertRuleConfig, CreateAlertRuleInput } from "../types/services";
 
@@ -229,6 +229,51 @@ export async function triggerAlertsForNewError(
           fingerprint,
           dashboardUrl: DASHBOARD_URL,
         });
+      } else if (rule.channel === "discord" && config.discordWebhook) {
+        result = await sendDiscordNotification(config.discordWebhook, {
+          projectName,
+          errorMessage: group.message,
+          errorFile: group.file,
+          errorLine: group.line,
+          eventCount: group.count,
+          fingerprint,
+          dashboardUrl: DASHBOARD_URL,
+        });
+      } else if (rule.channel === "telegram" && config.telegramBotToken && config.telegramChatId) {
+        result = await sendTelegramNotification(config.telegramBotToken, config.telegramChatId, {
+          projectName,
+          errorMessage: group.message,
+          errorFile: group.file,
+          errorLine: group.line,
+          eventCount: group.count,
+          fingerprint,
+          dashboardUrl: DASHBOARD_URL,
+        });
+      } else if (rule.channel === "github" && config.githubToken && config.githubRepo) {
+        result = await createGitHubIssue(config.githubToken, config.githubRepo, {
+          projectName,
+          errorMessage: group.message,
+          errorFile: group.file,
+          errorLine: group.line,
+          eventCount: group.count,
+          fingerprint,
+          dashboardUrl: DASHBOARD_URL,
+        });
+      } else if (rule.channel === "gitlab" && config.gitlabToken && config.gitlabProjectId) {
+        result = await createGitLabIssue(
+          config.gitlabToken,
+          config.gitlabProjectId,
+          config.gitlabUrl || "https://gitlab.com",
+          {
+            projectName,
+            errorMessage: group.message,
+            errorFile: group.file,
+            errorLine: group.line,
+            eventCount: group.count,
+            fingerprint,
+            dashboardUrl: DASHBOARD_URL,
+          }
+        );
       } else {
         logger.warn("No valid config for alert channel", { ruleId: rule.id, channel: rule.channel });
         continue;
@@ -352,6 +397,376 @@ async function sendSlackNotification(
   } catch (e) {
     const error = e instanceof Error ? e.message : "Unknown error";
     logger.error("Slack notification failed", { error });
+    return { success: false, error };
+  }
+}
+
+// Discord notification sender
+async function sendDiscordNotification(
+  webhookUrl: string,
+  data: {
+    projectName: string;
+    errorMessage: string;
+    errorFile: string;
+    errorLine: number;
+    eventCount: number;
+    fingerprint: string;
+    dashboardUrl: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        embeds: [{
+          title: `New Error in ${data.projectName}`,
+          description: `**Error:** \`${data.errorMessage}\`\n**Location:** \`${data.errorFile}:${data.errorLine}\`\n**Events:** ${data.eventCount}`,
+          color: 0xff0000,
+          fields: [
+            { name: "Project", value: data.projectName, inline: true },
+            { name: "Events", value: String(data.eventCount), inline: true },
+          ],
+          url: `${data.dashboardUrl}/dashboard/issues/${data.fingerprint}`,
+        }],
+      }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+    logger.info("Discord notification sent");
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    logger.error("Discord notification failed", { error });
+    return { success: false, error };
+  }
+}
+
+// Telegram notification sender
+async function sendTelegramNotification(
+  botToken: string,
+  chatId: string,
+  data: {
+    projectName: string;
+    errorMessage: string;
+    errorFile: string;
+    errorLine: number;
+    eventCount: number;
+    fingerprint: string;
+    dashboardUrl: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const text = `*New Error in ${escapeMarkdown(data.projectName)}*\n\n` +
+      `*Error:* \`${escapeMarkdown(data.errorMessage)}\`\n` +
+      `*Location:* \`${escapeMarkdown(data.errorFile)}:${data.errorLine}\`\n` +
+      `*Events:* ${data.eventCount}\n\n` +
+      `[View Details](${data.dashboardUrl}/dashboard/issues/${data.fingerprint})`;
+
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      return { success: false, error: `HTTP ${response.status}: ${body}` };
+    }
+    logger.info("Telegram notification sent");
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    logger.error("Telegram notification failed", { error });
+    return { success: false, error };
+  }
+}
+
+function escapeMarkdown(text: string): string {
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+}
+
+// GitHub issue creator
+async function createGitHubIssue(
+  token: string,
+  repo: string,
+  data: {
+    projectName: string;
+    errorMessage: string;
+    errorFile: string;
+    errorLine: number;
+    eventCount: number;
+    fingerprint: string;
+    dashboardUrl: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const title = `[ErrorWatch] ${data.errorMessage.slice(0, 100)}`;
+
+    // Dedup: check if issue already exists
+    const searchResponse = await fetch(
+      `https://api.github.com/search/issues?q=${encodeURIComponent(title)}+repo:${repo}+state:open`,
+      { headers: { Authorization: `Bearer ${token}`, "User-Agent": "ErrorWatch" } }
+    );
+
+    if (searchResponse.ok) {
+      const searchResult = await searchResponse.json() as { total_count: number };
+      if (searchResult.total_count > 0) {
+        logger.info("GitHub issue already exists, skipping", { repo });
+        return { success: true };
+      }
+    }
+
+    const body = `## Error Details\n\n` +
+      `- **Project:** ${data.projectName}\n` +
+      `- **Message:** \`${data.errorMessage}\`\n` +
+      `- **Location:** \`${data.errorFile}:${data.errorLine}\`\n` +
+      `- **Events:** ${data.eventCount}\n\n` +
+      `[View on ErrorWatch](${data.dashboardUrl}/dashboard/issues/${data.fingerprint})\n\n` +
+      `---\n*Created automatically by ErrorWatch*`;
+
+    const response = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "ErrorWatch",
+      },
+      body: JSON.stringify({
+        title,
+        body,
+        labels: ["bug", "errorwatch"],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+    }
+    logger.info("GitHub issue created", { repo });
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    logger.error("GitHub issue creation failed", { error });
+    return { success: false, error };
+  }
+}
+
+// GitLab issue creator
+async function createGitLabIssue(
+  token: string,
+  projectId: string,
+  gitlabUrl: string,
+  data: {
+    projectName: string;
+    errorMessage: string;
+    errorFile: string;
+    errorLine: number;
+    eventCount: number;
+    fingerprint: string;
+    dashboardUrl: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const title = `[ErrorWatch] ${data.errorMessage.slice(0, 100)}`;
+    const baseUrl = gitlabUrl || "https://gitlab.com";
+
+    // Dedup: check if issue already exists
+    const searchResponse = await fetch(
+      `${baseUrl}/api/v4/projects/${projectId}/issues?search=${encodeURIComponent(title)}&state=opened`,
+      { headers: { "PRIVATE-TOKEN": token } }
+    );
+
+    if (searchResponse.ok) {
+      const issues = await searchResponse.json() as unknown[];
+      if (Array.isArray(issues) && issues.length > 0) {
+        logger.info("GitLab issue already exists, skipping", { projectId });
+        return { success: true };
+      }
+    }
+
+    const description = `## Error Details\n\n` +
+      `- **Project:** ${data.projectName}\n` +
+      `- **Message:** \`${data.errorMessage}\`\n` +
+      `- **Location:** \`${data.errorFile}:${data.errorLine}\`\n` +
+      `- **Events:** ${data.eventCount}\n\n` +
+      `[View on ErrorWatch](${data.dashboardUrl}/dashboard/issues/${data.fingerprint})\n\n` +
+      `---\n*Created automatically by ErrorWatch*`;
+
+    const response = await fetch(`${baseUrl}/api/v4/projects/${projectId}/issues`, {
+      method: "POST",
+      headers: {
+        "PRIVATE-TOKEN": token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        labels: "bug,errorwatch",
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+    }
+    logger.info("GitLab issue created", { projectId });
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    logger.error("GitLab issue creation failed", { error });
+    return { success: false, error };
+  }
+}
+
+/**
+ * Trigger alerts when a cron monitor reports an error or is detected as missed.
+ */
+export async function triggerAlertsForCronError(
+  projectId: string,
+  monitorName: string,
+  monitorSlug: string,
+  status: "error" | "missed"
+) {
+  logger.debug("Checking cron alerts", { projectId, monitorSlug, status });
+
+  // Get enabled rules for this project with type "cron_missed"
+  const rules = await db
+    .select()
+    .from(alertRules)
+    .where(
+      and(
+        eq(alertRules.projectId, projectId),
+        eq(alertRules.enabled, true),
+        eq(alertRules.type, "cron_missed")
+      )
+    );
+
+  if (rules.length === 0) {
+    return;
+  }
+
+  // Get project name
+  const project = (await db
+    .select({ name: projects.name })
+    .from(projects)
+    .where(eq(projects.id, projectId)))[0];
+
+  const projectName = project?.name ?? "Unknown Project";
+
+  for (const rule of rules) {
+    try {
+      const config: AlertRuleConfig = rule.config ?? {};
+      let result: { success: boolean; error?: string };
+
+      if (rule.channel === "email" && config.email) {
+        result = await sendCronMissedAlertEmail({
+          to: config.email,
+          projectName,
+          monitorName,
+          monitorSlug,
+          status,
+          dashboardUrl: DASHBOARD_URL,
+        });
+      } else if (rule.channel === "webhook" && config.webhookUrl) {
+        result = await sendWebhook(config.webhookUrl, {
+          type: "cron_missed",
+          projectName,
+          monitor: { name: monitorName, slug: monitorSlug, status },
+        });
+      } else if (rule.channel === "slack" && config.slackWebhook) {
+        result = await sendCronSlackNotification(config.slackWebhook, {
+          projectName,
+          monitorName,
+          monitorSlug,
+          status,
+          dashboardUrl: DASHBOARD_URL,
+        });
+      } else {
+        logger.warn("No valid config for cron alert channel", { ruleId: rule.id, channel: rule.channel });
+        continue;
+      }
+
+      await db.insert(notifications).values({
+        id: crypto.randomUUID(),
+        ruleId: rule.id,
+        projectId,
+        channel: rule.channel,
+        status: result.success ? "sent" : "failed",
+        error: result.error,
+        sentAt: result.success ? new Date() : null,
+        createdAt: new Date(),
+      });
+    } catch (e) {
+      const error = e instanceof Error ? e.message : "Unknown error";
+      logger.error("Failed to process cron alert rule", { ruleId: rule.id, error });
+
+      await db.insert(notifications).values({
+        id: crypto.randomUUID(),
+        ruleId: rule.id,
+        projectId,
+        channel: rule.channel,
+        status: "failed",
+        error,
+        createdAt: new Date(),
+      });
+    }
+  }
+}
+
+// Slack notification for cron missed/error alerts
+async function sendCronSlackNotification(
+  webhookUrl: string,
+  data: {
+    projectName: string;
+    monitorName: string;
+    monitorSlug: string;
+    status: "error" | "missed";
+    dashboardUrl: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const label = data.status === "missed" ? "Missed" : "Failed";
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: `Cron Monitor ${label}: ${data.monitorName}`,
+              emoji: true,
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Project:* ${data.projectName}\n*Monitor:* \`${data.monitorSlug}\`\n*Status:* ${data.status}`,
+            },
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+
+    logger.info("Cron Slack notification sent");
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    logger.error("Cron Slack notification failed", { error });
     return { success: false, error };
   }
 }

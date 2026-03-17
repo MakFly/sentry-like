@@ -22,7 +22,7 @@ export const create = async (c: AuthContext) => {
     name: z.string().min(1).max(100),
     organizationId: z.string().uuid(),
     environment: z.enum(["production", "staging", "development"]).optional().default("production"),
-    platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify"]),
+    platform: z.enum(["symfony", "laravel", "vuejs", "react", "nextjs", "nuxtjs", "nodejs", "hono", "fastify", "metrics-agent"]),
   });
 
   let input;
