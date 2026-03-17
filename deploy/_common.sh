@@ -88,9 +88,8 @@ export_runtime_env() {
   export DOCKER_REDIS_PORT="${DOCKER_REDIS_PORT:-56379}"
   export CADDY_HTTP_PORT="${CADDY_HTTP_PORT:-80}"
   export CADDY_HTTPS_PORT="${CADDY_HTTPS_PORT:-443}"
-  export DASHBOARD_UPSTREAM="${DASHBOARD_UPSTREAM:-host.docker.internal:4001}"
-  export API_UPSTREAM="${API_UPSTREAM:-host.docker.internal:3333}"
-  export KUMA_UPSTREAM="${KUMA_UPSTREAM:-host.docker.internal:3001}"
+  export DASHBOARD_UPSTREAM="${DASHBOARD_UPSTREAM:-web:3000}"
+  export API_UPSTREAM="${API_UPSTREAM:-api:3333}"
   export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:${DOCKER_POSTGRES_PORT}/${POSTGRES_DB}}"
   export REDIS_URL="${REDIS_URL:-redis://host.docker.internal:${DOCKER_REDIS_PORT}}"
   export BETTER_AUTH_URL="${BETTER_AUTH_URL:-${API_URL:-${DASHBOARD_URL}}}"
@@ -100,7 +99,7 @@ export_runtime_env() {
 
 require_runtime_tools() {
   local missing=0
-  for cmd in docker bun bunx node curl sed grep git; do
+  for cmd in docker curl sed grep git; do
     if ! require_cmd "$cmd"; then
       missing=1
     fi
@@ -119,7 +118,7 @@ run_health_checks() {
 
   if [[ "$api_code" != "200" || "$dash_code" != "200" ]]; then
     echo "[ERROR] One or more health checks failed."
-    echo "Inspect logs with: bunx pm2 logs"
+    echo "Inspect logs with: docker compose logs"
     return 1
   fi
 

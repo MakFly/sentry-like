@@ -15,7 +15,7 @@ This setup is intended for production with strict IP allowlisting.
 In this stack:
 
 - Caddy runs in Docker and publishes `80/443`
-- API + Dashboard run on host (PM2) on `3333/4001`
+- API + Dashboard run in Docker on `3333/4001`
 
 If you only configure UFW, Docker-published ports may still be reachable depending on iptables chain order.
 

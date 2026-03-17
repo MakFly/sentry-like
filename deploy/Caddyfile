@@ -12,20 +12,6 @@
     }
 }
 
-# Kuma Uptime Monitoring
-kuma.{$BASE_DOMAIN} {
-    encode gzip zstd
-
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Frame-Options "SAMEORIGIN"
-        X-Content-Type-Options "nosniff"
-        -Server
-    }
-
-    reverse_proxy {$KUMA_UPSTREAM:kuma:3001}
-}
-
 # Dashboard
 {$DOMAIN} {
     encode gzip zstd

@@ -1,21 +1,50 @@
 # ===========================================
-# ErrorWatch Production Docker Compose (Full Docker)
+# ErrorWatch Self-Hosted Docker Compose
 # ===========================================
-# All services run inside Docker. No PM2 or host processes needed.
-#
 # Usage:
-#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-#   docker compose -f docker-compose.prod.yml exec api bun run db:push
+#   1. Copy .env.selfhost.example to .env and fill in values
+#   2. Download Caddyfile: curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/deploy/Caddyfile
+#   3. docker compose -f docker-compose.selfhost.yml up -d
+#
+# Database migrations run automatically on API startup.
 
 services:
-  # ===========================================
-  # API Server (Hono.js)
-  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: errorwatch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-errorwatch}
+      POSTGRES_USER: ${POSTGRES_USER:-errorwatch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - errorwatch
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-errorwatch} -d ${POSTGRES_DB:-errorwatch}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: errorwatch-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - errorwatch
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: api
+    image: ghcr.io/makfly/errorwatch-api:${ERRORWATCH_VERSION:-latest}
     container_name: errorwatch-api
     restart: unless-stopped
     depends_on:
@@ -26,7 +55,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3333
-      DATABASE_URL: postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-errorwatch}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-errorwatch}
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-20}
       DATABASE_SSL: ${DATABASE_SSL:-false}
       REDIS_URL: redis://redis:6379
@@ -51,25 +80,16 @@ services:
       SUBSCRIPTION_BYPASS_EMAILS: ${SUBSCRIPTION_BYPASS_EMAILS:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     networks:
-      - errorwatch-net
+      - errorwatch
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3333/health/live"]
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 30s
 
-  # ===========================================
-  # Web Dashboard (Next.js)
-  # ===========================================
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: web
-      args:
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
-        NEXT_PUBLIC_MONITORING_API_URL: ${NEXT_PUBLIC_MONITORING_API_URL:?NEXT_PUBLIC_MONITORING_API_URL is required}
+    image: ghcr.io/makfly/errorwatch-web:${ERRORWATCH_VERSION:-latest}
     container_name: errorwatch-web
     restart: unless-stopped
     depends_on:
@@ -82,7 +102,7 @@ services:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
     networks:
-      - errorwatch-net
+      - errorwatch
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 15s
@@ -90,9 +110,6 @@ services:
       retries: 5
       start_period: 20s
 
-  # ===========================================
-  # Caddy Reverse Proxy
-  # ===========================================
   caddy:
     image: caddy:2-alpine
     container_name: errorwatch-caddy
@@ -107,62 +124,23 @@ services:
       - "${CADDY_HTTPS_PORT:-443}:443"
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN is required}
-      BASE_DOMAIN: ${BASE_DOMAIN:?BASE_DOMAIN is required}
+      BASE_DOMAIN: ${BASE_DOMAIN:-${DOMAIN}}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
-      DASHBOARD_UPSTREAM: ${DASHBOARD_UPSTREAM:-web:3000}
-      API_UPSTREAM: ${API_UPSTREAM:-api:3333}
+      DASHBOARD_UPSTREAM: web:3000
+      API_UPSTREAM: api:3333
     volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - errorwatch-net
-
-  # ===========================================
-  # PostgreSQL Database
-  # ===========================================
-  postgres:
-    image: postgres:16-alpine
-    container_name: errorwatch-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-errorwatch}
-      POSTGRES_USER: ${POSTGRES_USER:-errorwatch}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - errorwatch-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-errorwatch} -d ${POSTGRES_DB:-errorwatch}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-  # ===========================================
-  # Redis (Queue & Rate Limiting)
-  # ===========================================
-  redis:
-    image: redis:7-alpine
-    container_name: errorwatch-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-    networks:
-      - errorwatch-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - errorwatch
 
 networks:
-  errorwatch-net:
+  errorwatch:
     driver: bridge
 
 volumes:
-  caddy_data:
-  caddy_config:
   postgres_data:
   redis_data:
+  caddy_data:
+  caddy_config:

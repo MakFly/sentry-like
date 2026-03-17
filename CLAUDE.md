@@ -51,7 +51,8 @@ errorwatch/
 │   └── example-symfony/
 ├── docs/                          # Documentation
 ├── docker-compose.yml             # Dev infra (Postgres + Redis)
-├── docker-compose.prod.yml       # Full-Docker production stack
+├── docker-compose.prod.yml       # Full-Docker production stack (build from source)
+├── docker-compose.selfhost.yml   # Self-host with pre-built GHCR images
 ├── package.json                   # Workspaces root
 ├── turbo.json                     # Turborepo config
 ├── tsconfig.base.json             # Base TypeScript config
@@ -255,6 +256,30 @@ make test-api        # Test API endpoints
 make build           # Build for production
 make clean           # Clean build artifacts
 ```
+
+---
+
+## Docker & Deployment
+
+### Docker Images
+
+Images are published to GHCR on each release tag (`v*`):
+- `ghcr.io/makfly/errorwatch-api:latest`
+- `ghcr.io/makfly/errorwatch-web:latest`
+
+Built via `.github/workflows/docker-publish.yml`.
+
+### Deployment Modes
+
+| Mode | File | Description |
+|------|------|-------------|
+| Self-host (GHCR) | `docker-compose.selfhost.yml` | Pre-built images, no build tools needed |
+| Build from source | `docker-compose.prod.yml` | Builds locally from `Dockerfile` |
+| Development | `docker-compose.yml` | PostgreSQL + Redis only |
+
+### API Entrypoint
+
+The API container uses `apps/api/docker-entrypoint.sh` which auto-runs `drizzle-kit push` before starting the server. No manual migration step needed.
 
 ---
 

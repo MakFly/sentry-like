@@ -1,10 +1,31 @@
-# ErrorWatch OneShot Production Deployment (VPS/EC2/Scaleway)
+# ErrorWatch Production Deployment
 
-Target topology:
+Two deployment modes are available:
 
-- API + Dashboard on host via PM2
-- PostgreSQL + Redis + Caddy in Docker (`docker-compose.prod.yml`)
-- Caddy reverse-proxy to PM2 apps through `host.docker.internal`
+## Mode 1: Pre-built Docker images (recommended for self-hosters)
+
+Use `docker-compose.selfhost.yml` with images from GitHub Container Registry. No build tools needed.
+
+```bash
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/docker-compose.selfhost.yml
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/.env.selfhost.example
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/deploy/Caddyfile
+cp .env.selfhost.example .env && nano .env
+docker compose -f docker-compose.selfhost.yml up -d
+```
+
+Database migrations run automatically on API startup.
+
+## Mode 2: Build from source (for contributors / custom builds)
+
+Use `docker-compose.prod.yml` which builds images locally from the Dockerfile.
+
+```bash
+git clone https://github.com/MakFly/errorwatch.git /opt/errorwatch
+cd /opt/errorwatch
+cp deploy/.env.production.example .env.production && nano .env.production
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+```
 
 ## Files
 
@@ -13,25 +34,17 @@ Target topology:
 | `deploy/first-init-deploy.sh` | First server bootstrap + initial full deploy |
 | `deploy/deploy.sh` | Update deploy (pull/build/migrate/reload/checks) |
 | `deploy/oneshot-deploy.sh` | Deprecated wrapper to `first-init-deploy.sh` |
-| `deploy/ecosystem.config.cjs` | PM2 process definitions |
 | `deploy/.env.production.example` | Production env template |
 | `deploy/Caddyfile` | Caddy config used by Docker service |
-| `docker-compose.prod.yml` | Docker services (caddy/postgres/redis) |
+| `docker-compose.prod.yml` | Docker services — build from source |
+| `docker-compose.selfhost.yml` | Docker services — pre-built GHCR images |
 
-## 1) Server prerequisites
+## Server prerequisites
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y curl git docker.io docker-compose-plugin
 sudo systemctl enable --now docker
-
-# Bun
-curl -fsSL https://bun.sh/install | bash
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# PM2
-bun add -g pm2
 ```
 
 ## 2) Deploy code
@@ -71,7 +84,7 @@ Behavior:
 - install/configure `ufw` + `fail2ban`
 - default policy: deny incoming, allow outgoing
 - allow SSH on `22/tcp`
-- allow Docker bridge network (`172.16.0.0/12`) to local app upstream ports `3333` and `4001` (required for Caddy container -> host PM2 apps)
+- allow Docker bridge network (`172.16.0.0/12`) to local app upstream ports `3333` and `4001`
 - `80/443` only if `ALLOWED_WEB_IPS` is provided at runtime
 
 Usage without hardcoding IPs in repository:
@@ -114,27 +127,19 @@ What the deployment flow does:
 
 1. `bun install --frozen-lockfile`
 2. starts PostgreSQL + Redis
-3. builds API + dashboard
+3. builds API + dashboard Docker images
 4. ensures DB role/database
-5. runs migrations
-6. starts/reloads PM2 apps
-7. starts/reloads Caddy container
-8. runs local health checks
+5. runs migrations (auto via entrypoint)
+6. starts/reloads all Docker services
+7. runs local health checks
 
 ## Useful operations
 
 ```bash
-# PM2
-bunx pm2 list
-bunx pm2 logs
-bunx pm2 restart errorwatch-api
-bunx pm2 restart errorwatch-dashboard
-
-# Docker infra + proxy
-docker compose --env-file .env.production -f docker-compose.prod.yml ps
-docker compose --env-file .env.production -f docker-compose.prod.yml logs -f caddy
-docker compose --env-file .env.production -f docker-compose.prod.yml logs -f postgres
-docker compose --env-file .env.production -f docker-compose.prod.yml logs -f redis
+# Docker services
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml restart
 
 # Re-deploy (updates)
 git pull
