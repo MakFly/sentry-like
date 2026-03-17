@@ -38,9 +38,7 @@ help: ## Show this help
 install: ## Install all dependencies
 	@echo "$(GREEN)Installing dependencies...$(RESET)"
 	@bun install
-	@test -f .env || (echo "POSTGRES_PASSWORD=errorwatch_dev_password" > .env && echo "$(YELLOW)Created .env with default Docker credentials$(RESET)")
-	@test -f apps/api/.env || (cp apps/api/.env.example apps/api/.env && echo "$(YELLOW)Created apps/api/.env from .env.example — edit it with your values$(RESET)")
-	@test -f apps/web/.env.local || (cp apps/web/.env.local.example apps/web/.env.local 2>/dev/null && echo "$(YELLOW)Created apps/web/.env.local from example$(RESET)" || true)
+	@test -f .env || (cp .env.example .env && echo "$(YELLOW)Created .env from .env.example — edit it with your values$(RESET)")
 
 build: ## Build all apps for production
 	@echo "$(GREEN)Building applications...$(RESET)"

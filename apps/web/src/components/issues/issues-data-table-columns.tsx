@@ -72,7 +72,6 @@ const sourceIcons = {
 interface IssuesDataTableColumnsProps {
   orgSlug: string
   projectSlug: string
-  maxCount: number
   onStatusChange?: () => void
 }
 
@@ -110,7 +109,6 @@ function getStatusColor(status: IssueStatus): string {
 export function createIssuesColumns({
   orgSlug,
   projectSlug,
-  maxCount,
   onStatusChange,
 }: IssuesDataTableColumnsProps): ColumnDef<IssueGroup, any>[] {
   return [
@@ -181,21 +179,6 @@ export function createIssuesColumns({
       ),
       size: 400,
       maxSize: 500,
-    },
-    {
-      accessorKey: "strength",
-      header: "Strength",
-      cell: ({ row }) => {
-        const count = row.original.count
-        const strength = maxCount > 0 ? (count / maxCount) * 100 : 0
-
-        return (
-          <div className="hidden w-24 lg:block">
-            <Progress value={strength} className="h-1.5" />
-          </div>
-        )
-      },
-      enableSorting: false,
     },
     {
       accessorKey: "source",

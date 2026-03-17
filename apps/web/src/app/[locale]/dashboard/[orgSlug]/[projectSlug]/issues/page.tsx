@@ -102,11 +102,6 @@ export default function IssuesPage() {
     });
   };
 
-  const maxCount = useMemo(() => {
-    if (!groups.length) return 0;
-    return Math.max(...groups.map((g) => g.count));
-  }, [groups]);
-
   const selectedFingerprints = useMemo(() => {
     return Object.keys(rowSelection).filter((key) => rowSelection[key]);
   }, [rowSelection]);
@@ -140,8 +135,8 @@ export default function IssuesPage() {
   }, [selectedFingerprints, mergeGroups, refetch, t]);
 
   const columns = useMemo(
-    () => createIssuesColumns({ orgSlug: currentOrgSlug || "", projectSlug: currentProjectSlug || "", maxCount, onStatusChange: refetch }),
-    [currentOrgSlug, currentProjectSlug, maxCount, refetch]
+    () => createIssuesColumns({ orgSlug: currentOrgSlug || "", projectSlug: currentProjectSlug || "", onStatusChange: refetch }),
+    [currentOrgSlug, currentProjectSlug, refetch]
   );
 
   if (error) {

@@ -104,8 +104,16 @@ cd apps/api
 bun install
 make docker-up       # Start PostgreSQL & Redis first (from root)
 bun run db:push      # Push schema to PostgreSQL
-bun run dev:standalone  # Port 3333
+bun run dev:standalone  # Port 3333 (reads ../../.env)
 ```
+
+### Environment Variables
+
+All env vars are centralized in a single **root `.env`** file, loaded via:
+- **API**: `--env-file=../../.env` in `package.json` scripts (tsx native flag)
+- **Web**: `set -a && . ../../.env` in `package.json` scripts (shell sourcing before `next dev`)
+
+There are NO per-app `.env` files (`apps/api/.env`, `apps/web/.env.local`). Everything lives in the root `.env`.
 
 ---
 

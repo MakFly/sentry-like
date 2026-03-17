@@ -73,11 +73,8 @@ make infra-wait     # Wait for healthy containers
 ### 3. Configure Environment
 
 ```bash
-# API — edit with your values
-cp apps/api/.env.example apps/api/.env
-
-# Dashboard
-cp apps/web/.env.local.example apps/web/.env.local
+cp .env.example .env
+# Edit .env with your values (auth secrets, API keys, etc.)
 ```
 
 ### 4. Setup Database
