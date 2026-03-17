@@ -7,7 +7,6 @@ set -euo pipefail
 # Use this script on a fresh server for first initialization:
 # - install system prerequisites
 # - ensure docker is available
-# - ensure bun + pm2 are available
 # - run full deployment flow (same as deploy.sh, with bootstrap step)
 #
 # First deployment:
@@ -77,10 +76,6 @@ ensure_system_prereqs() {
     exit 1
   fi
 
-  if ! bunx pm2 -v >/dev/null 2>&1; then
-    echo "[bootstrap] Install PM2"
-    bun add -g pm2
-  fi
 }
 
 ENV_FILE="$(resolve_env_file "${ENV_ARG}")" || {

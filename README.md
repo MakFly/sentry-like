@@ -102,12 +102,13 @@ errorwatch/
 ├── apps/
 │   ├── api/                  # Hono.js API server + BullMQ workers
 │   └── web/                  # Next.js 16 dashboard
-├── deploy/                   # Production deployment (Caddy, PM2, scripts)
+├── deploy/                   # Production deployment (Caddy, Docker, scripts)
 ├── examples/
 │   └── laravel-api/          # Laravel integration example
 ├── scripts/                  # Release & setup helpers
 ├── docker-compose.yml        # Dev infra (PostgreSQL + Redis)
-├── docker-compose.prod.yml   # Full Docker production stack
+├── docker-compose.prod.yml   # Full Docker production stack (build from source)
+├── docker-compose.selfhost.yml # Self-host with pre-built GHCR images
 ├── Dockerfile                # Multi-target (api + web)
 ├── Makefile                  # All dev/prod commands
 └── turbo.json                # Turborepo config
@@ -197,6 +198,26 @@ go build -o sdk-metrics .
 
 ## Self-Hosting
 
+### Quick Start with Docker (recommended)
+
+The fastest way to self-host ErrorWatch — pre-built images, automatic database migrations, HTTPS via Caddy.
+
+```bash
+# 1. Download config files
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/docker-compose.selfhost.yml
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/.env.selfhost.example
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/deploy/Caddyfile
+
+# 2. Configure
+cp .env.selfhost.example .env
+nano .env   # Set DOMAIN, POSTGRES_PASSWORD, BETTER_AUTH_SECRET, etc.
+
+# 3. Launch
+docker compose -f docker-compose.selfhost.yml up -d
+```
+
+That's it. Database migrations run automatically on first start. Caddy handles HTTPS certificates.
+
 ### Server Requirements
 
 | Resource | Minimum | Recommended |
@@ -206,21 +227,11 @@ go build -o sdk-metrics .
 | Storage | 20 GB | 50 GB+ SSD |
 | OS | Ubuntu 22.04+ | Ubuntu 24.04 LTS |
 
-Required: Docker Engine, Bun 1.x, PM2
+Required: Docker Engine + Docker Compose.
 
-### Deployment Model
+### Build from Source (alternative)
 
-Production topology uses **PM2** for apps and **Docker** for infrastructure:
-
-| Service | Runtime |
-|---------|---------|
-| API Server | PM2 (port 3333) |
-| Dashboard | PM2 (port 4001) |
-| PostgreSQL | Docker |
-| Redis | Docker |
-| Caddy | Docker (TLS + reverse proxy) |
-
-### Production Setup
+If you prefer to build images locally instead of using pre-built GHCR images:
 
 ```bash
 # 1. Clone on VPS
@@ -236,34 +247,27 @@ openssl rand -base64 32   # BETTER_AUTH_SECRET
 openssl rand -base64 24   # POSTGRES_PASSWORD
 openssl rand -base64 24   # API_KEY_HASH_SECRET
 
-# 4. First deployment
-./deploy/first-init-deploy.sh .env.production
-
-# 5. Subsequent updates
-./deploy/deploy.sh .env.production
+# 4. Deploy with Docker Compose
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
 ### Required Environment Variables
 
 ```bash
 # URLs
-DOMAIN=errorwatch.io
-DASHBOARD_URL=https://errorwatch.io
-API_URL=https://api.errorwatch.io
-BETTER_AUTH_URL=https://api.errorwatch.io
-NEXT_PUBLIC_APP_URL=https://errorwatch.io
-NEXT_PUBLIC_MONITORING_API_URL=https://api.errorwatch.io
+DOMAIN=errorwatch.example.com
+DASHBOARD_URL=https://errorwatch.example.com
+API_URL=https://api.errorwatch.example.com
+BETTER_AUTH_URL=https://api.errorwatch.example.com
+ACME_EMAIL=admin@example.com
 
 # Database
 POSTGRES_PASSWORD=<generated>
-DATABASE_URL=postgresql://errorwatch:<password>@localhost:55432/errorwatch
-REDIS_URL=redis://localhost:56379
 
 # Security
 BETTER_AUTH_SECRET=<generated>
 ADMIN_API_KEY=ew_admin_<generated>
 API_KEY_HASH_SECRET=<generated>
-ACME_EMAIL=admin@errorwatch.io
 ```
 
 Optional: `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `RESEND_API_KEY`, Stripe keys.
@@ -278,12 +282,11 @@ curl -s http://127.0.0.1:4001/               # Dashboard
 ### Operations
 
 ```bash
-bunx pm2 list                    # Process status
-bunx pm2 logs                    # Application logs
-bunx pm2 restart all             # Restart apps
-make prod-status                 # Docker infra status
-make prod-logs                   # Docker infra logs
-./deploy/deploy.sh .env.production  # Deploy update
+docker compose -f docker-compose.selfhost.yml ps       # Service status
+docker compose -f docker-compose.selfhost.yml logs -f   # Live logs
+docker compose -f docker-compose.selfhost.yml restart   # Restart all
+docker compose -f docker-compose.selfhost.yml pull      # Update images
+docker compose -f docker-compose.selfhost.yml up -d     # Apply update
 ```
 
 For the complete VPS deployment guide, see [deploy/README.md](./deploy/README.md).
@@ -334,6 +337,7 @@ GitHub Actions workflows:
 |----------|------|---------|
 | CI | `ci.yml` | push to main, PRs |
 | Security | `security.yml` | push to main, PRs |
+| Docker Publish | `docker-publish.yml` | push tags `v*` |
 | CD Production | `cd-production.yml` | manual dispatch |
 
 Required GitHub secrets for CD: `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`.

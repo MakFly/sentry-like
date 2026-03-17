@@ -14,7 +14,7 @@ WORKDIR /app
 FROM base AS api-deps
 COPY apps/api/package.json ./
 COPY bun.lock ./
-RUN bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile
 
 # ===========================================
 # API — Build
@@ -48,6 +48,8 @@ COPY --from=api-build --chown=errorwatch:errorwatch /app/dist ./dist
 COPY --from=api-build --chown=errorwatch:errorwatch /app/package.json ./
 COPY --from=api-build --chown=errorwatch:errorwatch /app/drizzle.config.ts ./
 COPY --chown=errorwatch:errorwatch apps/api/drizzle ./drizzle
+COPY --chown=errorwatch:errorwatch apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=api-build --chown=errorwatch:errorwatch /app/src/db ./src/db
 
 ENV NODE_ENV=production
 ENV PORT=3333
@@ -59,7 +61,7 @@ EXPOSE 3333
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3333/health/live || exit 1
 
-CMD ["bun", "run", "dist/index.js"]
+ENTRYPOINT ["sh", "docker-entrypoint.sh"]
 
 # ===========================================
 # Web — Dependencies
