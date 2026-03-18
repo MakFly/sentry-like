@@ -24,6 +24,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      SELF_HOSTED: ${SELF_HOSTED:-false}
       NODE_ENV: production
       PORT: 3333
       DATABASE_URL: postgresql://${POSTGRES_USER:-errorwatch}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-errorwatch}
@@ -36,10 +37,6 @@ services:
       API_KEY_HASH_SECRET: ${API_KEY_HASH_SECRET:?API_KEY_HASH_SECRET is required}
       DASHBOARD_URL: ${DASHBOARD_URL:?DASHBOARD_URL is required}
       API_URL: ${API_URL:?API_URL is required}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
@@ -76,6 +73,8 @@ services:
       api:
         condition: service_healthy
     environment:
+      SELF_HOSTED: ${SELF_HOSTED:-false}
+      AUTH_FAIL_OPEN: ${AUTH_FAIL_OPEN:-false}
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: "0.0.0.0"

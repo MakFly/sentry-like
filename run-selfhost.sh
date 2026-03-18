@@ -182,6 +182,50 @@ cmd_backup_db() {
     ok "Backup saved: $backup_file ($(du -h "$backup_file" | cut -f1))"
 }
 
+cmd_database() {
+    check_env
+    local action="${1:-}"
+    local db_user="${POSTGRES_USER:-errorwatch}"
+    local db_name="${POSTGRES_DB:-errorwatch}"
+
+    case "$action" in
+        --create)
+            info "Creating database schema via drizzle-kit push..."
+            docker exec errorwatch-api bunx drizzle-kit push
+            ok "Database schema created."
+            ;;
+        --reset)
+            warn "This will DROP and recreate the database '$db_name'. All data will be lost!"
+            read -rp "Are you sure? (y/N) " confirm
+            if [[ "$confirm" != [yY] ]]; then
+                info "Aborted."
+                return 0
+            fi
+            info "Dropping database '$db_name'..."
+            docker exec errorwatch-postgres psql -U "$db_user" -d postgres -c "DROP DATABASE IF EXISTS \"$db_name\";"
+            info "Recreating database '$db_name'..."
+            docker exec errorwatch-postgres psql -U "$db_user" -d postgres -c "CREATE DATABASE \"$db_name\" OWNER \"$db_user\";"
+            ok "Database recreated."
+            info "Pushing schema..."
+            docker exec errorwatch-api bunx drizzle-kit push
+            ok "Database reset complete."
+            ;;
+        --update)
+            info "Updating database schema via drizzle-kit push..."
+            docker exec errorwatch-api bunx drizzle-kit push
+            ok "Database schema updated."
+            ;;
+        *)
+            error "Usage: ./run-selfhost.sh database <--create|--reset|--update>"
+            echo
+            echo "  --create   Initialize the database schema (first setup)"
+            echo "  --reset    Drop and recreate the database (⚠ destroys all data)"
+            echo "  --update   Push latest schema changes (safe, additive)"
+            return 1
+            ;;
+    esac
+}
+
 usage() {
     cat <<USAGE
 ${CYAN}ErrorWatch Self-Host Manager${NC}
@@ -198,6 +242,7 @@ ${GREEN}Commands:${NC}
   version              Show running image versions
   logs [service]       Tail logs (all or specific service: api, web, postgres, redis, caddy)
   backup-db            Dump PostgreSQL to a timestamped .sql.gz file
+  database <action>    Manage database (--create, --reset, --update)
 
 ${YELLOW}Examples:${NC}
   ./run-selfhost.sh up                    # Start everything
@@ -205,6 +250,9 @@ ${YELLOW}Examples:${NC}
   ./run-selfhost.sh deploy                # Update to latest release
   ./run-selfhost.sh logs api              # Tail API logs
   ./run-selfhost.sh backup-db             # Backup database
+  ./run-selfhost.sh database --create     # Initialize DB schema
+  ./run-selfhost.sh database --reset      # Reset DB (drops all data)
+  ./run-selfhost.sh database --update     # Apply schema changes
 
 USAGE
 }
@@ -219,6 +267,7 @@ case "${1:-}" in
     version)    cmd_version ;;
     logs)       shift; cmd_logs "$@" ;;
     backup-db)  cmd_backup_db ;;
+    database)   shift; cmd_database "$@" ;;
     -h|--help|help|"") usage ;;
     *)          error "Unknown command: $1"; usage; exit 1 ;;
 esac
