@@ -1,8 +1,8 @@
 import { createAuthClient } from "better-auth/react";
-import { MONITORING_API_URL } from "@/lib/config";
+import { getMonitoringApiUrl } from "@/lib/config";
 
 export const authClient = createAuthClient({
-  baseURL: MONITORING_API_URL,
+  baseURL: getMonitoringApiUrl(),
 });
 
 export const {

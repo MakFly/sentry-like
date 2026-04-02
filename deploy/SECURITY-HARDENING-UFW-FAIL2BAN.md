@@ -8,6 +8,8 @@ This guide explains how to harden an ErrorWatch production server with:
 
 This setup is intended for production with strict IP allowlisting.
 
+Important: this hardening mode is not compatible with the standard public-ACME self-host flow documented in the main README. If you enforce a strict allowlist on `80/443`, Caddy may no longer be able to issue or renew a public certificate trusted by Chrome.
+
 ---
 
 ## 1) Important architecture note

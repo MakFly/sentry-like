@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
-import { MONITORING_API_URL } from "@/lib/config";
+import { getMonitoringApiUrl } from "@/lib/config";
 import { routing } from "@/i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -20,7 +20,7 @@ function propagateIntlCookies(intlResponse: NextResponse, response: NextResponse
   return response;
 }
 
-const API_URL = MONITORING_API_URL;
+const API_URL = getMonitoringApiUrl();
 const API_VERSION = "v1";
 const FAIL_OPEN = process.env.AUTH_FAIL_OPEN === "true" || process.env.NODE_ENV !== "production";
 const SELF_HOSTED = process.env.SELF_HOSTED === "true";
@@ -33,6 +33,13 @@ type SessionCacheEntry = {
 };
 
 const sessionCache = new Map<string, SessionCacheEntry>();
+
+type InstanceStatus = {
+  selfHosted: boolean;
+  initialized: boolean;
+  allowSetup: boolean;
+  allowPublicSignup: boolean;
+};
 
 function getSessionFromCache(sessionToken: string): string | null {
   const entry = sessionCache.get(sessionToken);
@@ -96,24 +103,70 @@ export async function proxy(request: NextRequest) {
   // Run next-intl middleware to resolve locale and set NEXT_LOCALE cookie
   const intlResponse = intlMiddleware(request);
 
-  // Self-hosted: skip marketing page, go straight to login
-  if (SELF_HOSTED && pathname === "/") {
-    return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/login", request.url)));
-  }
-
-  const publicRoutes = ["/", "/login", "/signup", "/invite"];
+  const publicRoutes = ["/", "/login", "/signup", "/setup", "/invite"];
   const isPublicRoute = publicRoutes.some(
     (route) => pathname === route || (route !== "/" && pathname.startsWith(`${route}/`))
   );
   const isOnboardingRoute = pathname.startsWith("/onboarding");
 
-  const authRoutes = ["/login", "/signup"];
+  const authRoutes = ["/login", "/signup", "/setup"];
   const isAuthRoute = authRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
   const sessionToken = getSessionToken(cookieHeader);
   const hasSessionCookie = sessionToken !== null;
+
+  let instanceStatus: InstanceStatus | null = null;
+  if (SELF_HOSTED) {
+    try {
+      const instanceRes = await fetch(`${API_URL}/api/${API_VERSION}/instance/status`, {
+        cache: "no-store",
+      });
+
+      if (!instanceRes.ok) {
+        if (!FAIL_OPEN) {
+          return new NextResponse("Service unavailable", { status: 503 });
+        }
+      } else {
+        instanceStatus = await instanceRes.json();
+      }
+    } catch (error) {
+      console.error("[Middleware] Failed to fetch instance status:", error);
+      if (!FAIL_OPEN) {
+        return new NextResponse("Service unavailable", { status: 503 });
+      }
+    }
+  }
+
+  if (SELF_HOSTED && instanceStatus) {
+    if (!instanceStatus.initialized) {
+      const shouldRedirectToSetup =
+        pathname === "/" ||
+        pathname === "/login" ||
+        pathname.startsWith("/login/") ||
+        pathname === "/signup" ||
+        pathname.startsWith("/signup/");
+
+      if (shouldRedirectToSetup) {
+        return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/setup", request.url)));
+      }
+    } else {
+      if (pathname === "/") {
+        return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/login", request.url)));
+      }
+
+      if (
+        pathname === "/setup" ||
+        pathname.startsWith("/setup/") ||
+        pathname === "/signup" ||
+        pathname.startsWith("/signup/")
+      ) {
+        const redirectTarget = hasSessionCookie ? "/dashboard" : "/login";
+        return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL(redirectTarget, request.url)));
+      }
+    }
+  }
 
   if (hasSessionCookie && isAuthRoute) {
     return propagateIntlCookies(intlResponse, NextResponse.redirect(new URL("/dashboard", request.url)));

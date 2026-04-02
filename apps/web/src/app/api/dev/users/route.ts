@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { MONITORING_API_URL } from "@/lib/config";
-const API_URL = MONITORING_API_URL;
+import { getMonitoringApiUrl } from "@/lib/config";
+const API_URL = getMonitoringApiUrl();
 
 export async function GET() {
   if (process.env.NODE_ENV === "production") {

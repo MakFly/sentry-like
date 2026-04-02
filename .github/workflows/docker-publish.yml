@@ -1,9 +1,8 @@
 name: Build & Publish Docker Images
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   schedule:
     - cron: '0 3 * * 1'  # Every Monday at 3am UTC
   workflow_dispatch:
@@ -29,20 +28,27 @@ jobs:
           - target: web
             image: errorwatch-web
     steps:
+      - name: Resolve image tags
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+            git_ref="${{ github.event.release.tag_name }}"
+            version="${git_ref#v}"
+            major_minor="$(printf '%s' "$version" | awk -F. '{print $1 "." $2}')"
+            echo "git_ref=${git_ref}" >> "$GITHUB_OUTPUT"
+            echo "tags=ghcr.io/makfly/${{ matrix.image }}:${version},ghcr.io/makfly/${{ matrix.image }}:${major_minor},ghcr.io/makfly/${{ matrix.image }}:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "git_ref=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tags=ghcr.io/makfly/${{ matrix.image }}:dev" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/makfly/${{ matrix.image }}
-          tags: |
-            type=semver,pattern={{version}},enable=${{ github.event_name == 'push' }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'push' }}
-            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value=prod,enable=${{ github.event_name == 'push' }}
-            type=raw,value=dev,enable=${{ github.event_name == 'workflow_dispatch' }}
+          ref: ${{ steps.vars.outputs.git_ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -62,15 +68,11 @@ jobs:
         with:
           context: .
           target: ${{ matrix.target }}
-          push: ${{ !(github.event.inputs.dry_run == 'true') }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          push: ${{ github.event.inputs.dry_run != 'true' }}
+          tags: ${{ steps.vars.outputs.tags }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            NEXT_PUBLIC_APP_URL=http://localhost
-            NEXT_PUBLIC_MONITORING_API_URL=http://localhost:3333
 
   # =========================================
   # Cleanup old GHCR images (runs on schedule

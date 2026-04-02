@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MONITORING_API_URL } from "@/lib/config";
+import { getMonitoringApiUrl } from "@/lib/config";
 
 export type SSEStatus = "connected" | "connecting" | "disconnected";
 export type LiveLogEvent = {
@@ -32,7 +32,7 @@ export function useSSE(orgId: string | undefined) {
   useEffect(() => {
     if (!orgId) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_SSE_URL || MONITORING_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_SSE_URL || getMonitoringApiUrl();
     const es = new EventSource(`${apiUrl}/sse/${orgId}`, {
       withCredentials: true,
     });

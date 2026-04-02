@@ -1,7 +1,11 @@
 # ===========================================
-# ErrorWatch Production Caddyfile (Docker)
-# Domain and upstream values are injected via env vars.
+# ErrorWatch Self-Hosted Caddyfile
 # ===========================================
+# Public ACME certificates are provisioned automatically for:
+#   - https://{$DOMAIN}
+#   - https://api.{$DOMAIN}
+#
+# Keep ports 80/443 publicly reachable for ACME issuance and renewal.
 
 {
     admin off
@@ -12,7 +16,6 @@
     }
 }
 
-# Dashboard
 {$DOMAIN} {
     encode gzip zstd
 
@@ -34,8 +37,6 @@ api.{$DOMAIN} {
     }
 
     # SSE streams are sensitive to proxy/content-encoding transforms.
-    # Route them through a dedicated upstream config to avoid 502 from
-    # duplicate transfer-encoding handling.
     handle @sse {
         reverse_proxy {$API_UPSTREAM:api:3333} {
             header_up Accept-Encoding identity

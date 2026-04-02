@@ -8,8 +8,8 @@ set -euo pipefail
 COMPOSE_FILE="docker-compose.selfhost.yml"
 COMPOSE="docker compose -f $COMPOSE_FILE"
 APP_SERVICES="api web"
-INFRA_SERVICES="postgres redis"
-ALL_SERVICES="$INFRA_SERVICES $APP_SERVICES caddy"
+INFRA_SERVICES="postgres redis caddy"
+ALL_SERVICES="$INFRA_SERVICES $APP_SERVICES"
 
 # Colors
 RED='\033[0;31m'
@@ -35,6 +35,53 @@ check_env() {
     fi
 }
 
+load_env() {
+    set -a
+    # shellcheck disable=SC1091
+    . ./.env
+    set +a
+}
+
+validate_env() {
+    : "${DOMAIN:?DOMAIN is required in .env}"
+    : "${ACME_EMAIL:?ACME_EMAIL is required in .env}"
+    : "${DASHBOARD_URL:?DASHBOARD_URL is required in .env}"
+    : "${API_URL:?API_URL is required in .env}"
+    : "${BETTER_AUTH_URL:?BETTER_AUTH_URL is required in .env}"
+    : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env}"
+    : "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required in .env}"
+    : "${API_KEY_HASH_SECRET:?API_KEY_HASH_SECRET is required in .env}"
+    : "${ADMIN_API_KEY:?ADMIN_API_KEY is required in .env}"
+
+    local expected_dashboard="https://${DOMAIN}"
+    local expected_api="https://api.${DOMAIN}"
+    local use_secure_cookies="${USE_SECURE_COOKIES:-true}"
+
+    if [ "${DASHBOARD_URL}" != "$expected_dashboard" ]; then
+        warn "DASHBOARD_URL is '$DASHBOARD_URL' (expected '$expected_dashboard' for the standard self-host layout)."
+    fi
+
+    if [ "${API_URL}" != "$expected_api" ]; then
+        warn "API_URL is '$API_URL' (expected '$expected_api' for the standard self-host layout)."
+    fi
+
+    if [ "${BETTER_AUTH_URL}" != "${API_URL}" ]; then
+        error "BETTER_AUTH_URL must match API_URL for self-hosted deployments."
+        exit 1
+    fi
+
+    if [ "$use_secure_cookies" = "false" ]; then
+        error "USE_SECURE_COOKIES=false is not compatible with the standard HTTPS self-host flow."
+        exit 1
+    fi
+}
+
+check_selfhost_config() {
+    check_env
+    load_env
+    validate_env
+}
+
 wait_healthy() {
     local container="$1"
     local timeout="${2:-90}"
@@ -57,7 +104,7 @@ wait_healthy() {
 }
 
 cmd_up() {
-    check_env
+    check_selfhost_config
     info "Starting ErrorWatch stack..."
     $COMPOSE up -d "$@"
     ok "Stack started."
@@ -71,21 +118,49 @@ cmd_down() {
 }
 
 cmd_pull() {
-    check_env
+    check_selfhost_config
     info "Pulling latest images..."
-    $COMPOSE pull api web
+    $COMPOSE pull api web caddy
     ok "Images pulled."
 }
 
+cmd_install() {
+    check_selfhost_config
+
+    info "=== ErrorWatch Install ==="
+    echo
+
+    info "Step 1/4: Pulling images..."
+    $COMPOSE pull
+    ok "Images pulled."
+    echo
+
+    info "Step 2/4: Starting stack..."
+    $COMPOSE up -d
+    ok "Stack started."
+    echo
+
+    info "Step 3/4: Waiting for healthy services..."
+    wait_healthy errorwatch-postgres
+    wait_healthy errorwatch-redis
+    wait_healthy errorwatch-api 120
+    wait_healthy errorwatch-web 120
+    echo
+
+    info "Step 4/4: Summary"
+    cmd_status
+    cmd_version
+}
+
 cmd_deploy() {
-    check_env
+    check_selfhost_config
 
     info "=== ErrorWatch Deploy ==="
     echo
 
     # 1. Pull latest app images
     info "Step 1/4: Pulling latest images..."
-    $COMPOSE pull api web
+    $COMPOSE pull api web caddy
     ok "Images pulled."
     echo
 
@@ -135,15 +210,15 @@ cmd_logs() {
 }
 
 cmd_health() {
-    check_env
+    check_selfhost_config
     echo
     local all_ok=true
 
-    for container in errorwatch-postgres errorwatch-redis errorwatch-api errorwatch-web; do
+    for container in errorwatch-postgres errorwatch-redis errorwatch-api errorwatch-web errorwatch-caddy; do
         local health
-        health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "not running")
+        health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || echo "not running")
         case "$health" in
-            healthy)     echo -e "  ${GREEN}✓${NC} $container" ;;
+            healthy|running) echo -e "  ${GREEN}✓${NC} $container" ;;
             not\ running) echo -e "  ${YELLOW}–${NC} $container (not running)"; all_ok=false ;;
             *)           echo -e "  ${RED}✗${NC} $container ($health)"; all_ok=false ;;
         esac
@@ -171,7 +246,7 @@ cmd_version() {
 }
 
 cmd_backup_db() {
-    check_env
+    check_selfhost_config
     local timestamp
     timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_file="backup_errorwatch_${timestamp}.sql.gz"
@@ -183,7 +258,7 @@ cmd_backup_db() {
 }
 
 cmd_database() {
-    check_env
+    check_selfhost_config
     local action="${1:-}"
     local db_user="${POSTGRES_USER:-errorwatch}"
     local db_name="${POSTGRES_DB:-errorwatch}"
@@ -236,6 +311,7 @@ ${CYAN}ErrorWatch Self-Host Manager${NC}
 Usage: ./run-selfhost.sh <command> [options]
 
 ${GREEN}Commands:${NC}
+  install              Pull images and perform the first full stack start
   up [services...]     Start the full stack (or specific services)
   down                 Stop the full stack
   deploy               Pull latest images & redeploy app (zero-downtime for DB)
@@ -248,6 +324,7 @@ ${GREEN}Commands:${NC}
   database <action>    Manage database (--create, --reset, --update)
 
 ${YELLOW}Examples:${NC}
+  ./run-selfhost.sh install               # First install / first full start
   ./run-selfhost.sh up                    # Start everything
   ./run-selfhost.sh up postgres redis     # Start infra only
   ./run-selfhost.sh deploy                # Update to latest release
@@ -261,6 +338,7 @@ USAGE
 }
 
 case "${1:-}" in
+    install)    cmd_install ;;
     up)         shift; cmd_up "$@" ;;
     down)       shift; cmd_down "$@" ;;
     deploy)     cmd_deploy ;;

@@ -88,11 +88,6 @@ COPY apps/web/next.config.ts apps/web/tsconfig.json apps/web/tailwind.config.ts 
 COPY apps/web/src ./src
 COPY apps/web/public ./public
 
-ARG NEXT_PUBLIC_APP_URL
-ARG NEXT_PUBLIC_MONITORING_API_URL
-ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-ENV NEXT_PUBLIC_MONITORING_API_URL=${NEXT_PUBLIC_MONITORING_API_URL}
-
 RUN npx next build
 
 # ===========================================

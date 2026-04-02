@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --force --tags origin
+
+      - name: Compute next version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -n1)"
+
+          if [ -n "$latest_tag" ]; then
+            commit_count="$(git rev-list --count "${latest_tag}..HEAD")"
+            if [ "$commit_count" -eq 0 ]; then
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            range="${latest_tag}..HEAD"
+          else
+            range="HEAD"
+          fi
+
+          subjects="$(git log --format='%s' $range)"
+          bodies="$(git log --format='%b' $range)"
+          bump="patch"
+
+          if printf '%s\n%s\n' "$subjects" "$bodies" | grep -Eq 'BREAKING CHANGE'; then
+            bump="major"
+          elif printf '%s\n' "$subjects" | grep -Eq '^[^:]+!:'; then
+            bump="major"
+          elif printf '%s\n' "$subjects" | grep -Eq '^feat(\(.+\))?:'; then
+            bump="minor"
+          fi
+
+          if [ -n "$latest_tag" ]; then
+            current="${latest_tag#v}"
+          else
+            current="0.0.0"
+          fi
+
+          IFS='.' read -r major minor patch <<< "$current"
+
+          case "$bump" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "version=v${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${latest_tag}" >> "$GITHUB_OUTPUT"
+          echo "bump=${bump}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        if: steps.version.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            --target "${GITHUB_SHA}" \
+            --title "${{ steps.version.outputs.version }}" \
+            --generate-notes \
+            --latest

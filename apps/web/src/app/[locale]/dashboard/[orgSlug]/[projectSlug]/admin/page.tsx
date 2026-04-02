@@ -20,9 +20,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-
-import { MONITORING_API_URL } from "@/lib/config";
-const API_URL = MONITORING_API_URL;
+import { getMonitoringApiUrl } from "@/lib/config";
 
 function formatDuration(ms: number | null): string {
   if (ms == null) return "-";
@@ -54,6 +52,7 @@ const CRON_DESCRIPTIONS: Record<string, { label: string; description: string }> 
 };
 
 export default function AdminPage() {
+  const apiUrl = getMonitoringApiUrl();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [result, setResult] = useState<{ type: string; data: unknown } | null>(null);
   const [targetDate, setTargetDate] = useState(
@@ -212,7 +211,7 @@ export default function AdminPage() {
             <div className="space-y-2 font-mono text-muted-foreground">
               <p># Check status</p>
               <p className="text-foreground">
-                curl -H &quot;Authorization: Bearer $KEY&quot; {API_URL}/api/v1/admin/cron/status
+                curl -H &quot;Authorization: Bearer $KEY&quot; {apiUrl}/api/v1/admin/cron/status
               </p>
               <p className="mt-2"># Trigger async job</p>
               <p className="text-foreground">
@@ -222,11 +221,11 @@ export default function AdminPage() {
                 -d {`'{"type":"aggregate-hourly","targetDate":"2026-02-19"}'`} \
               </p>
               <p className="pl-4 text-foreground">
-                {API_URL}/api/v1/admin/cron/trigger
+                {apiUrl}/api/v1/admin/cron/trigger
               </p>
               <p className="mt-2"># Run sync (blocks until done)</p>
               <p className="text-foreground">
-                curl -X POST ... {API_URL}/api/v1/admin/cron/run-sync
+                curl -X POST ... {apiUrl}/api/v1/admin/cron/run-sync
               </p>
               <p className="mt-2"># Backfill 30 days (one-shot script)</p>
               <p className="text-foreground">

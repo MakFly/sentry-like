@@ -2,6 +2,11 @@ name: CD Production
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to deploy (for example 0.7.0 or v0.7.0)'
+        required: true
+        type: string
 
 concurrency:
   group: cd-production
@@ -31,7 +36,7 @@ jobs:
           fi
 
   deploy:
-    name: Deploy to production
+    name: Deploy self-hosted bundle to production
     needs: preflight
     if: ${{ needs.preflight.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
@@ -44,6 +49,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Upload self-host bundle
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: "docker-compose.selfhost.yml,run-selfhost.sh,Caddyfile"
+          target: /opt/errorwatch
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -53,13 +67,22 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            export PATH="$HOME/.bun/bin:$PATH"
             cd /opt/errorwatch
-            if [ -n "$(git status --porcelain)" ]; then
-              echo "[ERROR] Working tree is dirty on server. Aborting deploy."
-              git status --short
+
+            if [ ! -f .env ]; then
+              echo "[ERROR] Missing /opt/errorwatch/.env on the server."
               exit 1
             fi
-            git fetch origin main --tags
-            git pull --ff-only origin main
-            ./deploy/deploy.sh .env.production
+
+            chmod +x run-selfhost.sh
+
+            version="${{ github.event.inputs.version }}"
+            version="${version#v}"
+
+            if grep -q '^ERRORWATCH_VERSION=' .env; then
+              sed -i "s/^ERRORWATCH_VERSION=.*/ERRORWATCH_VERSION=${version}/" .env
+            else
+              printf '\nERRORWATCH_VERSION=%s\n' "$version" >> .env
+            fi
+
+            ./run-selfhost.sh deploy

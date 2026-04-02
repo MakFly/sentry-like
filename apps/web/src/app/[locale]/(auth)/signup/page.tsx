@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signUp, signIn, useSession } from "@/lib/auth-client";
+import { isSsoEnabled } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,7 @@ export default function SignupPage() {
   const [ssoLoading, setSsoLoading] = useState<string | null>(null);
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const ssoEnabled = isSsoEnabled();
 
   const features = [
     { icon: Rocket, text: t("feature1") },
@@ -51,9 +53,7 @@ export default function SignupPage() {
   const handleSSOSignup = async (provider: "github" | "google") => {
     setSsoLoading(provider);
     try {
-      const appUrl = typeof window !== "undefined"
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+      const appUrl = window.location.origin;
       await signIn.social({
         provider,
         callbackURL: `${appUrl}/dashboard`,
@@ -144,6 +144,7 @@ export default function SignupPage() {
               <Input
                 id="name"
                 type="text"
+                autoComplete="name"
                 placeholder={t("namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -158,6 +159,7 @@ export default function SignupPage() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -173,6 +175,7 @@ export default function SignupPage() {
                 <Input
                   id="password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder={t("passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -187,6 +190,7 @@ export default function SignupPage() {
                 <Input
                   id="confirmPassword"
                   type="password"
+                  autoComplete="new-password"
                   placeholder={t("confirmPlaceholder")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -222,47 +226,51 @@ export default function SignupPage() {
             )}
           </form>
 
-          {/* SSO Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/50" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-4 text-muted-foreground">
-                {t("orSignUpWith")}
-              </span>
-            </div>
-          </div>
+            {ssoEnabled && (
+            <>
+              {/* SSO Divider */}
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-4 text-muted-foreground">
+                    {t("orSignUpWith")}
+                  </span>
+                </div>
+              </div>
 
-          {/* SSO Buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleSSOSignup("github")}
-              disabled={ssoLoading !== null}
-              className="h-12 border-border/50 hover:bg-muted/50"
-            >
-              {ssoLoading === "github" ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Github className="h-5 w-5" />
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleSSOSignup("google")}
-              disabled={ssoLoading !== null}
-              className="h-12 border-border/50 hover:bg-muted/50"
-            >
-              {ssoLoading === "google" ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <GoogleIcon className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+              {/* SSO Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSSOSignup("github")}
+                  disabled={ssoLoading !== null}
+                  className="h-12 border-border/50 hover:bg-muted/50"
+                >
+                  {ssoLoading === "github" ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Github className="h-5 w-5" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSSOSignup("google")}
+                  disabled={ssoLoading !== null}
+                  className="h-12 border-border/50 hover:bg-muted/50"
+                >
+                  {ssoLoading === "google" ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <GoogleIcon className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

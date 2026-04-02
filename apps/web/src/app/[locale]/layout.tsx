@@ -5,6 +5,7 @@ import { TRPCProvider } from "@/lib/trpc/provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 import { routing } from "@/i18n/routing";
+import { RuntimeConfigScript } from "@/components/runtime-config-script";
 
 type Props = {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} className="dark" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="min-h-screen overflow-x-hidden bg-background text-foreground antialiased">
+        <RuntimeConfigScript />
         <NuqsAdapter>
           <TRPCProvider>
             <NextIntlClientProvider messages={messages}>

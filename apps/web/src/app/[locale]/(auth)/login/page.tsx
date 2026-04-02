@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "@/lib/auth-client";
+import { isSsoEnabled } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Zap, FlaskConical, Github, Bug, Layers, Shield, ArrowRight } from "lucide-react";
+import { Zap, FlaskConical, Github, Bug, Layers, Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { trpc } from "@/lib/trpc/client";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -36,11 +38,14 @@ function LoginForm() {
   const t = useTranslations("auth.login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState<string | null>(null);
   const [devUsers, setDevUsers] = useState<DevUser[]>([]);
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const instanceStatusQuery = trpc.instance.getStatus.useQuery();
+  const ssoEnabled = isSsoEnabled();
 
   const features = [
     { icon: Bug, text: t("feature1") },
@@ -63,12 +68,12 @@ function LoginForm() {
     }
   }, [session, isPending, router]);
 
+  const allowPublicSignup = instanceStatusQuery.data?.allowPublicSignup ?? true;
+
   const handleSSOLogin = async (provider: "github" | "google") => {
     setSsoLoading(provider);
     try {
-      const appUrl = typeof window !== "undefined"
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+      const appUrl = window.location.origin;
       await signIn.social({
         provider,
         callbackURL: `${appUrl}/dashboard`,
@@ -126,10 +131,16 @@ function LoginForm() {
               {t("title")}
             </h1>
             <p className="text-muted-foreground">
-              {t("noAccount")}{" "}
-              <Link href="/signup" className="font-medium text-primary hover:underline">
-                {t("signUpLink")}
-              </Link>
+              {allowPublicSignup ? (
+                <>
+                  {t("noAccount")}{" "}
+                  <Link href="/signup" className="font-medium text-primary hover:underline">
+                    {t("signUpLink")}
+                  </Link>
+                </>
+              ) : (
+                t("signupDisabled")
+              )}
             </p>
           </div>
 
@@ -164,6 +175,7 @@ function LoginForm() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="username"
                 placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -175,15 +187,27 @@ function LoginForm() {
               <label htmlFor="password" className="text-sm font-medium">
                 {t("passwordLabel")}
               </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={t("passwordPlaceholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-12"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder={t("passwordPlaceholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-12 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                  title={showPassword ? t("hidePassword") : t("showPassword")}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button
               type="submit"
@@ -212,45 +236,49 @@ function LoginForm() {
             )}
           </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/50" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-4 text-muted-foreground">
-                {t("orContinueWith")}
-              </span>
-            </div>
-          </div>
+            {ssoEnabled && (
+            <>
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-4 text-muted-foreground">
+                    {t("orContinueWith")}
+                  </span>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleSSOLogin("github")}
-              disabled={ssoLoading !== null}
-              className="h-12 border-border/50 hover:bg-muted/50"
-            >
-              {ssoLoading === "github" ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Github className="h-5 w-5" />
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleSSOLogin("google")}
-              disabled={ssoLoading !== null}
-              className="h-12 border-border/50 hover:bg-muted/50"
-            >
-              {ssoLoading === "google" ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <GoogleIcon className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSSOLogin("github")}
+                  disabled={ssoLoading !== null}
+                  className="h-12 border-border/50 hover:bg-muted/50"
+                >
+                  {ssoLoading === "github" ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Github className="h-5 w-5" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSSOLogin("google")}
+                  disabled={ssoLoading !== null}
+                  className="h-12 border-border/50 hover:bg-muted/50"
+                >
+                  {ssoLoading === "google" ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <GoogleIcon className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

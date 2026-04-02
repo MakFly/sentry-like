@@ -159,10 +159,6 @@ prod-db-push: ## Run migrations in production (via Docker exec)
 prod-db-shell: ## Open PostgreSQL shell (production)
 	@docker compose -f $(COMPOSE_PROD) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-prod-deploy: ## Full deploy (pull + build + migrate)
-	@chmod +x deploy/deploy.sh
-	@deploy/deploy.sh
-
 # =============================================================================
 # EXAMPLES
 # =============================================================================

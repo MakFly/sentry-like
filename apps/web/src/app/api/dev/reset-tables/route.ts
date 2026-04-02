@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-import { MONITORING_API_URL } from "@/lib/config";
-const API_URL = MONITORING_API_URL;
+import { getMonitoringApiUrl } from "@/lib/config";
+const API_URL = getMonitoringApiUrl();
 
 export async function POST(req: NextRequest) {
   // Block in production

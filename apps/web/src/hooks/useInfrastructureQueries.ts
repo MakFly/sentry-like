@@ -2,8 +2,7 @@ import { useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import type { InfraDateRange, InfraMetricsHistory, InfraMetricsSnapshot } from "@/server/api/types";
-
-const API_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL || "http://localhost:3333";
+import { getMonitoringApiUrl } from "@/lib/config";
 
 export function useInfrastructureQueries(
   projectId: string | null,
@@ -71,7 +70,7 @@ export function useInfrastructureQueries(
   useEffect(() => {
     if (!projectId) return;
 
-    const url = `${API_URL}/api/v1/infrastructure/stream?projectId=${projectId}`;
+    const url = `${getMonitoringApiUrl()}/api/v1/infrastructure/stream?projectId=${projectId}`;
     const eventSource = new EventSource(url, { withCredentials: true });
 
     eventSource.addEventListener("metrics", (event) => {

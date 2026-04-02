@@ -4,9 +4,9 @@
  */
 
 import { logApiCall, createApiTimer } from '@/lib/api-logger';
-import { MONITORING_API_URL } from '@/lib/config';
+import { getMonitoringApiUrl } from '@/lib/config';
 
-export const API_URL = MONITORING_API_URL;
+export const API_URL = getMonitoringApiUrl();
 export const API_VERSION = "v1";
 export const API_BASE = `${API_URL}/api/${API_VERSION}`;
 
@@ -79,4 +79,3 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit & { co
   const data = await res.json();
   return data;
 }
-

@@ -37,6 +37,7 @@ services:
       API_KEY_HASH_SECRET: ${API_KEY_HASH_SECRET:?API_KEY_HASH_SECRET is required}
       DASHBOARD_URL: ${DASHBOARD_URL:?DASHBOARD_URL is required}
       API_URL: ${API_URL:?API_URL is required}
+      USE_SECURE_COOKIES: ${USE_SECURE_COOKIES:-true}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
@@ -47,6 +48,7 @@ services:
       AUTH_FAIL_OPEN: ${AUTH_FAIL_OPEN:-false}
       SUBSCRIPTION_BYPASS_EMAILS: ${SUBSCRIPTION_BYPASS_EMAILS:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      NEXT_PUBLIC_ENABLE_SSO: ${NEXT_PUBLIC_ENABLE_SSO:-true}
     networks:
       - errorwatch-net
     healthcheck:
@@ -64,9 +66,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: web
-      args:
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
-        NEXT_PUBLIC_MONITORING_API_URL: ${NEXT_PUBLIC_MONITORING_API_URL:?NEXT_PUBLIC_MONITORING_API_URL is required}
     container_name: errorwatch-web
     restart: unless-stopped
     depends_on:
@@ -79,7 +78,10 @@ services:
       PORT: 3000
       HOSTNAME: "0.0.0.0"
       ADMIN_API_KEY: ${ADMIN_API_KEY}
+      API_URL: ${API_URL:?API_URL is required}
+      DASHBOARD_URL: ${DASHBOARD_URL:?DASHBOARD_URL is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      NEXT_PUBLIC_ENABLE_SSO: ${NEXT_PUBLIC_ENABLE_SSO:-true}
     networks:
       - errorwatch-net
     healthcheck:
@@ -106,12 +108,11 @@ services:
       - "${CADDY_HTTPS_PORT:-443}:443"
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN is required}
-      BASE_DOMAIN: ${BASE_DOMAIN:?BASE_DOMAIN is required}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
       DASHBOARD_UPSTREAM: ${DASHBOARD_UPSTREAM:-web:3000}
       API_UPSTREAM: ${API_UPSTREAM:-api:3333}
     volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:

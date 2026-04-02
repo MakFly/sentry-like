@@ -233,8 +233,7 @@ export default function IssuesPage() {
   );
 }
 
-import { MONITORING_API_URL } from "@/lib/config";
-const API_URL = MONITORING_API_URL;
+import { getMonitoringApiUrl } from "@/lib/config";
 
 function ExportDropdown({
   projectId,
@@ -248,11 +247,12 @@ function ExportDropdown({
   const t = useTranslations("issues.page");
 
   const handleExport = (format: "csv" | "json") => {
+    const apiUrl = getMonitoringApiUrl();
     if (!projectId) return;
     const params = new URLSearchParams({ projectId, format });
     if (dateRange !== "all") params.set("dateRange", dateRange);
     if (status !== "all") params.set("status", status);
-    window.open(`${API_URL}/api/v1/export/errors?${params.toString()}`, "_blank");
+    window.open(`${apiUrl}/api/v1/export/errors?${params.toString()}`, "_blank");
   };
 
   return (

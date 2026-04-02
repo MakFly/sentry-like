@@ -203,17 +203,19 @@ The fastest way to self-host ErrorWatch — pre-built images, automatic database
 # 1. Download config files
 curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/docker-compose.selfhost.yml
 curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/.env.selfhost.example
-curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/deploy/Caddyfile
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/Caddyfile
+curl -O https://raw.githubusercontent.com/MakFly/errorwatch/main/run-selfhost.sh
 
 # 2. Configure
 cp .env.selfhost.example .env
 nano .env   # Set DOMAIN, POSTGRES_PASSWORD, BETTER_AUTH_SECRET, etc.
+chmod +x run-selfhost.sh
 
 # 3. Launch
-docker compose -f docker-compose.selfhost.yml up -d
+./run-selfhost.sh install
 ```
 
-That's it. Database migrations run automatically on first start. Caddy handles HTTPS certificates.
+That is the standard self-host flow. Caddy provisions a public certificate for Chrome-compatible HTTPS. Keep ports `80/443` publicly reachable for ACME issuance and renewal.
 
 ### Server Requirements
 
@@ -265,6 +267,7 @@ POSTGRES_PASSWORD=<generated>
 BETTER_AUTH_SECRET=<generated>
 ADMIN_API_KEY=ew_admin_<generated>
 API_KEY_HASH_SECRET=<generated>
+USE_SECURE_COOKIES=true
 ```
 
 Optional: `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `RESEND_API_KEY`, Stripe keys.
@@ -279,16 +282,16 @@ curl -s http://127.0.0.1:4001/               # Dashboard
 ### Operations
 
 ```bash
-docker compose -f docker-compose.selfhost.yml ps       # Service status
-docker compose -f docker-compose.selfhost.yml logs -f   # Live logs
-docker compose -f docker-compose.selfhost.yml restart   # Restart all
-docker compose -f docker-compose.selfhost.yml pull      # Update images
-docker compose -f docker-compose.selfhost.yml up -d     # Apply update
+./run-selfhost.sh status
+./run-selfhost.sh health
+./run-selfhost.sh logs
+./run-selfhost.sh deploy
+./run-selfhost.sh backup-db
 ```
 
 For the complete VPS deployment guide, see [deploy/README.md](./deploy/README.md).
 
-For security hardening (UFW + Fail2ban), see [deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md).
+For advanced/private-network hardening (UFW + Fail2ban + allowlists), see [deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md](./deploy/SECURITY-HARDENING-UFW-FAIL2BAN.md).
 
 ## Development
 
@@ -320,11 +323,11 @@ bun test apps/api/tests     # API tests
 
 ### Releases
 
-```bash
-./scripts/release.sh --type patch                    # Auto bump
-./scripts/release.sh --version v1.0.0 --notes "1.0"  # Explicit version
-./scripts/release.sh --type minor --dry-run           # Preview only
-```
+Releases are created automatically from `main`. Each merge produces:
+
+- a semver Git tag
+- a GitHub Release
+- GHCR images for `errorwatch-api` and `errorwatch-web`
 
 ## CI/CD
 
@@ -334,8 +337,9 @@ GitHub Actions workflows:
 |----------|------|---------|
 | CI | `ci.yml` | push to main, PRs |
 | Security | `security.yml` | push to main, PRs |
-| Docker Publish | `docker-publish.yml` | push tags `v*` |
-| CD Production | `cd-production.yml` | manual dispatch |
+| Release | `release.yml` | push to `main` |
+| Docker Publish | `docker-publish.yml` | published release |
+| CD Production | `cd-production.yml` | manual dispatch with version |
 
 Required GitHub secrets for CD: `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`.
 

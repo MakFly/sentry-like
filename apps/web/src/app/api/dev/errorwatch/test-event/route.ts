@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MONITORING_API_URL } from "@/lib/config";
+import { getMonitoringApiUrl } from "@/lib/config";
 
-const TARGET_API_URL = process.env.NEXT_PUBLIC_TARGET_APP_URL || MONITORING_API_URL;
+const TARGET_API_URL = process.env.NEXT_PUBLIC_TARGET_APP_URL || getMonitoringApiUrl();
 
 const scenarioMap: Record<string, { path: string; method: "GET" | "POST" }> = {
   ping: { path: "/api/v1/dev/errorwatch/ping", method: "GET" },
