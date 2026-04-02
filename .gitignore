@@ -46,3 +46,6 @@ coverage/
 # See: github.com/MakFly/errorwatch-sdk-symfony
 # See: github.com/MakFly/errorwatch-sdk-laravel
 packages/
+
+# instant-grep index
+.ig/

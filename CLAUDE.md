@@ -168,37 +168,37 @@ bun run dev:standalone  # Port 4001
 
 ---
 
-## SDK Packages (standalone repos)
+## SDK Packages (standalone git clones)
 
-`packages/` is **gitignored** — SDK packages are maintained in their own repositories:
+`packages/` is **gitignored**. Each SDK is a **standalone git clone** of its own repository:
 
-| SDK | Repo | Package |
-|-----|------|---------|
-| Symfony Bundle | [errorwatch-sdk-symfony](https://github.com/MakFly/errorwatch-sdk-symfony) | `errorwatch/sdk-symfony` (Packagist) |
-| Laravel SDK | [errorwatch-sdk-laravel](https://github.com/MakFly/errorwatch-sdk-laravel) | `errorwatch/sdk-laravel` (Packagist) |
-
-### Subtree remotes
-
-Remotes `sdk-symfony` and `sdk-laravel` are configured for subtree operations:
-
-```bash
-# Push local changes to standalone repo
-git subtree split --prefix=packages/sdk-symfony -b sdk-symfony-release
-git push sdk-symfony sdk-symfony-release:main
-
-git subtree split --prefix=packages/sdk-laravel -b sdk-laravel-release
-git push sdk-laravel sdk-laravel-release:main
+```
+packages/
+├── sdk-laravel/    ← git clone of MakFly/errorwatch-sdk-laravel
+├── sdk-symfony/    ← git clone of MakFly/errorwatch-sdk-symfony
+└── sdk-metrics/    ← local Go agent (no standalone repo)
 ```
 
-### Tests
+| SDK | Repo | Package | CI |
+|-----|------|---------|----|
+| Laravel SDK | [errorwatch-sdk-laravel](https://github.com/MakFly/errorwatch-sdk-laravel) | `errorwatch/sdk-laravel` (Packagist) | PHPUnit matrix (PHP 8.1-8.4 × Laravel 10-12) |
+| Symfony Bundle | [errorwatch-sdk-symfony](https://github.com/MakFly/errorwatch-sdk-symfony) | `errorwatch/sdk-symfony` (Packagist) | composer audit |
+| Metrics Agent | — | — | — |
+
+### Working with SDKs
+
+Each SDK directory has its own `.git`. Work directly inside the clone:
 
 ```bash
 cd packages/sdk-laravel
-composer install
-composer test
+git pull                  # Get latest
+# ... make changes ...
+composer test             # Run tests (102 tests, 219 assertions)
+git add . && git commit   # Commit to sdk-laravel repo
+git push                  # Push to MakFly/errorwatch-sdk-laravel
 ```
 
-Current test status: **73 tests, 137 assertions** ✅
+> **Note:** No subtree remotes. Each SDK is an independent git repository.
 
 ---
 
