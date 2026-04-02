@@ -7,6 +7,10 @@ import { Toaster } from "sonner";
 import { routing } from "@/i18n/routing";
 import { RuntimeConfigScript } from "@/components/runtime-config-script";
 
+// GHCR images are built without API_URL; static HTML would otherwise embed
+// default localhost URLs in __ERRORWATCH_RUNTIME_CONFIG__ for the browser.
+export const dynamic = "force-dynamic";
+
 type Props = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
