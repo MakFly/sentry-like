@@ -63,6 +63,20 @@ export function getMonitoringApiUrl(): string {
   return getRuntimeConfig().monitoringApiUrl;
 }
 
+export function getInternalMonitoringApiUrl(): string {
+  if (typeof window === "undefined") {
+    return (
+      process.env.INTERNAL_API_URL ||
+      process.env.MONITORING_API_URL ||
+      process.env.API_URL ||
+      process.env.BETTER_AUTH_URL ||
+      DEFAULT_MONITORING_API_URL
+    );
+  }
+
+  return getMonitoringApiUrl();
+}
+
 export function isSsoEnabled(): boolean {
   return getRuntimeConfig().ssoEnabled;
 }

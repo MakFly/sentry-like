@@ -101,6 +101,7 @@ services:
       PORT: 3000
       HOSTNAME: "0.0.0.0"
       ADMIN_API_KEY: ${ADMIN_API_KEY}
+      INTERNAL_API_URL: http://api:3333
       API_URL: ${API_URL:?API_URL is required}
       DASHBOARD_URL: ${DASHBOARD_URL:?DASHBOARD_URL is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}

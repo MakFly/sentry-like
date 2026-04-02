@@ -4,9 +4,9 @@
  */
 
 import { logApiCall, createApiTimer } from '@/lib/api-logger';
-import { getMonitoringApiUrl } from '@/lib/config';
+import { getInternalMonitoringApiUrl } from '@/lib/config';
 
-export const API_URL = getMonitoringApiUrl();
+export const API_URL = getInternalMonitoringApiUrl();
 export const API_VERSION = "v1";
 export const API_BASE = `${API_URL}/api/${API_VERSION}`;
 

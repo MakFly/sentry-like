@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
-import { getMonitoringApiUrl } from "@/lib/config";
+import { getInternalMonitoringApiUrl } from "@/lib/config";
 import { routing } from "@/i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -20,7 +20,7 @@ function propagateIntlCookies(intlResponse: NextResponse, response: NextResponse
   return response;
 }
 
-const API_URL = getMonitoringApiUrl();
+const API_URL = getInternalMonitoringApiUrl();
 const API_VERSION = "v1";
 const FAIL_OPEN = process.env.AUTH_FAIL_OPEN === "true" || process.env.NODE_ENV !== "production";
 const SELF_HOSTED = process.env.SELF_HOSTED === "true";
