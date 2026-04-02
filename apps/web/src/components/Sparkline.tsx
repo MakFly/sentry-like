@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 
 interface SparklineProps {
   data: number[];
@@ -15,10 +15,12 @@ export default function Sparkline({
   data,
   width = 80,
   height = 24,
-  color = "#a78bfa",
+  color = "hsl(var(--chart-2))",
   fillOpacity = 0.2,
   className = "",
 }: SparklineProps) {
+  const gradientId = `sparkline-fill-${useId().replace(/:/g, "")}`;
+
   const path = useMemo(() => {
     if (!data || data.length === 0) return "";
 
@@ -60,15 +62,12 @@ export default function Sparkline({
       viewBox={`0 0 ${width} ${height}`}
     >
       <defs>
-        <linearGradient id={`gradient-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity={fillOpacity} />
           <stop offset="100%" stopColor={color} stopOpacity={0} />
         </linearGradient>
       </defs>
-      <path
-        d={areaPath}
-        fill={`url(#gradient-${color.replace("#", "")})`}
-      />
+      <path d={areaPath} fill={`url(#${gradientId})`} />
       <path
         d={path}
         fill="none"

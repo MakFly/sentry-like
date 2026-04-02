@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,11 @@ export default function SetupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const pendingOnboardingRef = useRef(false);
 
   useEffect(() => {
-    if (!sessionPending && session?.user) {
-      router.push("/dashboard");
+    if (!sessionPending && session?.user && !pendingOnboardingRef.current) {
+      router.replace("/dashboard");
     }
   }, [router, session, sessionPending]);
 
@@ -40,13 +41,16 @@ export default function SetupPage() {
     try {
       await bootstrapMutation.mutateAsync({ name, email, password });
 
+      pendingOnboardingRef.current = true;
       await signIn.email(
         { email, password },
         {
           onSuccess: () => {
-            window.location.href = "/onboarding";
+            setIsLoading(false);
+            router.replace("/onboarding");
           },
           onError: (error) => {
+            pendingOnboardingRef.current = false;
             const errorMessage = error instanceof Error ? error.message : t("loginAfterSetupFailed");
             toast.error(errorMessage);
             setIsLoading(false);
@@ -54,6 +58,7 @@ export default function SetupPage() {
         }
       );
     } catch (error) {
+      pendingOnboardingRef.current = false;
       const errorMessage = error instanceof Error ? error.message : t("setupFailed");
       toast.error(errorMessage);
       setIsLoading(false);

@@ -133,11 +133,11 @@ export function SdkInstructions({ instructions, apiKey, className }: SdkInstruct
             <span className="text-amber-500">🔑</span>
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-amber-200">Your API Key</h4>
-            <p className="text-xs text-amber-300/70 mt-0.5 mb-2">
+            <h4 className="text-sm font-medium text-amber-900 dark:text-amber-200">Your API Key</h4>
+            <p className="mt-0.5 mb-2 text-xs text-amber-800/80 dark:text-amber-300/70">
               Keep this key secure. It&apos;s used to authenticate your error reports.
             </p>
-            <code className="block px-3 py-2 rounded bg-black/30 text-xs font-mono text-amber-100 break-all">
+            <code className="block break-all rounded bg-muted px-3 py-2 font-mono text-xs text-foreground">
               {apiKey}
             </code>
           </div>

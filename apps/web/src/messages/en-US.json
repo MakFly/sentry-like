@@ -18,7 +18,11 @@
     "user": "User",
     "logOut": "Log out",
     "creating": "Creating...",
-    "toggleSidebar": "Toggle sidebar"
+    "toggleSidebar": "Toggle sidebar",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
   },
   "navigation": {
     "dashboard": "Dashboard",

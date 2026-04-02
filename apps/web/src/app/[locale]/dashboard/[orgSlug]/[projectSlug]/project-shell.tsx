@@ -6,7 +6,6 @@ import { ProjectProvider } from "@/contexts/ProjectContext";
 import { ErrorWatchSidebar } from "@/components/errorwatch-sidebar";
 import { ErrorWatchHeader } from "@/components/errorwatch-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Toaster } from "@/components/ui/sonner";
 import { SSEProvider } from "@/components/sse-provider";
 
 type ProjectDashboardShellProps = {
@@ -58,7 +57,6 @@ export function ProjectDashboardShell({
               </div>
             </SidebarInset>
           </SidebarProvider>
-          <Toaster />
         </SSEProvider>
       </ProjectProvider>
     </OrganizationProvider>

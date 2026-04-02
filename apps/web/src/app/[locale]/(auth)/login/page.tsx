@@ -64,7 +64,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (!isPending && session?.user) {
-      router.push("/dashboard");
+      router.replace("/dashboard");
     }
   }, [session, isPending, router]);
 
@@ -105,7 +105,7 @@ function LoginForm() {
       { email, password },
       {
         onSuccess: () => {
-          window.location.href = "/dashboard";
+          setIsLoading(false);
         },
         onError: (error) => {
           const errorMessage = error instanceof Error ? error.message : t("loginFailed");

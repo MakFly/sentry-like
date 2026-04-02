@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { signUp, signIn, useSession } from "@/lib/auth-client";
 import { isSsoEnabled } from "@/lib/config";
 import Link from "next/link";
@@ -35,6 +35,7 @@ export default function SignupPage() {
   const [ssoLoading, setSsoLoading] = useState<string | null>(null);
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const justSignedUpRef = useRef(false);
   const ssoEnabled = isSsoEnabled();
 
   const features = [
@@ -44,9 +45,8 @@ export default function SignupPage() {
   ];
 
   useEffect(() => {
-    if (!isPending && session?.user) {
-      // Si déjà connecté, rediriger vers /dashboard qui gère la suite
-      router.push("/dashboard");
+    if (!isPending && session?.user && !justSignedUpRef.current) {
+      router.replace("/dashboard");
     }
   }, [session, isPending, router]);
 
@@ -99,8 +99,9 @@ export default function SignupPage() {
       { name, email, password },
       {
         onSuccess: () => {
-          // Nouvel utilisateur = pas de projet = onboarding
-          window.location.href = "/onboarding";
+          justSignedUpRef.current = true;
+          setIsLoading(false);
+          router.replace("/onboarding");
         },
         onError: (error) => {
           const errorMessage = error instanceof Error ? error.message : t("signupFailed");

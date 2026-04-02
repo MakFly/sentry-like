@@ -197,7 +197,7 @@ function BreadcrumbItem({
 
           {/* Expanded data */}
           {expanded && hasData && (
-            <div className="border-t border-border/50 p-3 bg-black/10">
+            <div className="border-t border-border/50 bg-muted/50 p-3">
               <pre className="text-xs font-mono text-muted-foreground overflow-x-auto">
                 {JSON.stringify(breadcrumb.data, null, 2)}
               </pre>

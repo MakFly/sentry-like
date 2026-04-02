@@ -13,6 +13,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { CommandMenu } from "@/components/command-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DevResetButton } from "@/components/dev-reset-button";
 import { resolveDashboardBreadcrumbs } from "@/lib/dashboard-breadcrumbs";
 
@@ -49,6 +50,7 @@ export function ErrorWatchHeader() {
 
         {/* Right side items */}
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           {/* Dev-only reset button */}
           <DevResetButton />
 

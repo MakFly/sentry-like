@@ -18,6 +18,7 @@ import { useState } from "react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useTranslations, useLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "U";
@@ -146,6 +147,7 @@ function Navbar() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
         >
+          <ThemeToggle />
           <MarketingLocaleSwitcher />
           {session?.user ? (
             <div className="flex items-center gap-3">

@@ -436,14 +436,14 @@ export function ReplayPlayer({
 
   if (error) {
     return (
-      <div className={cn("rounded-xl bg-zinc-900 border border-zinc-800", className)}>
+      <div className={cn("rounded-xl border border-border bg-card", className)}>
         <div className="aspect-video flex items-center justify-center">
           <div className="text-center px-8">
             <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="h-8 w-8 text-red-400" />
+              <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
-            <p className="text-zinc-400 font-medium">{error}</p>
-            <p className="text-xs text-zinc-600 mt-2">
+            <p className="font-medium text-muted-foreground">{error}</p>
+            <p className="mt-2 text-xs text-muted-foreground/80">
               {events?.length || 0} events loaded
             </p>
           </div>
@@ -458,12 +458,12 @@ export function ReplayPlayer({
       <div
         ref={wrapperRef}
         className={cn(
-          "relative overflow-hidden bg-zinc-900 border border-zinc-800",
+          "relative overflow-hidden border border-border bg-card",
           isFullscreen ? "fixed inset-0 z-50 rounded-none" : "rounded-xl"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
+        <div className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-3">
           <div className="flex items-center gap-2">
             <div
               className={cn(
@@ -471,18 +471,18 @@ export function ReplayPlayer({
                 playing ? "bg-red-500 animate-pulse" : "bg-amber-500"
               )}
             />
-            <span className="text-sm font-medium text-zinc-200">
+            <span className="text-sm font-medium text-foreground">
               Session Replay
             </span>
-            <span className="text-zinc-600">/</span>
+            <span className="text-muted-foreground">/</span>
           </div>
 
-          <div className="flex items-center gap-3 text-sm text-zinc-400">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <Monitor className="h-4 w-4" />
               {metadata?.browser || "Chrome"}
             </span>
-            <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-xs capitalize">
+            <span className="rounded bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">
               {metadata?.deviceType || "Desktop"}
             </span>
           </div>
@@ -490,17 +490,17 @@ export function ReplayPlayer({
 
         {/* Player Viewport */}
         <div
-          className="relative aspect-video bg-zinc-950 cursor-pointer"
+          className="relative aspect-video cursor-pointer bg-muted"
           onClick={!isLoading ? togglePlay : undefined}
         >
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-20 bg-zinc-950">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-muted">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <div className="w-12 h-12 border-2 border-violet-500/30 rounded-full" />
                   <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-violet-500 rounded-full animate-spin" />
                 </div>
-                <span className="text-sm text-zinc-400">Loading replay...</span>
+                <span className="text-sm text-muted-foreground">Loading replay...</span>
               </div>
             </div>
           )}
@@ -509,14 +509,14 @@ export function ReplayPlayer({
           <div
             ref={containerRef}
             className={cn(
-              "w-full h-full flex items-center justify-center [&_.rr-player]:!bg-transparent [&_iframe]:!bg-zinc-900",
+              "flex h-full w-full items-center justify-center [&_.rr-player]:!bg-transparent [&_iframe]:!bg-muted",
               isLoading && "opacity-0"
             )}
           />
 
           {/* Play overlay when paused */}
           {!playing && !isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
+            <div className="absolute inset-0 flex items-center justify-center bg-foreground/10 opacity-0 transition-opacity hover:opacity-100 dark:bg-black/30">
               <div className="w-20 h-20 rounded-full bg-violet-600/90 flex items-center justify-center shadow-xl shadow-violet-900/50">
                 <Play className="h-8 w-8 text-white ml-1" fill="white" />
               </div>
@@ -526,7 +526,7 @@ export function ReplayPlayer({
 
         {/* Progress Bar */}
         <div
-          className="relative h-1.5 bg-zinc-800 cursor-pointer group"
+          className="group relative h-1.5 cursor-pointer bg-muted"
           onClick={seek}
           onMouseMove={handleProgressHover}
           onMouseLeave={() => setHoverProgress(null)}
@@ -540,7 +540,7 @@ export function ReplayPlayer({
           {/* Hover preview tooltip */}
           {hoverProgress !== null && duration > 0 && (
             <div
-              className="absolute -top-8 transform -translate-x-1/2 px-2 py-1 bg-zinc-700 rounded text-xs text-white font-mono"
+              className="absolute -top-8 -translate-x-1/2 transform rounded border border-border bg-popover px-2 py-1 font-mono text-xs text-popover-foreground shadow-md"
               style={{ left: `${(hoverProgress / duration) * 100}%` }}
             >
               {formatTime(hoverProgress)}
@@ -549,56 +549,56 @@ export function ReplayPlayer({
 
           {/* Scrubber handle - always visible, no transition for instant sync */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg shadow-black/50"
+            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-primary bg-background shadow-md"
             style={{ left: `calc(${progress}% - 6px)` }}
           />
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-t border-zinc-800">
+        <div className="flex items-center justify-between border-t border-border bg-card px-4 py-3">
           {/* Left controls */}
           <div className="flex items-center gap-1">
             <button
               onClick={togglePlay}
-              className="w-10 h-10 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors cursor-pointer"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-muted transition-colors hover:bg-muted/80"
               title={playing ? "Pause" : "Play"}
             >
               {playing ? (
-                <Pause className="h-5 w-5 text-white" />
+                <Pause className="h-5 w-5 text-foreground" />
               ) : (
-                <Play className="h-5 w-5 text-white ml-0.5" />
+                <Play className="ml-0.5 h-5 w-5 text-foreground" />
               )}
             </button>
 
             <button
               onClick={() => skip(-10)}
-              className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-muted"
               title="Rewind 10s"
             >
-              <SkipBack className="h-4 w-4 text-zinc-400" />
+              <SkipBack className="h-4 w-4 text-muted-foreground" />
             </button>
 
             <button
               onClick={() => skip(10)}
-              className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-muted"
               title="Forward 10s"
             >
-              <SkipForward className="h-4 w-4 text-zinc-400" />
+              <SkipForward className="h-4 w-4 text-muted-foreground" />
             </button>
 
             <button
               onClick={restart}
-              className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-muted"
               title="Restart"
             >
-              <RotateCcw className="h-4 w-4 text-zinc-400" />
+              <RotateCcw className="h-4 w-4 text-muted-foreground" />
             </button>
 
             {/* Time display */}
-            <div className="ml-3 text-sm text-zinc-300 font-mono tabular-nums">
-              <span className="text-white">{formatTime(currentTime)}</span>
-              <span className="text-zinc-600 mx-1">/</span>
-              <span className="text-zinc-500">{formatTime(duration)}</span>
+            <div className="ml-3 font-mono text-sm tabular-nums text-muted-foreground">
+              <span className="text-foreground">{formatTime(currentTime)}</span>
+              <span className="mx-1 text-muted-foreground/70">/</span>
+              <span>{formatTime(duration)}</span>
             </div>
           </div>
 
@@ -611,14 +611,14 @@ export function ReplayPlayer({
                   e.stopPropagation();
                   setShowSpeedMenu(!showSpeedMenu);
                 }}
-                className="h-9 px-3 rounded-lg hover:bg-zinc-800 flex items-center transition-colors cursor-pointer"
+                className="flex h-9 cursor-pointer items-center rounded-lg px-3 transition-colors hover:bg-muted"
                 title="Playback speed"
               >
-                <span className="text-sm text-zinc-300 font-medium">{speed}x</span>
+                <span className="text-sm font-medium text-foreground">{speed}x</span>
               </button>
 
               {showSpeedMenu && (
-                <div className="absolute bottom-full right-0 mb-2 py-1 bg-zinc-800 rounded-lg border border-zinc-700 shadow-xl z-50">
+                <div className="absolute bottom-full right-0 z-50 mb-2 rounded-lg border border-border bg-popover py-1 shadow-xl">
                   {[0.5, 1, 1.5, 2, 4].map((s) => (
                     <button
                       key={s}
@@ -628,8 +628,8 @@ export function ReplayPlayer({
                         setShowSpeedMenu(false);
                       }}
                       className={cn(
-                        "w-full px-4 py-1.5 text-left text-sm hover:bg-zinc-700 transition-colors cursor-pointer",
-                        speed === s ? "text-violet-400" : "text-zinc-300"
+                        "w-full cursor-pointer px-4 py-1.5 text-left text-sm transition-colors hover:bg-accent",
+                        speed === s ? "text-violet-600 dark:text-violet-400" : "text-foreground"
                       )}
                     >
                       {s}x
@@ -642,13 +642,13 @@ export function ReplayPlayer({
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-muted"
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? (
-                <Minimize2 className="h-4 w-4 text-zinc-400" />
+                <Minimize2 className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Maximize2 className="h-4 w-4 text-zinc-400" />
+                <Maximize2 className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
           </div>
@@ -657,43 +657,43 @@ export function ReplayPlayer({
 
       {/* Metadata Cards */}
       {metadata && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="rounded-xl border border-border bg-card/50 p-4">
+            <div className="mb-1 flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span className="text-xs uppercase tracking-wider">Recorded</span>
             </div>
-            <p className="text-sm text-zinc-200 font-medium">
+            <p className="text-sm font-medium text-foreground">
               {formatDate(metadata.startedAt)}
             </p>
           </div>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1">
+          <div className="rounded-xl border border-border bg-card/50 p-4">
+            <div className="mb-1 flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span className="text-xs uppercase tracking-wider">Duration</span>
             </div>
-            <p className="text-sm text-zinc-200 font-medium">
+            <p className="text-sm font-medium text-foreground">
               {formatDuration(duration || calculatedDuration)}
             </p>
           </div>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1">
+          <div className="rounded-xl border border-border bg-card/50 p-4">
+            <div className="mb-1 flex items-center gap-2 text-muted-foreground">
               <DeviceIcon className="h-4 w-4" />
               <span className="text-xs uppercase tracking-wider">Device</span>
             </div>
-            <p className="text-sm text-zinc-200 font-medium capitalize">
+            <p className="text-sm font-medium capitalize text-foreground">
               {metadata.deviceType || "Desktop"}
             </p>
           </div>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1">
+          <div className="rounded-xl border border-border bg-card/50 p-4">
+            <div className="mb-1 flex items-center gap-2 text-muted-foreground">
               <Globe className="h-4 w-4" />
               <span className="text-xs uppercase tracking-wider">Browser</span>
             </div>
-            <p className="text-sm text-zinc-200 font-medium">
+            <p className="text-sm font-medium text-foreground">
               {metadata.browser || "Unknown"} / {metadata.os || "Unknown"}
             </p>
           </div>
@@ -702,13 +702,13 @@ export function ReplayPlayer({
 
       {/* URL Card */}
       {metadata?.url && (
-        <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-4">
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-xs text-zinc-500 uppercase tracking-wider shrink-0">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
                 Page URL
               </span>
-              <code className="text-sm text-zinc-300 font-mono truncate">
+              <code className="truncate font-mono text-sm text-foreground">
                 {metadata.url}
               </code>
             </div>
@@ -716,7 +716,7 @@ export function ReplayPlayer({
               href={metadata.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 p-2 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+              className="shrink-0 cursor-pointer rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="Open in new tab"
             >
               <ExternalLink className="h-4 w-4" />

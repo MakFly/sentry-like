@@ -93,7 +93,7 @@ export interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void
 }
 
-const PAGE_SIZE_OPTIONS = [15, 25, 35, 45, 50] as const
+const PAGE_SIZE_OPTIONS = [8, 10, 15, 20, 25, 35, 45, 50] as const
 
 function DragHandle({ id }: { id: UniqueIdentifier }) {
   const { attributes, listeners } = useSortable({ id })
@@ -194,6 +194,11 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize,
   })
+
+  const pageSizeOptions = React.useMemo(() => {
+    const set = new Set<number>([...PAGE_SIZE_OPTIONS, pagination.pageSize])
+    return Array.from(set).sort((a, b) => a - b)
+  }, [pagination.pageSize])
 
   const sortableId = React.useId()
   const sensors = useSensors(
@@ -463,15 +468,15 @@ export function DataTable<TData, TValue>({
                 }}
               >
                 <SelectTrigger
-                  className="w-20"
+                  className="w-20 bg-background text-foreground"
                   id="rows-per-page"
                 >
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={`${table.getState().pagination.pageSize}`}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
-                  {PAGE_SIZE_OPTIONS.map((size) => (
+                  {pageSizeOptions.map((size) => (
                     <SelectItem key={size} value={`${size}`}>
                       {size}
                     </SelectItem>

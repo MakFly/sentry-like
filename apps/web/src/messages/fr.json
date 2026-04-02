@@ -18,7 +18,11 @@
     "user": "Utilisateur",
     "logOut": "Se déconnecter",
     "creating": "Création...",
-    "toggleSidebar": "Afficher/masquer la barre latérale"
+    "toggleSidebar": "Afficher/masquer la barre latérale",
+    "theme": "Thème",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "themeSystem": "Système"
   },
   "navigation": {
     "dashboard": "Tableau de bord",
