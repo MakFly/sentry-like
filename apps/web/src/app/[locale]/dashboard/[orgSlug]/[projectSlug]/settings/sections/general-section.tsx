@@ -52,6 +52,7 @@ import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
+import { getMonitoringApiUrl } from "@/lib/config";
 
 export function GeneralSection() {
   const t = useTranslations("settings.general");
@@ -62,7 +63,7 @@ export function GeneralSection() {
   // Project state
   const [projectName, setProjectName] = useState("");
   const [environment, setEnvironment] = useState("production");
-  const [dsn, setDsn] = useState("http://localhost:3333");
+  const [dsn, setDsn] = useState(() => getMonitoringApiUrl());
   const [timezone, setTimezone] = useState("UTC");
   const [copied, setCopied] = useState(false);
   const [deleteProjectDialogOpen, setDeleteProjectDialogOpen] = useState(false);
@@ -146,6 +147,11 @@ export function GeneralSection() {
   useEffect(() => {
     if (projectSettings) setTimezone(projectSettings.timezone);
   }, [projectSettings]);
+
+  useEffect(() => {
+    if (!currentProjectId) return;
+    setDsn(getMonitoringApiUrl());
+  }, [currentProjectId]);
 
   // Sync profile data
   useEffect(() => {
@@ -367,10 +373,19 @@ export function GeneralSection() {
                 </Button>
               </div>
             </div>
-            <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
-              <p className="text-muted-foreground mb-1">{t("dsnSymfonyComment")}</p>
-              <p>error_monitoring:</p>
-              <p className="pl-4">dsn: &apos;{dsn}&apos;</p>
+            <div className="space-y-3">
+              <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
+                <p className="mb-1 text-muted-foreground">{t("dsnSymfonyComment")}</p>
+                <p>error_watch:</p>
+                <p className="pl-2">{`  endpoint: '${dsn}'`}</p>
+                <p className="pl-2">{`  api_key: '${t("dsnApiKeyPlaceholder")}'`}</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
+                <p className="mb-1 text-muted-foreground">{t("dsnLaravelComment")}</p>
+                <p>ERRORWATCH_ENABLED=true</p>
+                <p>{`ERRORWATCH_ENDPOINT=${dsn}`}</p>
+                <p>{`ERRORWATCH_API_KEY=${t("dsnApiKeyPlaceholder")}`}</p>
+              </div>
             </div>
           </CardContent>
         </Card>

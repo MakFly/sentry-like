@@ -13,8 +13,20 @@ import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { getPlatformIcon } from "@/lib/platform-icons";
 import { useTranslations } from "next-intl";
 
+function useProjectEnvironmentLabel() {
+  const t = useTranslations("settings.general");
+  return (env?: string | null) => {
+    const v = env || "production";
+    if (v === "production") return t("environmentProduction");
+    if (v === "staging") return t("environmentStaging");
+    if (v === "development") return t("environmentDevelopment");
+    return v;
+  };
+}
+
 export function ProjectSelector() {
   const t = useTranslations("project");
+  const environmentLabel = useProjectEnvironmentLabel();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -86,10 +98,15 @@ export function ProjectSelector() {
         >
           {currentProject ? (
             <>
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-amber-500 to-orange-600 text-[8px] font-bold text-white">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-amber-500 to-orange-600 text-[8px] font-bold text-white">
                 {getPlatformIcon(currentProject.platform as string) || currentProject.name?.substring(0, 2).toUpperCase()}
               </div>
-              <span className="flex-1 truncate text-sm font-medium">{currentProject.name}</span>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-sm font-medium">{currentProject.name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {environmentLabel(currentProject.environment)}
+                </p>
+              </div>
             </>
           ) : (
             <>
@@ -127,7 +144,9 @@ export function ProjectSelector() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="truncate font-medium">{project.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{project.environment}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {environmentLabel(project.environment)}
+                        </p>
                       </div>
                       {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
                     </button>
