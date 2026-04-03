@@ -104,7 +104,8 @@ services:
       INTERNAL_API_URL: http://api:3333
       API_URL: ${API_URL:?API_URL is required}
       DASHBOARD_URL: ${DASHBOARD_URL:?DASHBOARD_URL is required}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      BETTER_AUTH_URL: ${API_URL:?API_URL is required}
+      NEXT_PUBLIC_API_URL: ${API_URL:?API_URL is required}
       NEXT_PUBLIC_ENABLE_SSO: ${NEXT_PUBLIC_ENABLE_SSO:-true}
     networks:
       - errorwatch
@@ -137,7 +138,9 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - errorwatch
+      errorwatch:
+        aliases:
+          - api.error-watch.tilvest.com
 
 networks:
   errorwatch:
