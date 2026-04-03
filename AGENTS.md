@@ -4,10 +4,10 @@
 
 **Pour déployer une nouvelle version des images Docker (api + web) :**
 
-1. **Créer un tag de release** ( bump version + tag Git ) :
+1. **Créer un tag de release** :
    ```bash
-   # Bump patch version & git tag
-   bumpver update --patch
+   # Bump patch version & git tag (manuel)
+   git tag v0.9.2
    git push --follow-tags
    ```
 
@@ -28,7 +28,7 @@
 
 | Action | Commande |
 |--------|----------|
-| Nouvelle release | `bumpver update --patch && git push --follow-tags` |
+| Nouvelle release | `git tag v0.9.2 && git push --follow-tags` |
 | First deploy | `./run-selfhost.sh init-deploy` |
 | Update | `./run-selfhost.sh deploy` |
 | Check status | `./run-selfhost.sh status` |
