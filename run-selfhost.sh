@@ -158,14 +158,14 @@ cmd_deploy() {
     info "=== ErrorWatch Deploy ==="
     echo
 
-    # 1. Pull latest app images
-    info "Step 1/4: Pulling latest images..."
-    $COMPOSE pull api web caddy
+    # 1. Pull latest app images (api + web only, no caddy)
+    info "Step 1/3: Pulling latest images..."
+    $COMPOSE pull api web
     ok "Images pulled."
     echo
 
     # 2. Recreate only app containers (zero-downtime for infra)
-    info "Step 2/4: Recreating app containers..."
+    info "Step 2/3: Recreating app containers..."
     $COMPOSE up -d --no-deps --force-recreate api
     wait_healthy errorwatch-api
 
@@ -173,24 +173,43 @@ cmd_deploy() {
     wait_healthy errorwatch-web
     echo
 
-    # 3. Reload Caddy if running
-    if docker ps --format '{{.Names}}' | grep -q errorwatch-caddy; then
-        info "Step 3/4: Reloading Caddy..."
-        $COMPOSE up -d --no-deps --force-recreate caddy
-        ok "Caddy reloaded."
-    else
-        info "Step 3/4: Caddy not running, skipping."
-    fi
-    echo
-
-    # 4. Cleanup old images
-    info "Step 4/4: Cleaning up old images..."
+    # 3. Cleanup old images
+    info "Step 3/3: Cleaning up old images..."
     docker image prune -f --filter "label=org.opencontainers.image.vendor=ErrorWatch" 2>/dev/null || true
     ok "Cleanup done."
     echo
 
     ok "=== Deploy complete ==="
     cmd_status
+}
+
+cmd_init_deploy() {
+    check_selfhost_config
+
+    info "=== ErrorWatch Initial Deploy ==="
+    echo
+
+    info "Step 1/4: Pulling all images..."
+    $COMPOSE pull
+    ok "Images pulled."
+    echo
+
+    info "Step 2/4: Starting full stack..."
+    $COMPOSE up -d
+    ok "Stack started."
+    echo
+
+    info "Step 3/4: Waiting for healthy services..."
+    wait_healthy errorwatch-postgres
+    wait_healthy errorwatch-redis
+    wait_healthy errorwatch-api 120
+    wait_healthy errorwatch-web 120
+    wait_healthy errorwatch-caddy 120
+    echo
+
+    info "Step 4/4: Summary"
+    cmd_status
+    cmd_version
 }
 
 cmd_status() {
@@ -311,7 +330,8 @@ ${CYAN}ErrorWatch Self-Host Manager${NC}
 Usage: ./run-selfhost.sh <command> [options]
 
 ${GREEN}Commands:${NC}
-  install              Pull images and perform the first full stack start
+  install              First-time setup (pull all, start stack, init DB)
+  init-deploy         First deploy after install (same as install)
   up [services...]     Start the full stack (or specific services)
   down                 Stop the full stack
   deploy               Pull latest images & redeploy app (zero-downtime for DB)
@@ -325,6 +345,7 @@ ${GREEN}Commands:${NC}
 
 ${YELLOW}Examples:${NC}
   ./run-selfhost.sh install               # First install / first full start
+  ./run-selfhost.sh init-deploy           # First deploy (same as install, explicit)
   ./run-selfhost.sh up                    # Start everything
   ./run-selfhost.sh up postgres redis     # Start infra only
   ./run-selfhost.sh deploy                # Update to latest release
@@ -339,6 +360,7 @@ USAGE
 
 case "${1:-}" in
     install)    cmd_install ;;
+    init-deploy) shift; cmd_init_deploy "$@" ;;
     up)         shift; cmd_up "$@" ;;
     down)       shift; cmd_down "$@" ;;
     deploy)     cmd_deploy ;;
