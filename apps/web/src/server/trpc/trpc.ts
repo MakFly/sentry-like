@@ -6,7 +6,7 @@ import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { getMonitoringApiUrl } from "@/lib/config";
+import { getInternalMonitoringApiUrl } from "@/lib/config";
 
 /**
  * Session type from BetterAuth
@@ -31,7 +31,7 @@ export interface Context {
  * Cached session fetch - deduplicates within a single RSC render pass
  */
 const getSessionFromCookie = cache(async (cookieHeader: string): Promise<Session | null> => {
-  const response = await fetch(`${getMonitoringApiUrl()}/api/auth/get-session`, {
+  const response = await fetch(`${getInternalMonitoringApiUrl()}/api/auth/get-session`, {
     headers: { Cookie: cookieHeader },
     cache: "no-store",
   });
