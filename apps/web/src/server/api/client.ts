@@ -18,6 +18,21 @@ export function getApiBase(): string {
   return `${getApiUrl()}/api/${API_VERSION}`;
 }
 
+/** Forward client IP to the monitoring API so SSR requests are not all keyed as the web container. */
+async function mergeIncomingForwardingHeaders(headers: Record<string, string>): Promise<void> {
+  if (typeof window !== "undefined") return;
+  try {
+    const { headers: getHeaders } = await import("next/headers");
+    const incoming = await getHeaders();
+    const xff = incoming.get("x-forwarded-for");
+    const xri = incoming.get("x-real-ip");
+    if (xff) headers["X-Forwarded-For"] = xff;
+    if (xri) headers["X-Real-IP"] = xri;
+  } catch {
+    // Outside a Next request (e.g. build) — omit forwarding
+  }
+}
+
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit & { cookie?: string }): Promise<T> {
   const apiUrl = getApiUrl();
   const apiBase = getApiBase();
@@ -51,6 +66,8 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit & { co
       // Not in a Server Component context, ignore
     }
   }
+
+  await mergeIncomingForwardingHeaders(headers);
 
   const res = await fetch(url, {
     ...options,

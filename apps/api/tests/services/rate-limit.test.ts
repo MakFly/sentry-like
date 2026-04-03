@@ -2,8 +2,9 @@
  * Tests for the rate-limit middleware (in-memory fallback path).
  * We test the pure in-memory logic without requiring Redis.
  */
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { Hono } from "hono";
+import { getRateLimitClientKey } from "../../src/middleware/rate-limit";
 
 // ── Inline the memory-based rate limiter (mirrors rate-limit.ts) ──────────────
 
@@ -106,5 +107,33 @@ describe("rate-limit (in-memory)", () => {
     // Second request — window has reset, should be allowed again
     const second = await app.request("/ping");
     expect(second.status).toBe(200);
+  });
+});
+
+describe("getRateLimitClientKey", () => {
+  test("uses leftmost X-Forwarded-For hop", async () => {
+    const app = new Hono();
+    let key = "";
+    app.get("/x", (c) => {
+      key = getRateLimitClientKey(c);
+      return c.text("ok");
+    });
+    await app.request("/x", {
+      headers: { "x-forwarded-for": "203.0.113.1, 10.0.0.2" },
+    });
+    expect(key).toBe("203.0.113.1");
+  });
+
+  test("falls back to X-Real-IP", async () => {
+    const app = new Hono();
+    let key = "";
+    app.get("/x", (c) => {
+      key = getRateLimitClientKey(c);
+      return c.text("ok");
+    });
+    await app.request("/x", {
+      headers: { "x-real-ip": "198.51.100.2" },
+    });
+    expect(key).toBe("198.51.100.2");
   });
 });

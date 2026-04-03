@@ -5,7 +5,7 @@ import logger from "./logger";
 import { logApiCall } from "./api-logger";
 import { sessionMiddleware } from "./middleware/session";
 import { securityHeaders } from "./middleware/security-headers";
-import { rateLimit } from "./middleware/rate-limit";
+import { getRateLimitClientKey, rateLimit } from "./middleware/rate-limit";
 import api from "./routes";
 import type { AppEnv } from "./types/hono";
 
@@ -122,10 +122,25 @@ app.use("*", cors({
 }));
 
 // 4. Global rate limiting (prevent DDoS)
+const globalRateWindowMs = Math.max(
+  1_000,
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000", 10)
+);
+const globalRateMax = Math.max(
+  100,
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "12000", 10)
+);
 app.use("*", rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 1000,   // 1000 requests per minute per IP
-  skip: (c) => c.req.method === "OPTIONS", // Skip preflight requests
+  windowMs: globalRateWindowMs,
+  maxRequests: globalRateMax,
+  keyGenerator: getRateLimitClientKey,
+  skip: (c) => {
+    if (c.req.method === "OPTIONS") return true;
+    const path = c.req.path;
+    if (path.startsWith("/health")) return true;
+    if (path === "/metrics") return true;
+    return false;
+  },
 }));
 
 // 5. API Logger middleware - logs all requests with timing and metrics

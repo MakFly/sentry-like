@@ -22,6 +22,16 @@ function propagateIntlCookies(intlResponse: NextResponse, response: NextResponse
 
 const API_VERSION = "v1";
 
+/** So API rate limits use the browser IP, not the web container (Docker internal). */
+function rateLimitForwardHeaders(request: NextRequest): Record<string, string> {
+  const out: Record<string, string> = {};
+  const xff = request.headers.get("x-forwarded-for");
+  const xri = request.headers.get("x-real-ip");
+  if (xff) out["X-Forwarded-For"] = xff;
+  if (xri) out["X-Real-IP"] = xri;
+  return out;
+}
+
 const CACHE_TTL = 30000;
 
 type SessionCacheEntry = {
@@ -122,6 +132,7 @@ export async function proxy(request: NextRequest) {
     try {
       const instanceRes = await fetch(`${apiUrl}/api/${API_VERSION}/instance/status`, {
         cache: "no-store",
+        headers: rateLimitForwardHeaders(request),
       });
 
       if (!instanceRes.ok) {
@@ -192,6 +203,7 @@ export async function proxy(request: NextRequest) {
     try {
       const sessionRes = await fetch(`${apiUrl}/api/auth/get-session`, {
         headers: {
+          ...rateLimitForwardHeaders(request),
           ...(cookieHeader ? { Cookie: cookieHeader } : {}),
           ...(request.headers.get("origin") ? { Origin: request.headers.get("origin")! } : {}),
         },
@@ -231,10 +243,16 @@ export async function proxy(request: NextRequest) {
     try {
       const [statusRes, orgsRes] = await Promise.all([
         fetch(`${apiUrl}/api/${API_VERSION}/onboarding/status`, {
-          headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+          headers: {
+            ...rateLimitForwardHeaders(request),
+            ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+          },
         }),
         fetch(`${apiUrl}/api/${API_VERSION}/organizations`, {
-          headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+          headers: {
+            ...rateLimitForwardHeaders(request),
+            ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+          },
         }),
       ]);
 
@@ -271,7 +289,10 @@ export async function proxy(request: NextRequest) {
       const statusRes = await fetch(
         `${apiUrl}/api/${API_VERSION}/onboarding/status`,
         {
-          headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+          headers: {
+            ...rateLimitForwardHeaders(request),
+            ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+          },
         }
       );
 

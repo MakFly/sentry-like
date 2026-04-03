@@ -13,6 +13,27 @@ import logger from "../logger";
 // Environment check - DISABLE rate limiting in development
 const isDev = process.env.NODE_ENV === "development";
 
+/** Self-host / ops: set RATE_LIMIT_ENABLED=false to disable all limiting */
+const rateLimitGloballyDisabled = process.env.RATE_LIMIT_ENABLED === "false";
+
+/**
+ * Client IP for rate-limit keys. Prefer the leftmost X-Forwarded-For hop (original client
+ * behind trusted proxies). Without this, SSR from Next → API over Docker shows one server IP
+ * for every user and exhausts the global bucket instantly.
+ */
+export function getRateLimitClientKey(c: Context): string {
+  const xff = c.req.header("x-forwarded-for") ?? c.req.header("X-Forwarded-For");
+  if (xff) {
+    const client = xff.split(",")[0]?.trim();
+    if (client) return client;
+  }
+  const realIp = c.req.header("x-real-ip") ?? c.req.header("X-Real-IP");
+  if (realIp?.trim()) return realIp.trim();
+  const cf = c.req.header("cf-connecting-ip");
+  if (cf?.trim()) return cf.trim();
+  return "unknown";
+}
+
 // Redis connection
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 let redis: Redis | null = null;
@@ -89,7 +110,7 @@ export interface RateLimitConfig {
 const DEFAULT_CONFIG: Required<RateLimitConfig> = {
   windowMs: 60 * 1000, // 1 minute
   maxRequests: 1000,
-  keyGenerator: (c) => c.req.header("X-Forwarded-For") || c.req.header("X-Real-IP") || "unknown",
+  keyGenerator: getRateLimitClientKey,
   message: "Too many requests, please try again later",
   skip: () => false,
   keyPrefix: "rl:",
@@ -185,6 +206,10 @@ export function rateLimit(config: Partial<RateLimitConfig> = {}) {
   return async (c: Context, next: Next) => {
     // DEVELOPMENT MODE: Skip ALL rate limiting
     if (isDev) {
+      return next();
+    }
+
+    if (rateLimitGloballyDisabled) {
       return next();
     }
 
@@ -284,7 +309,7 @@ export const rateLimiters = {
   api: rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 1_000, // 1k requests/min per user
-    keyGenerator: (c) => c.req.header("X-Forwarded-For") || "unknown",
+    keyGenerator: getRateLimitClientKey,
     keyPrefix: "rl:api:",
   }),
 
@@ -292,7 +317,7 @@ export const rateLimiters = {
   auth: rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 20, // 20 attempts per 15 min
-    keyGenerator: (c) => c.req.header("X-Forwarded-For") || "unknown",
+    keyGenerator: getRateLimitClientKey,
     message: "Too many authentication attempts, please try again later",
     keyPrefix: "rl:auth:",
   }),
@@ -301,7 +326,10 @@ export const rateLimiters = {
   webhooks: rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 500, // 500 webhooks/min
-    keyGenerator: (c) => c.req.header("X-Forwarded-For") || "stripe",
+    keyGenerator: (c) => {
+      const k = getRateLimitClientKey(c);
+      return k === "unknown" ? "stripe" : k;
+    },
     keyPrefix: "rl:webhooks:",
   }),
 };
