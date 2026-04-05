@@ -66,7 +66,8 @@ export default function QueriesPage() {
       </div>
 
       <QueryInsights
-        duplicateQueries={spanAnalysis?.duplicateQueries ?? []}
+        n1Queries={spanAnalysis?.n1Queries ?? []}
+        frequentQueries={spanAnalysis?.frequentQueries ?? []}
         slowQueries={spanAnalysis?.slowQueries ?? []}
         isLoading={spanAnalysisLoading}
         baseUrl={baseUrl}

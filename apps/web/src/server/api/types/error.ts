@@ -61,6 +61,7 @@ export type GroupsFilter = {
   search?: string;
   status?: "open" | "resolved" | "ignored" | "snoozed";
   level?: "fatal" | "error" | "warning" | "info" | "debug";
+  levels?: string[];
   sort?: "lastSeen" | "firstSeen" | "count";
   page?: number;
   limit?: number;

@@ -16,6 +16,7 @@ export const getAll = async (filters?: GroupsFilter): Promise<GroupsResponse> =>
   if (filters?.search) params.set("search", filters.search);
   if (filters?.status) params.set("status", filters.status);
   if (filters?.level) params.set("level", filters.level);
+  if (filters?.levels && filters.levels.length > 0) params.set("levels", filters.levels.join(","));
   if (filters?.sort) params.set("sort", filters.sort);
   if (filters?.page) params.set("page", String(filters.page));
   if (filters?.limit) params.set("limit", String(filters.limit));

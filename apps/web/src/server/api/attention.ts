@@ -107,9 +107,11 @@ export async function getTop(
     return [];
   }
 
-  // Filter out snoozed items
+  // Filter out snoozed items and non-actionable levels (info, debug)
   const activeGroups = groups.filter((group) => {
-    return group.status !== "snoozed";
+    if (group.status === "snoozed") return false;
+    if (group.level === "info" || group.level === "debug") return false;
+    return true;
   });
 
   // Calculate scores for each group

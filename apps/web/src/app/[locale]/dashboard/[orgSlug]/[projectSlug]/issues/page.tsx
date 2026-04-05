@@ -36,6 +36,7 @@ interface FiltersState {
   search: string;
   status: string;
   source: string;
+  level: string;
 }
 
 export default function IssuesPage() {
@@ -49,6 +50,7 @@ export default function IssuesPage() {
     search: "",
     status: "all",
     source: "all",
+    level: "actionable",
   });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -58,6 +60,13 @@ export default function IssuesPage() {
   const mergeGroups = useMergeGroups();
   const snoozeGroup = useSnoozeGroup();
 
+  // Compute level filter params
+  const levelFilter = useMemo(() => {
+    if (filters.level === "actionable") return { levels: ["fatal", "error", "warning"] };
+    if (filters.level === "all") return {};
+    return { level: filters.level as "fatal" | "error" | "warning" | "info" | "debug" };
+  }, [filters.level]);
+
   // Pass filters to server
   const { data: groupsData, isLoading, error, refetch } = useGroups({
     env: filters.env === "all" ? undefined : filters.env,
@@ -65,7 +74,7 @@ export default function IssuesPage() {
     projectId: currentProjectId || undefined,
     search: debouncedSearch || undefined,
     status: filters.status === "all" ? undefined : filters.status as IssueStatus,
-    level: undefined,
+    ...levelFilter,
   });
 
   const allGroups = useMemo(() => normalizeGroups<IssueGroup>(groupsData), [groupsData]);
@@ -90,7 +99,8 @@ export default function IssuesPage() {
     filters.dateRange !== "all" ||
     filters.search !== "" ||
     filters.status !== "all" ||
-    filters.source !== "all";
+    filters.source !== "all" ||
+    filters.level !== "actionable";
 
   const handleClearFilters = () => {
     setFilters({
@@ -99,6 +109,7 @@ export default function IssuesPage() {
       search: "",
       status: "all",
       source: "all",
+      level: "actionable",
     });
   };
 
@@ -166,6 +177,8 @@ export default function IssuesPage() {
           onStatusChange={(value) => setFilters({ ...filters, status: value })}
           source={filters.source}
           onSourceChange={(value) => setFilters({ ...filters, source: value })}
+          level={filters.level}
+          onLevelChange={(value) => setFilters({ ...filters, level: value })}
           onClear={handleClearFilters}
           hasActiveFilters={hasActiveFilters}
           className="flex-1"

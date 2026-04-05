@@ -76,6 +76,14 @@ export interface DuplicateQuery {
   totalDuration: number;
 }
 
+export interface N1Query {
+  description: string;
+  count: number;
+  totalDuration: number;
+  transactionId: string;
+  transactionName: string;
+}
+
 export interface SlowQuery {
   description: string;
   duration: number;
@@ -85,7 +93,8 @@ export interface SlowQuery {
 
 export interface SpanAnalysis {
   byOp: SpanOpSummary[];
-  duplicateQueries: DuplicateQuery[];
+  n1Queries: N1Query[];
+  frequentQueries: DuplicateQuery[];
   slowQueries: SlowQuery[];
 }
 

@@ -5,7 +5,7 @@ import logger from "../logger";
 
 
 export const GroupService = {
-  getAll: async (filters?: { dateRange?: string; env?: string; search?: string; status?: string; level?: string; sort?: string; page?: number; limit?: number }, projectId?: string) => {
+  getAll: async (filters?: { dateRange?: string; env?: string; search?: string; status?: string; level?: string; levels?: string[]; sort?: string; page?: number; limit?: number }, projectId?: string) => {
     logger.debug("Fetching error groups", { filters, projectId });
     return await GroupRepository.findAll(filters, projectId);
   },

@@ -73,6 +73,7 @@ const groupsRouter = router({
         search: z.string().optional(),
         status: z.enum(["open", "resolved", "ignored", "snoozed"]).optional(),
         level: z.enum(["fatal", "error", "warning", "info", "debug"]).optional(),
+        levels: z.array(z.string()).optional(),
         sort: z.enum(["lastSeen", "firstSeen", "count"]).optional(),
         page: z.number().int().positive().optional(),
         limit: z.number().int().positive().max(100).optional(),

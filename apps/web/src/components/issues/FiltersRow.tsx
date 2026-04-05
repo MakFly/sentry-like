@@ -24,6 +24,8 @@ interface FiltersRowProps {
   onStatusChange: (value: string) => void;
   source?: string;
   onSourceChange?: (value: string) => void;
+  level?: string;
+  onLevelChange?: (value: string) => void;
   onClear: () => void;
   hasActiveFilters: boolean;
   className?: string;
@@ -40,6 +42,8 @@ export function FiltersRow({
   onStatusChange,
   source,
   onSourceChange,
+  level,
+  onLevelChange,
   onClear,
   hasActiveFilters,
   className,
@@ -145,6 +149,24 @@ export function FiltersRow({
             <SelectItem value="cli">{t("sourceCLI")}</SelectItem>
             <SelectItem value="messenger">{t("sourceQueue")}</SelectItem>
             <SelectItem value="deprecation">{t("sourceDeprecation")}</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+
+      {/* Level */}
+      {onLevelChange && (
+        <Select value={level || "actionable"} onValueChange={onLevelChange}>
+          <SelectTrigger className="w-full border-issues-border bg-issues-surface/50 sm:w-[140px]">
+            <SelectValue placeholder={t("levelActionable")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="actionable">{t("levelActionable")}</SelectItem>
+            <SelectItem value="all">{t("levelAll")}</SelectItem>
+            <SelectItem value="fatal">{t("levelFatal")}</SelectItem>
+            <SelectItem value="error">{t("levelError")}</SelectItem>
+            <SelectItem value="warning">{t("levelWarning")}</SelectItem>
+            <SelectItem value="info">{t("levelInfo")}</SelectItem>
+            <SelectItem value="debug">{t("levelDebug")}</SelectItem>
           </SelectContent>
         </Select>
       )}

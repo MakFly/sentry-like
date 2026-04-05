@@ -44,7 +44,7 @@ export const GroupRepository = {
    * Optimized findAll using single query with LEFT JOIN for replay data
    * Replaces 3 separate queries (groups + replayCounts + latestReplays) with 1
    */
-  findAll: async (filters?: { dateRange?: string; env?: string; search?: string; status?: string; level?: string; sort?: string; page?: number; limit?: number }, projectId?: string) => {
+  findAll: async (filters?: { dateRange?: string; env?: string; search?: string; status?: string; level?: string; levels?: string[]; sort?: string; page?: number; limit?: number }, projectId?: string) => {
     const startDate = parseDateRange(filters?.dateRange);
     const page = filters?.page || 1;
     const limit = filters?.limit || 50;
@@ -79,7 +79,9 @@ export const GroupRepository = {
       conditions.push(eq(errorGroups.status, filters.status));
     }
 
-    if (filters?.level && filters.level !== "all") {
+    if (filters?.levels && filters.levels.length > 0) {
+      conditions.push(inArray(errorGroups.level, filters.levels));
+    } else if (filters?.level && filters.level !== "all") {
       conditions.push(eq(errorGroups.level, filters.level));
     }
 

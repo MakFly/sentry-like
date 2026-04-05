@@ -13,6 +13,8 @@ export const getAll = async (c: AuthContext) => {
   const search = c.req.query("search");
   const status = c.req.query("status") as "open" | "resolved" | "ignored" | undefined;
   const level = c.req.query("level") as "fatal" | "error" | "warning" | "info" | "debug" | undefined;
+  const levelsRaw = c.req.query("levels");
+  const levels = levelsRaw ? levelsRaw.split(",").map((l) => l.trim()).filter(Boolean) : undefined;
   const sort = c.req.query("sort") as "lastSeen" | "firstSeen" | "count" | undefined || "lastSeen";
   const page = parseInt(c.req.query("page") || "1", 10);
   const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
@@ -25,8 +27,8 @@ export const getAll = async (c: AuthContext) => {
     }
   }
 
-  logger.debug("GET /api/v1/groups", { env, dateRange, projectId, search, status, level, sort, page, limit });
-  const result = await GroupService.getAll({ env, dateRange, search, status, level, sort, page, limit }, projectId);
+  logger.debug("GET /api/v1/groups", { env, dateRange, projectId, search, status, level, levels, sort, page, limit });
+  const result = await GroupService.getAll({ env, dateRange, search, status, level, levels, sort, page, limit }, projectId);
   return c.json(result);
 };
 

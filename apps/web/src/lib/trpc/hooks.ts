@@ -15,6 +15,7 @@ interface GroupsFilter {
   search?: string;
   status?: "open" | "resolved" | "ignored" | "snoozed";
   level?: "fatal" | "error" | "warning" | "info" | "debug";
+  levels?: string[];
   sort?: "lastSeen" | "firstSeen" | "count";
   page?: number;
   limit?: number;
@@ -41,8 +42,7 @@ export const useGroups = (filters?: GroupsFilter) => {
 
     if (previousCount !== null && total > previousCount) {
       const newCount = total - previousCount;
-      toast.info(`${newCount} new error${newCount > 1 ? "s" : ""} detected`, {
-        description: "Click to refresh the view",
+      toast.info(`${newCount} new error${newCount > 1 ? "s" : ""}`, {
         action: {
           label: "View",
           onClick: () => query.refetch(),

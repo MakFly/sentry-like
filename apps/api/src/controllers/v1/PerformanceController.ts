@@ -9,7 +9,7 @@ import { z } from "zod";
 import { db } from "../../db/connection";
 import { performanceMetrics, performanceMetricsHourly, performanceMetricsDaily, transactions, transactionAggregatesHourly, transactionAggregatesDaily, spans, projects } from "../../db/schema";
 import { verifyProjectAccess } from "../../services/project-access";
-import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import logger from "../../logger";
 import { publishEvent } from "../../sse/publisher";
 
@@ -66,28 +66,28 @@ const metricSchema = z.object({
 
 const spanSchema = z.object({
   id: z.string(),
-  parentSpanId: z.string().optional(),
+  parentSpanId: z.string().nullable().optional(),
   op: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  status: z.string().max(20).optional(),
+  description: z.string().max(500).nullable().optional(),
+  status: z.string().max(20).nullable().optional(),
   startTimestamp: z.number(),
   endTimestamp: z.number(),
-  data: emptyArrayToObject(z.record(z.string(), z.any())).optional(),
-});
+  data: emptyArrayToObject(z.record(z.string(), z.any())).nullable().optional(),
+}).passthrough();
 
 const transactionSchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(200),
   op: z.string().min(1).max(100),
-  traceId: z.string().optional(),
-  parentSpanId: z.string().optional(),
-  status: z.enum(["ok", "error", "cancelled"]).optional(),
+  traceId: z.string().nullable().optional(),
+  parentSpanId: z.string().nullable().optional(),
+  status: z.enum(["ok", "error", "cancelled"]).nullable().optional(),
   startTimestamp: z.number(),
   endTimestamp: z.number(),
   spans: z.array(spanSchema).optional(),
-  tags: emptyArrayToObject(z.record(z.string(), z.string())).optional(),
-  data: emptyArrayToObject(z.record(z.string(), z.any())).optional(),
-});
+  tags: emptyArrayToObject(z.record(z.string(), z.any())).nullable().optional(),
+  data: emptyArrayToObject(z.record(z.string(), z.any())).nullable().optional(),
+}).passthrough();
 
 const metricsPayloadSchema = z.object({
   metrics: z.array(metricSchema).max(100),
@@ -210,7 +210,7 @@ export const submitTransaction = async (c: Context<AppEnv>) => {
     }
 
     const now = new Date();
-    const duration = transaction.endTimestamp - transaction.startTimestamp;
+    const duration = Math.round(transaction.endTimestamp - transaction.startTimestamp);
 
     // Insert transaction
     await db.insert(transactions).values({
@@ -233,7 +233,7 @@ export const submitTransaction = async (c: Context<AppEnv>) => {
     // Insert spans if any
     if (transaction.spans && transaction.spans.length > 0) {
       for (const span of transaction.spans) {
-        const spanDuration = span.endTimestamp - span.startTimestamp;
+        const spanDuration = Math.round(span.endTimestamp - span.startTimestamp);
         await db.insert(spans).values({
           id: span.id,
           transactionId: transaction.id,
@@ -882,10 +882,41 @@ export const getSpanAnalysis = async (c: AuthContext) => {
     .groupBy(spans.op)
     .orderBy(sql`count(*) DESC`);
 
-  // 2. Duplicate queries (same description >= 5 occurrences)
-  const duplicateQueries = await db
+  // Fallback: use data->>'sql' when description is null (older SDK versions)
+  // data may be double-encoded JSON string, so try both patterns
+  const queryDescription = sql<string>`COALESCE(${spans.description}, ${spans.data}->>'sql', (${spans.data}#>>'{}')::json->>'sql', '')`;
+
+  // 2. N+1 Detection: queries that repeat >= 5 times within a single transaction
+  const n1Queries = await db.execute(sql`
+    SELECT
+      sub.query_text as description,
+      sub.transaction_id as "transactionId",
+      sub.transaction_name as "transactionName",
+      sub.count_in_tx as count,
+      sub.total_duration_in_tx as "totalDuration"
+    FROM (
+      SELECT
+        COALESCE(${spans.description}, ${spans.data}->>'sql', (${spans.data}#>>'{}')::json->>'sql', '') as query_text,
+        ${spans.transactionId} as transaction_id,
+        ${transactions.name} as transaction_name,
+        COUNT(*) as count_in_tx,
+        SUM(${spans.duration}) as total_duration_in_tx
+      FROM ${spans}
+      INNER JOIN ${transactions} ON ${spans.transactionId} = ${transactions.id}
+      WHERE ${transactions.projectId} = ${projectId}
+        AND ${spans.op} IN ('db.sql.query', 'db.query')
+        AND ${transactions.startTimestamp} >= ${startDate.toISOString()}
+      GROUP BY 1, 2, 3
+      HAVING COUNT(*) >= 5
+    ) sub
+    ORDER BY sub.count_in_tx DESC
+    LIMIT 20
+  `);
+
+  // 2b. Most frequent queries globally (same description >= 5 occurrences across all transactions)
+  const frequentQueries = await db
     .select({
-      description: spans.description,
+      description: queryDescription,
       count: sql<number>`count(*)`,
       totalDuration: sql<number>`sum(${spans.duration})`,
     })
@@ -894,18 +925,19 @@ export const getSpanAnalysis = async (c: AuthContext) => {
     .where(
       and(
         eq(transactions.projectId, projectId),
-        eq(spans.op, "db.sql.query"),
+        inArray(spans.op, ["db.sql.query", "db.query"]),
         gte(transactions.startTimestamp, startDate)
       )
     )
-    .groupBy(spans.description)
+    .groupBy(queryDescription)
     .having(sql`count(*) >= 5`)
-    .orderBy(sql`count(*) DESC`);
+    .orderBy(sql`count(*) DESC`)
+    .limit(10);
 
   // 3. Top 10 slowest queries
   const slowQueries = await db
     .select({
-      description: spans.description,
+      description: queryDescription,
       duration: spans.duration,
       transactionId: spans.transactionId,
       transactionName: transactions.name,
@@ -915,7 +947,7 @@ export const getSpanAnalysis = async (c: AuthContext) => {
     .where(
       and(
         eq(transactions.projectId, projectId),
-        eq(spans.op, "db.sql.query"),
+        inArray(spans.op, ["db.sql.query", "db.query"]),
         gte(transactions.startTimestamp, startDate)
       )
     )
@@ -929,7 +961,15 @@ export const getSpanAnalysis = async (c: AuthContext) => {
       totalDuration: Number(row.totalDuration),
       avgDuration: Math.round(Number(row.avgDuration)),
     })),
-    duplicateQueries: duplicateQueries.map((row) => ({
+    // @ts-expect-error - Drizzle execute return type compatibility
+    n1Queries: (n1Queries.rows ?? n1Queries ?? []).map((row: any) => ({
+      description: row.description || "",
+      count: Number(row.count),
+      totalDuration: Number(row.totalDuration),
+      transactionId: row.transactionId,
+      transactionName: row.transactionName,
+    })),
+    frequentQueries: frequentQueries.map((row) => ({
       description: row.description || "",
       count: Number(row.count),
       totalDuration: Number(row.totalDuration),

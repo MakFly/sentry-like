@@ -6,47 +6,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type { DuplicateQuery, SlowQuery } from "@/server/api/types/performance";
+import type { DuplicateQuery, N1Query, SlowQuery } from "@/server/api/types/performance";
 
 function formatDuration(ms: number): string {
   if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`;
   return `${Math.round(ms)}ms`;
 }
 
-function duplicateBadgeVariant(count: number): "destructive" | "secondary" {
+function n1BadgeVariant(count: number): "destructive" | "secondary" {
   if (count >= 20) return "destructive";
   return "secondary";
 }
 
-function duplicateBadgeClass(count: number): string {
+function n1BadgeClass(count: number): string {
   if (count >= 20) return "";
   if (count >= 10) return "bg-amber-500/15 text-amber-500 border-amber-500/30 hover:bg-amber-500/25";
   return "";
 }
 
 interface QueryInsightsProps {
-  duplicateQueries: DuplicateQuery[];
+  n1Queries: N1Query[];
+  frequentQueries: DuplicateQuery[];
   slowQueries: SlowQuery[];
   isLoading: boolean;
   baseUrl?: string;
 }
 
-export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUrl }: QueryInsightsProps) {
+export function QueryInsights({ n1Queries, frequentQueries, slowQueries, isLoading, baseUrl }: QueryInsightsProps) {
   const t = useTranslations("performance.queries.insights");
-
-  function getSeverityLabel(count: number): string {
-    if (count >= 20) return t("severity.critical");
-    if (count >= 10) return t("severity.warning");
-    return t("severity.info");
-  }
 
   if (isLoading) {
     return (
@@ -65,7 +52,7 @@ export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUr
     );
   }
 
-  if (duplicateQueries.length === 0 && slowQueries.length === 0) return null;
+  if (n1Queries.length === 0 && frequentQueries.length === 0 && slowQueries.length === 0) return null;
 
   return (
     <Card>
@@ -73,49 +60,76 @@ export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUr
         <CardTitle className="text-base">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Duplicate Queries */}
-        {duplicateQueries.length > 0 && (
+        {/* N+1 Detected */}
+        {n1Queries.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
-              {t("duplicates")}
+              {t("n1Detected")}
             </h4>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50%]">{t("columns.query")}</TableHead>
-                  <TableHead className="w-[80px] text-right">{t("columns.count")}</TableHead>
-                  <TableHead className="w-[100px] text-right">{t("columns.totalTime")}</TableHead>
-                  <TableHead className="w-[80px] text-right">{t("columns.severity")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {duplicateQueries.map((q, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-mono text-xs truncate" title={q.description}>
-                      {q.description}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs whitespace-nowrap">
-                      {q.count}x
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs whitespace-nowrap">
-                      {formatDuration(q.totalDuration)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={duplicateBadgeVariant(q.count)}
-                        className={duplicateBadgeClass(q.count)}
-                      >
-                        {getSeverityLabel(q.count)}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-2">
+              {n1Queries.map((q, i) => (
+                <div key={i} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <code className="text-xs font-mono break-all line-clamp-2 flex-1 min-w-0" title={q.description}>
+                      {q.description || <span className="text-muted-foreground italic">—</span>}
+                    </code>
+                    <Badge
+                      variant={n1BadgeVariant(q.count)}
+                      className={`shrink-0 ${n1BadgeClass(q.count)}`}
+                    >
+                      {q.count}x {t("timesInOneRequest")}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                    <div className="truncate">
+                      {baseUrl ? (
+                        <Link
+                          href={`${baseUrl}/performance/transactions/${q.transactionId}`}
+                          className="text-primary hover:underline"
+                        >
+                          → {q.transactionName}
+                        </Link>
+                      ) : (
+                        <span>→ {q.transactionName}</span>
+                      )}
+                    </div>
+                    <span className="shrink-0 ml-4">total: {formatDuration(q.totalDuration)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {duplicateQueries.length > 0 && slowQueries.length > 0 && <Separator />}
+        {n1Queries.length > 0 && (frequentQueries.length > 0 || slowQueries.length > 0) && <Separator />}
+
+        {/* Most Frequent Queries */}
+        {frequentQueries.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-3">
+              {t("frequentQueries")}
+            </h4>
+            <div className="space-y-2">
+              {frequentQueries.map((q, i) => (
+                <div key={i} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <code className="text-xs font-mono break-all line-clamp-2 flex-1 min-w-0" title={q.description}>
+                      {q.description || <span className="text-muted-foreground italic">—</span>}
+                    </code>
+                    <span className="text-xs font-mono text-muted-foreground shrink-0">
+                      {q.count}x
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {formatDuration(q.totalDuration)} {t("columns.totalTime").toLowerCase()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(n1Queries.length > 0 || frequentQueries.length > 0) && slowQueries.length > 0 && <Separator />}
 
         {/* Slowest Queries */}
         {slowQueries.length > 0 && (
@@ -123,39 +137,32 @@ export function QueryInsights({ duplicateQueries, slowQueries, isLoading, baseUr
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
               {t("slowest")}
             </h4>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50%]">{t("columns.query")}</TableHead>
-                  <TableHead className="w-[100px] text-right">{t("columns.duration")}</TableHead>
-                  <TableHead className="w-[30%]">{t("columns.transaction")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {slowQueries.map((q, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-mono text-xs truncate" title={q.description}>
-                      {q.description}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs whitespace-nowrap">
+            <div className="space-y-2">
+              {slowQueries.map((q, i) => (
+                <div key={i} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <code className="text-xs font-mono break-all line-clamp-2 flex-1 min-w-0" title={q.description}>
+                      {q.description || <span className="text-muted-foreground italic">—</span>}
+                    </code>
+                    <span className="text-xs font-mono text-muted-foreground shrink-0">
                       {formatDuration(q.duration)}
-                    </TableCell>
-                    <TableCell className="text-xs truncate">
-                      {baseUrl ? (
-                        <Link
-                          href={`${baseUrl}/performance/transactions/${q.transactionId}`}
-                          className="text-primary hover:underline"
-                        >
-                          {q.transactionName}
-                        </Link>
-                      ) : (
-                        q.transactionName
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground truncate">
+                    {baseUrl ? (
+                      <Link
+                        href={`${baseUrl}/performance/transactions/${q.transactionId}`}
+                        className="text-primary hover:underline"
+                      >
+                        {q.transactionName}
+                      </Link>
+                    ) : (
+                      q.transactionName
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>

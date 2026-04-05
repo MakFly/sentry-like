@@ -15,6 +15,9 @@ error_monitoring:
   enabled: true
   endpoint: '${endpoint}'
   api_key: '${apiKey}'
+  logging:
+    enabled: true
+    level: debug
   replay:
     enabled: true
     sample_rate: 1.0`,
@@ -28,7 +31,9 @@ error_monitoring:
     configSnippet: (apiKey: string, endpoint: string) => `# .env
 ERRORWATCH_ENABLED=true
 ERRORWATCH_ENDPOINT=${endpoint}
-ERRORWATCH_API_KEY=${apiKey}`,
+ERRORWATCH_API_KEY=${apiKey}
+ERRORWATCH_LOGGING_ENABLED=true
+ERRORWATCH_LOG_LEVEL=debug`,
   },
   react: {
     name: "React",

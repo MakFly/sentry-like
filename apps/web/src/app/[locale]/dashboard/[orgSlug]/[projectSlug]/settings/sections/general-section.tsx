@@ -379,12 +379,17 @@ export function GeneralSection() {
                 <p>error_watch:</p>
                 <p className="pl-2">{`  endpoint: '${dsn}'`}</p>
                 <p className="pl-2">{`  api_key: '${t("dsnApiKeyPlaceholder")}'`}</p>
+                <p className="pl-2">{`  logging:`}</p>
+                <p className="pl-4">{`    enabled: true`}</p>
+                <p className="pl-4">{`    level: debug`}</p>
               </div>
               <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
                 <p className="mb-1 text-muted-foreground">{t("dsnLaravelComment")}</p>
                 <p>ERRORWATCH_ENABLED=true</p>
                 <p>{`ERRORWATCH_ENDPOINT=${dsn}`}</p>
                 <p>{`ERRORWATCH_API_KEY=${t("dsnApiKeyPlaceholder")}`}</p>
+                <p>ERRORWATCH_LOGGING_ENABLED=true</p>
+                <p>ERRORWATCH_LOG_LEVEL=debug</p>
               </div>
             </div>
           </CardContent>

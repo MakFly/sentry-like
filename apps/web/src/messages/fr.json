@@ -303,7 +303,11 @@
       "title": "Requêtes BDD",
       "insights": {
         "title": "Analyse des requêtes",
-        "duplicates": "Requêtes dupliquées (N+1 potentiel)",
+        "n1Detected": "Requêtes N+1 détectées",
+        "frequentQueries": "Requêtes les plus fréquentes",
+        "timesInOneRequest": "fois dans une requête",
+        "n1Queries": "Requêtes N+1 détectées (par transaction)",
+        "duplicates": "Requêtes fréquentes (global)",
         "slowest": "Requêtes les plus lentes",
         "columns": {
           "query": "Requête",
@@ -845,6 +849,10 @@
       "noOrgsDescription": "Créez-en une pour commencer",
       "membersButton": "Membres",
       "deleteConfirm": "Supprimer cette organisation ?",
+      "deleteDialogTitle": "Supprimer l'organisation ?",
+      "deleteDialogDescription": "Cette action supprimera définitivement \"{name}\" ainsi que toutes ses données : projets, événements d'erreur, membres, clés API et paramètres. Cette action est irréversible.",
+      "deleteDialogCancel": "Annuler",
+      "deleteDialogConfirm": "Supprimer définitivement",
       "membersCount": "Membres ({count})",
       "noMembersYet": "Aucun membre pour l'instant",
       "removeMemberConfirm": "Supprimer {email} ?"
@@ -1094,7 +1102,15 @@
       "sourceHTTP": "HTTP",
       "sourceCLI": "CLI",
       "sourceQueue": "File d'attente",
-      "sourceDeprecation": "Dépréciation"
+      "sourceDeprecation": "Dépréciation",
+      "level": "Niveau",
+      "levelActionable": "Actionnables",
+      "levelAll": "Tous les niveaux",
+      "levelFatal": "Fatal",
+      "levelError": "Erreur",
+      "levelWarning": "Avertissement",
+      "levelInfo": "Info",
+      "levelDebug": "Debug"
     },
     "page": {
       "selected": "{count} sélectionné(s)",

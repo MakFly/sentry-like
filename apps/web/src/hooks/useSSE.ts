@@ -52,9 +52,7 @@ export function useSSE(orgId: string | undefined) {
           case "alert:triggered":
             queryClient.invalidateQueries({ queryKey: [["alerts"]] });
             if (!(window as Window & { __errorwatchLogsFocused?: boolean }).__errorwatchLogsFocused) {
-              toast.info(`Alert: ${event.payload.message}`, {
-                description: "A new alert was triggered",
-              });
+              toast.info(`Alert: ${event.payload.message.length > 80 ? event.payload.message.slice(0, 80) + "…" : event.payload.message}`);
             }
             break;
           case "transaction:new":

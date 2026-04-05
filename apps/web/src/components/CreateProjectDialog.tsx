@@ -92,9 +92,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
       onOpenChange(false);
       utils.projects.getAll.invalidate();
       utils.projects.canCreate.invalidate();
-      toast.success(t("createSuccess"), {
-        description: t("createSuccessDescription", { name: data.name }),
-      });
+      toast.success(t("createSuccess"));
       onSuccess?.();
       // Navigate to the new project
       if (currentOrgSlug && data.slug) {
@@ -103,9 +101,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
     },
     onError: (err) => {
       setError(err.message);
-      toast.error("Failed to create project", {
-        description: err.message,
-      });
+      toast.error(err.message?.slice(0, 100) || "Error");
     },
   });
 

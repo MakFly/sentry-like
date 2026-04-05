@@ -303,7 +303,11 @@
       "title": "Database Queries",
       "insights": {
         "title": "Query Insights",
-        "duplicates": "Duplicate Queries (potential N+1)",
+        "n1Detected": "N+1 Queries Detected",
+        "frequentQueries": "Most Frequent Queries",
+        "timesInOneRequest": "in one request",
+        "n1Queries": "N+1 Queries Detected (per transaction)",
+        "duplicates": "Frequent Queries (global)",
         "slowest": "Slowest Queries",
         "columns": {
           "query": "Query",
@@ -663,6 +667,10 @@
       "noOrgsDescription": "Create one to get started",
       "membersButton": "Members",
       "deleteConfirm": "Delete this organization?",
+      "deleteDialogTitle": "Delete organization?",
+      "deleteDialogDescription": "This will permanently delete \"{name}\" and all its data: projects, error events, members, API keys, and settings. This action cannot be undone.",
+      "deleteDialogCancel": "Cancel",
+      "deleteDialogConfirm": "Delete permanently",
       "membersCount": "Members ({count})",
       "noMembersYet": "No members yet",
       "removeMemberConfirm": "Remove {email}?"
@@ -912,7 +920,15 @@
       "sourceHTTP": "HTTP",
       "sourceCLI": "CLI",
       "sourceQueue": "Queue",
-      "sourceDeprecation": "Deprecation"
+      "sourceDeprecation": "Deprecation",
+      "level": "Level",
+      "levelActionable": "Actionable",
+      "levelAll": "All levels",
+      "levelFatal": "Fatal",
+      "levelError": "Error",
+      "levelWarning": "Warning",
+      "levelInfo": "Info",
+      "levelDebug": "Debug"
     },
     "page": {
       "selected": "{count} selected",

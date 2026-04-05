@@ -37,17 +37,13 @@ export function DevResetButton() {
         throw new Error(data.error || "Failed to reset");
       }
 
-      toast.success("Tables reset successfully", {
-        description: "All error tracking data has been cleared.",
-      });
+      toast.success("Tables reset successfully");
 
       setOpen(false);
       // Reload to refresh data
       window.location.reload();
     } catch (error) {
-      toast.error("Failed to reset tables", {
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
+      toast.error(error instanceof Error ? error.message.slice(0, 100) : "Failed to reset tables");
     } finally {
       setIsLoading(false);
     }
