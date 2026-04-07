@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import "../globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
@@ -11,6 +12,14 @@ import { Toaster } from "@/components/ui/sonner";
 // GHCR images are built without API_URL; static HTML would otherwise embed
 // default localhost URLs in __ERRORWATCH_RUNTIME_CONFIG__ for the browser.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | ErrorWatch",
+    default: "ErrorWatch - Error Monitoring",
+  },
+  description: "Self-hosted error monitoring for modern applications",
+};
 
 type Props = {
   children: React.ReactNode;
