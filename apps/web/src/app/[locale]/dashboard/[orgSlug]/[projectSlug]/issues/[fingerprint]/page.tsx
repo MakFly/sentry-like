@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { ErrorLevel } from "@/server/api";
 
 import { EventTimeline, StackTraceViewer, ContextCards } from "@/components/issue-detail";
+import { DebugProfilePanel } from "@/components/issue-detail/DebugProfilePanel";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -696,6 +697,12 @@ export default function IssueDetailPage() {
               firstSeenIn={releasesData?.firstSeenIn}
             />
           </Section>
+
+          {selectedEvent?.debug && (
+            <Section title="Full Debug" anchor="debug" defaultOpen={false}>
+              <DebugProfilePanel profile={selectedEvent.debug} />
+            </Section>
+          )}
         </div>
 
         <MetadataSidebar

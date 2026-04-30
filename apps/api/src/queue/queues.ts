@@ -125,6 +125,9 @@ export interface EventJobData {
   // Distributed tracing correlation (W3C traceparent)
   traceId?: string | null;
   spanId?: string | null;
+  // Full request profile (laravel-web-profiler parity), persisted as-is in
+  // error_events.debug. Null when SDK profiler is disabled or unsupported.
+  debug?: Record<string, unknown> | null;
 }
 
 export interface ReplayJobData {

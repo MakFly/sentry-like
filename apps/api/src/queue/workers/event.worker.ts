@@ -225,6 +225,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
     sdkFingerprint,
     traceId,
     spanId,
+    debug,
   } = job.data;
 
   // Scrub PII from message and stack
@@ -342,6 +343,7 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
       fingerprintVersion: fingerprintVersion ?? 1,
       traceId: traceId || null,
       spanId: spanId || null,
+      debug: debug ?? null,
     });
   } catch (e: any) {
     if (e?.code === "23505") {

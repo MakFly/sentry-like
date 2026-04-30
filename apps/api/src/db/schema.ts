@@ -88,6 +88,10 @@ export const errorEvents = pgTable("error_events", {
   // Distributed tracing correlation (W3C traceparent)
   traceId: text("trace_id"),               // 32-hex trace identifier
   spanId: text("span_id"),                 // 16-hex span identifier within the trace
+  // Full request profile (laravel-web-profiler parity): per-request snapshot of
+  // queries, cache, mail, events, views, gates, http_client, logs, jobs, memory,
+  // timing, request, route. Null when SDK profiler is disabled or unsupported.
+  debug: jsonb("debug"),
 }, (table) => ({
   // Performance indexes for common queries
   projectCreatedIdx: index("idx_error_events_project_created").on(table.projectId, table.createdAt),

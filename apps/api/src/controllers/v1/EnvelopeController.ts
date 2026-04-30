@@ -81,6 +81,9 @@ const envelopeSchema = z.object({
   fingerprint: z.string().max(128).optional().nullable(),
   session_id: z.string().max(100).optional(),
   extra: z.record(z.string(), z.unknown()).optional(),
+  // Full request profile (laravel-web-profiler parity). Loose-typed on the
+  // wire; the SDK enforces shape. Persisted as-is in error_events.debug.
+  profile: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 type Frame = z.infer<typeof frameSchema>;
@@ -235,6 +238,7 @@ export const submitEnvelope = async (c: Context<AppEnv>) => {
       sdkFingerprint: input.fingerprint ?? null,
       traceId: input.trace_id ?? null,
       spanId: input.span_id ?? null,
+      debug: (input.profile ?? null) as any,
     }, { jobId });
 
     incrementQuotaCache(projectId).catch(() => {});

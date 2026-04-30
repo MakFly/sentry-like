@@ -113,6 +113,9 @@ const enrichedEventSchema = z.object({
     name: z.string().max(100),
     version: z.string().max(50),
   }).optional(),
+  // Full request profile (laravel-web-profiler parity). Free-form on the wire
+  // — strict shape is enforced at SDK level. Capped server-side to ~512 KB.
+  profile: z.record(z.string(), z.any()).optional().nullable(),
   // Shared fields (same as legacy)
   env: z.string().max(50).default("unknown"),
   url: z.string().url().max(2000).optional().nullable(),

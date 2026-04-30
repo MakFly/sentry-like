@@ -90,6 +90,7 @@ export interface EnrichedValidatedEvent {
   fingerprint?: string | string[] | null;
   trace_id?: string | null;
   span_id?: string | null;
+  profile?: Record<string, unknown> | null;
 }
 
 /**
@@ -226,6 +227,7 @@ function normalizeEnriched(input: EnrichedValidatedEvent, projectId: string): Ev
     sdkFingerprint: flattenFingerprint(input.fingerprint),
     traceId: input.trace_id ?? null,
     spanId: input.span_id ?? null,
+    debug: input.profile ?? null,
   };
 }
 

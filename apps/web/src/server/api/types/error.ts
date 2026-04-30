@@ -89,6 +89,149 @@ export type ErrorEvent = {
   // Distributed tracing correlation (W3C traceparent)
   traceId?: string | null;
   spanId?: string | null;
+  // Full request profile (laravel-web-profiler parity). Optional — present
+  // only when SDK profiler is enabled at capture time.
+  debug?: ProfileV1 | null;
+};
+
+/**
+ * ProfileV1 — full request profile snapshot (parity with laravel-web-profiler).
+ *
+ * Captured by the SDK during the request that produced the exception. All
+ * panels are individually optional so collectors can be toggled per project.
+ */
+export type ProfileV1 = {
+  token: string;
+  ip?: string;
+  method?: string;
+  url?: string;
+  status_code?: number;
+  duration_ms?: number;
+  collected_at?: string;
+
+  request?: {
+    method: string;
+    url: string;
+    path: string;
+    query_string: string;
+    headers: Record<string, string[]>;
+    content_type: string;
+    content_length: number;
+    cookies: string[];
+    session: { id: string; data: Record<string, unknown> } | null;
+    format: string;
+  };
+
+  route?: {
+    uri: string;
+    name: string | null;
+    action: string | null;
+    controller: string | null;
+    middleware: string[];
+    parameters: Record<string, unknown>;
+    methods: string[];
+    domain?: string | null;
+    prefix?: string | null;
+    wheres?: Record<string, string>;
+  } | null;
+
+  queries?: {
+    items: Array<{
+      sql: string;
+      bindings: unknown[];
+      bound_sql: string;
+      time_ms: number;
+      connection: string;
+      is_slow: boolean;
+      is_duplicate: boolean;
+      duplicate_count: number;
+      backtrace?: Array<{ file: string; line: number; function: string }> | null;
+    }>;
+    total_count: number;
+    total_time_ms: number;
+    slow_count: number;
+    duplicate_count: number;
+  };
+
+  cache?: {
+    hits: number;
+    misses: number;
+    writes: number;
+    deletes: number;
+    hit_ratio: number;
+    operations: Array<{ type: "hit" | "miss" | "write" | "delete"; key: string; store: string | null }>;
+  };
+
+  mail?: {
+    messages: Array<{
+      to: string[];
+      from: string[];
+      cc: string[];
+      bcc: string[];
+      subject: string;
+      body_excerpt: string | null;
+      attachments: string[];
+    }>;
+    total_count: number;
+  };
+
+  events?: {
+    byName: Record<string, { count: number; listeners: number; total_duration_ms: number }>;
+    total_count: number;
+    unique_count: number;
+  };
+
+  views?: {
+    items: Array<{ name: string; path: string; data_keys: string[]; render_time_ms: number | null }>;
+    total_count: number;
+    total_render_time_ms: number;
+  };
+
+  gates?: {
+    checks: Array<{ ability: string; result: boolean; user: string | null; arguments_classes: string[] }>;
+    total_count: number;
+    allowed_count: number;
+    denied_count: number;
+  };
+
+  http_client?: {
+    requests: Array<{
+      method: string;
+      url: string;
+      status_code: number;
+      duration_ms: number;
+      request_headers: Record<string, string[]>;
+      response_headers: Record<string, string[]>;
+    }>;
+    total_count: number;
+    total_duration_ms: number;
+  };
+
+  logs?: {
+    items: Array<{ level: string; message: string; context: Record<string, unknown>; time: number }>;
+    counts_by_level: Record<string, number>;
+    total_count: number;
+    highest_level: string | null;
+    error_count: number;
+  };
+
+  jobs?: {
+    items: Array<{ queue: string; class: string; status: "processing" | "processed" | "failed"; duration_ms: number }>;
+    total_count: number;
+    failed_count: number;
+  };
+
+  memory?: {
+    peak_bytes: number;
+    limit_bytes: number;
+    opcache_mb: number | null;
+    usage_ratio: number;
+  };
+
+  timing?: {
+    duration_ms: number;
+    events: Record<string, { start: number; duration: number; memory: number; category: string }>;
+  };
 };
 
 export type ReleaseDistribution = {

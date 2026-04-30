@@ -31,6 +31,7 @@ export const EventRepository = {
         userContext: errorEvents.userContext,
         sdk: errorEvents.sdk,
         extra: errorEvents.extra,
+        debug: errorEvents.debug,
         fingerprintVersion: errorEvents.fingerprintVersion,
       })
       .from(errorEvents)
