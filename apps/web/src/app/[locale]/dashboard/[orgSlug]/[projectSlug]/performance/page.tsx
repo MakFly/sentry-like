@@ -62,12 +62,6 @@ export default function PerformancePage() {
       icon: ListTree,
     },
     {
-      title: t("subPages.transactions.title"),
-      description: t("subPages.transactions.description"),
-      href: `${baseUrl}/performance/transactions`,
-      icon: List,
-    },
-    {
       title: t("subPages.database.title"),
       description: t("subPages.database.description"),
       href: `${baseUrl}/performance/database`,
@@ -103,7 +97,7 @@ export default function PerformancePage() {
     {
       title: t("subPages.transactions.title"),
       description: t("subPages.transactions.description"),
-      href: `${baseUrl}/performance/transactions`,
+      href: `${baseUrl}/performance/requests?tab=transactions`,
       icon: List,
     },
   ];

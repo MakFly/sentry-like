@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { useGroups, useMergeGroups } from "@/lib/trpc/hooks";
@@ -34,9 +35,11 @@ interface FiltersState {
   dateRange: DateRange;
   search: string;
   level: string;
+  httpStatus: string;
 }
 
 export default function IssuesPage() {
+  const router = useRouter();
   const { currentProjectId, currentProjectSlug } = useCurrentProject();
   const { currentOrgSlug } = useCurrentOrganization();
   const t = useTranslations("issues.page");
@@ -48,6 +51,7 @@ export default function IssuesPage() {
     dateRange: "all",
     search: "",
     level: "actionable",
+    httpStatus: "",
   });
   const [page, setPage] = useState(1);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -63,6 +67,13 @@ export default function IssuesPage() {
     return { level: filters.level as "fatal" | "error" | "warning" | "info" | "debug" };
   }, [filters.level]);
 
+  const parsedHttpStatus =
+    filters.httpStatus.length === 3 ? Number(filters.httpStatus) : undefined;
+  const httpStatus =
+    parsedHttpStatus && parsedHttpStatus >= 100 && parsedHttpStatus <= 599
+      ? parsedHttpStatus
+      : undefined;
+
   const { data: groupsData, isLoading, error, refetch } = useGroups({
     env: filters.env === "all" ? undefined : filters.env,
     dateRange: filters.dateRange === "all" ? undefined : filters.dateRange,
@@ -70,6 +81,7 @@ export default function IssuesPage() {
     search: debouncedSearch || undefined,
     page,
     limit: 25,
+    httpStatus,
     ...levelFilter,
   });
 
@@ -91,7 +103,8 @@ export default function IssuesPage() {
     filters.env !== "all" ||
     filters.dateRange !== "all" ||
     filters.search !== "" ||
-    filters.level !== "actionable";
+    filters.level !== "actionable" ||
+    filters.httpStatus !== "";
 
   const handleClearFilters = () => {
     setFilters({
@@ -99,6 +112,7 @@ export default function IssuesPage() {
       dateRange: "all",
       search: "",
       level: "actionable",
+      httpStatus: "",
     });
     setPage(1);
   };
@@ -166,6 +180,8 @@ export default function IssuesPage() {
           onDateRangeChange={(value) => { setFilters({ ...filters, dateRange: value }); setPage(1); }}
           level={filters.level}
           onLevelChange={(value) => { setFilters({ ...filters, level: value }); setPage(1); }}
+          httpStatus={filters.httpStatus}
+          onHttpStatusChange={(value) => { setFilters({ ...filters, httpStatus: value }); setPage(1); }}
           onClear={handleClearFilters}
           hasActiveFilters={hasActiveFilters}
           className="flex-1"
@@ -200,10 +216,14 @@ export default function IssuesPage() {
         showColumnToggle
         enableRowSelection
         pageSize={25}
-        className="w-full"
-        getRowId={(group: any) => group.fingerprint}
+        className="issues-grid w-full"
+        getRowId={(group) => group.fingerprint}
         onRowSelectionChange={setRowSelection}
         rowSelection={rowSelection}
+        onRowClick={(group) => {
+          if (!currentOrgSlug || !currentProjectSlug) return;
+          router.push(`/dashboard/${currentOrgSlug}/${currentProjectSlug}/issues/${group.fingerprint}`);
+        }}
         emptyMessage={
           hasActiveFilters
             ? t("noMatchingSignals")

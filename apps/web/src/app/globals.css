@@ -256,6 +256,56 @@
     font-family: 'DM Serif Display', Georgia, serif;
   }
 
+  .issues-grid > .relative {
+    @apply px-0;
+  }
+
+  .issues-grid > .relative > .overflow-x-auto {
+    @apply rounded-lg border-issues-border bg-issues-bg/40 shadow-none;
+  }
+
+  .issues-grid table {
+    table-layout: fixed;
+  }
+
+  .issues-grid thead {
+    @apply bg-issues-surface;
+  }
+
+  .issues-grid th {
+    @apply h-11 border-r border-issues-border/70 px-3 text-[11px] uppercase tracking-normal last:border-r-0;
+  }
+
+  .issues-grid td {
+    @apply h-[72px] border-r border-issues-border/50 px-3 last:border-r-0;
+  }
+
+  .issues-grid tr {
+    @apply border-issues-border/70;
+  }
+
+  .issues-grid th:nth-child(1),
+  .issues-grid td:nth-child(1) {
+    width: 42px;
+  }
+
+  .issues-grid th:nth-child(2),
+  .issues-grid td:nth-child(2) {
+    width: 132px;
+  }
+
+  .issues-grid th:nth-child(4),
+  .issues-grid td:nth-child(4) {
+    width: 292px;
+  }
+
+  .issues-grid th:nth-child(5),
+  .issues-grid td:nth-child(5),
+  .issues-grid th:nth-child(6),
+  .issues-grid td:nth-child(6) {
+    width: 104px;
+  }
+
   /* Glow effects */
   .glow-primary {
     box-shadow: 0 0 20px hsl(var(--brand) / 0.3);
@@ -476,4 +526,3 @@
     animation: pulse-glow 3s ease-in-out infinite;
   }
 }
-

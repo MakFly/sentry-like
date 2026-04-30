@@ -8,8 +8,12 @@ export type ErrorGroup = {
   fingerprint: string;
   projectId: string | null;
   message: string;
+  /** Sentry-style display title computed at ingest time. Empty string for legacy rows; UI falls back to message. */
+  title?: string;
   file: string;
   line: number;
+  url?: string | null;
+  httpMethod?: string | null;
   statusCode: number | null;
   level: ErrorLevel;
   count: number;
@@ -21,6 +25,11 @@ export type ErrorGroup = {
   latestReplaySessionId?: string | null;
   latestReplayEventId?: string | null;
   latestReplayCreatedAt?: Date | null;
+  /** Latest event signals — used by the Issues list to surface trace/log/breadcrumb context. */
+  latestEventId?: string | null;
+  latestTraceId?: string | null;
+  latestTopFrame?: { filename: string; function?: string | null } | null;
+  latestBreadcrumbsCount?: number;
   // v2 enriched fields
   exceptionType?: string;
   exceptionValue?: string;
@@ -103,8 +112,8 @@ export type GroupsFilter = {
   search?: string;
   level?: "fatal" | "error" | "warning" | "info" | "debug";
   levels?: string[];
+  httpStatus?: number;
   sort?: "lastSeen" | "firstSeen" | "count";
   page?: number;
   limit?: number;
 };
-

@@ -73,6 +73,7 @@ const groupsRouter = router({
         search: z.string().optional(),
         level: z.enum(["fatal", "error", "warning", "info", "debug"]).optional(),
         levels: z.array(z.string()).optional(),
+        httpStatus: z.number().int().min(100).max(599).optional(),
         sort: z.enum(["lastSeen", "firstSeen", "count"]).optional(),
         page: z.number().int().positive().optional(),
         limit: z.number().int().positive().max(100).optional(),
@@ -118,6 +119,12 @@ const groupsRouter = router({
     .input(z.object({ fingerprint: z.string() }))
     .query(async ({ input }) => {
       return api.groups.getReleases(input.fingerprint);
+    }),
+
+  getCorrelatedSignals: protectedProcedure
+    .input(z.object({ fingerprint: z.string() }))
+    .query(async ({ input }) => {
+      return api.groups.getCorrelatedSignals(input.fingerprint);
     }),
 
   merge: protectedProcedure

@@ -16,32 +16,47 @@ A complete Laravel 12 REST API example showcasing [ErrorWatch](https://errorwatc
 - PHP 8.2+
 - Composer
 - SQLite (built into PHP — no separate install needed)
+- ErrorWatch running locally (`make dev` from the repo root)
 
-## Setup
+## Quick start
 
 ```bash
-# 1. Install dependencies
+# From the repository root — single command, idempotent:
+make example NAME=laravel
+```
+
+This installs composer deps, generates `APP_KEY`, creates the SQLite DB, runs
+migrations + seeds, provisions an org+project+API key in ErrorWatch via the
+dev seed endpoint, writes the key into `examples/laravel-api/.env`, starts
+`php artisan serve` on `:8008` in background, and fires `/api/v1/test/*` to
+populate the dashboard. The terminal prints the dashboard URL.
+
+Re-running `make example NAME=laravel` is safe: existing org/project are
+reused, a fresh API key is issued and stored in `.env`.
+
+```bash
+make example-status NAME=laravel   # PID + port
+make example-down   NAME=laravel   # stop the server
+make example-reset  NAME=laravel   # wipe vendor/.env/sqlite (destructive)
+```
+
+### Manual setup (alternative)
+
+If you prefer to run the steps yourself:
+
+```bash
 composer install
-
-# 2. Copy environment file
 cp .env.example .env
-
-# 3. Generate app key
 php artisan key:generate
-
-# 4. Create SQLite database and run migrations with seed data
 touch database/database.sqlite
 php artisan migrate --seed
-
-# 5. Start the development server
 php artisan serve
 ```
 
-The API will be available at `http://localhost:8000`.
-
 ## ErrorWatch configuration
 
-Edit `.env` with your ErrorWatch project credentials:
+`make example NAME=laravel` writes these vars for you. To target a non-local
+ErrorWatch instance, edit `.env` after the first run:
 
 ```env
 ERRORWATCH_ENABLED=true

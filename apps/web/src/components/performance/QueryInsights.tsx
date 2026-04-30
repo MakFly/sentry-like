@@ -84,7 +84,7 @@ export function QueryInsights({ n1Queries, frequentQueries, slowQueries, isLoadi
                     <div className="truncate">
                       {baseUrl ? (
                         <Link
-                          href={`${baseUrl}/performance/transactions/${q.transactionId}`}
+                          href={`${baseUrl}/performance/requests/${q.transactionId}?type=transaction`}
                           className="text-primary hover:underline"
                         >
                           → {q.transactionName}
@@ -151,7 +151,7 @@ export function QueryInsights({ n1Queries, frequentQueries, slowQueries, isLoadi
                   <div className="mt-2 text-xs text-muted-foreground truncate">
                     {baseUrl ? (
                       <Link
-                        href={`${baseUrl}/performance/transactions/${q.transactionId}`}
+                        href={`${baseUrl}/performance/requests/${q.transactionId}?type=transaction`}
                         className="text-primary hover:underline"
                       >
                         {q.transactionName}

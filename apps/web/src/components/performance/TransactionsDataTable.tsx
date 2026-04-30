@@ -50,7 +50,7 @@ export function TransactionsDataTable({
   const handleRowClick = React.useCallback(
     (row: Transaction | GroupedTransaction) => {
       const transactionId = "transactions" in row ? row.transactions[0].id : row.id;
-      router.push(`${baseUrl}/performance/transactions/${transactionId}`);
+      router.push(`${baseUrl}/performance/requests/${transactionId}?type=transaction`);
     },
     [router, baseUrl]
   );

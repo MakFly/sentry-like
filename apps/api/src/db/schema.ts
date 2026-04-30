@@ -10,9 +10,14 @@ export const errorGroups = pgTable("error_groups", {
     .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
   message: text("message").notNull(),
+  // Sentry-style display title computed at ingest time (e.g. "TypeError: x is undefined").
+  // Empty string for legacy groups created before this column existed; the API falls back to message.
+  title: text("title").notNull().default(""),
   file: text("file").notNull(),
   line: integer("line").notNull(),
   url: text("url"),
+  // HTTP method captured from the request context, used to render "{METHOD} {url} → {status}".
+  httpMethod: text("http_method"),
   statusCode: integer("status_code"),
   level: text("level").notNull().default("error"), // fatal, error, warning, info, debug
   count: integer("count").notNull().default(1),

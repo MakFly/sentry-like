@@ -10,7 +10,6 @@ import {
   Settings,
   Film,
   HelpCircle,
-  Zap,
   LayoutDashboard,
   Wrench,
   Terminal,
@@ -54,92 +53,104 @@ export function ErrorWatchSidebar({
     ? `/dashboard/${currentOrgSlug}/${currentProjectSlug}`
     : null;
 
-  // Build navigation items based on current org AND project
-  const navMain = React.useMemo(() => {
+  // Build navigation items based on current org AND project, grouped semantically:
+  //   Monitoring   = what the user looks at to triage incidents
+  //   Observability = deeper analytics / replays / infrastructure
+  //   (Project utilities live in the navSecondary group at the bottom)
+  const { navMonitoring, navObservability } = React.useMemo(() => {
     if (!currentOrgSlug) {
-      return [
-        {
-          title: t("dashboard"),
-          url: "/dashboard",
-          icon: LayoutDashboard,
-          isActive: pathname === "/dashboard",
-        },
-      ];
+      return {
+        navMonitoring: [
+          {
+            title: t("dashboard"),
+            url: "/dashboard",
+            icon: LayoutDashboard,
+            isActive: pathname === "/dashboard",
+          },
+        ],
+        navObservability: [],
+      };
     }
 
     // If no project selected, point to org-level (will show empty state)
     if (!baseUrl) {
       const orgUrl = `/dashboard/${currentOrgSlug}`;
-      return [
-        {
-          title: t("dashboard"),
-          url: orgUrl,
-          icon: LayoutDashboard,
-          isActive: pathname === orgUrl,
-        },
-      ];
+      return {
+        navMonitoring: [
+          {
+            title: t("dashboard"),
+            url: orgUrl,
+            icon: LayoutDashboard,
+            isActive: pathname === orgUrl,
+          },
+        ],
+        navObservability: [],
+      };
     }
 
-    return [
-      {
-        title: t("dashboard"),
-        url: baseUrl,
-        icon: LayoutDashboard,
-        isActive: pathname === baseUrl,
-      },
-      {
-        title: t("issues"),
-        url: `${baseUrl}/issues`,
-        icon: Bug,
-        isActive: pathname.startsWith(`${baseUrl}/issues`),
-      },
-      {
-        title: t("logs"),
-        url: `${baseUrl}/logs`,
-        icon: Terminal,
-        isActive: pathname.startsWith(`${baseUrl}/logs`),
-      },
-      {
-        title: t("replays"),
-        url: `${baseUrl}/replays`,
-        icon: Film,
-        isActive: pathname.startsWith(`${baseUrl}/replays`),
-      },
-      {
-        title: t("stats"),
-        url: `${baseUrl}/stats`,
-        icon: BarChart3,
-        isActive: pathname.startsWith(`${baseUrl}/stats`),
-      },
-      {
-        title: t("performance"),
-        url: `${baseUrl}/performance`,
-        icon: Gauge,
-        isActive: pathname.startsWith(`${baseUrl}/performance`),
-        children: [
-          { title: t("overview"), url: `${baseUrl}/performance`, isActive: pathname === `${baseUrl}/performance` },
-          { title: t("requests"), url: `${baseUrl}/performance/requests`, isActive: pathname.startsWith(`${baseUrl}/performance/requests`) },
-          { title: t("transactions"), url: `${baseUrl}/performance/transactions`, isActive: pathname.startsWith(`${baseUrl}/performance/transactions`) },
-          { title: t("database"), url: `${baseUrl}/performance/database`, isActive: pathname === `${baseUrl}/performance/database` },
-          { title: t("cache"), url: `${baseUrl}/performance/cache`, isActive: pathname === `${baseUrl}/performance/cache` },
-          { title: t("http"), url: `${baseUrl}/performance/http`, isActive: pathname === `${baseUrl}/performance/http` },
-          { title: t("queues"), url: `${baseUrl}/performance/queues`, isActive: pathname === `${baseUrl}/performance/queues` },
-          { title: t("webVitals"), url: `${baseUrl}/performance/web-vitals`, isActive: pathname === `${baseUrl}/performance/web-vitals` },
-        ],
-      },
-      {
-        title: t("infrastructure"),
-        url: `${baseUrl}/infrastructure`,
-        icon: Server,
-        isActive: pathname.startsWith(`${baseUrl}/infrastructure`),
-      },
-      {
-        title: t("crons"),
-        url: `${baseUrl}/crons`,
-        icon: Clock,
-        isActive: pathname.startsWith(`${baseUrl}/crons`),
-      },
-    ];
+    return {
+      navMonitoring: [
+        {
+          title: t("dashboard"),
+          url: baseUrl,
+          icon: LayoutDashboard,
+          isActive: pathname === baseUrl,
+        },
+        {
+          title: t("issues"),
+          url: `${baseUrl}/issues`,
+          icon: Bug,
+          isActive: pathname.startsWith(`${baseUrl}/issues`),
+        },
+        {
+          title: t("logs"),
+          url: `${baseUrl}/logs`,
+          icon: Terminal,
+          isActive: pathname.startsWith(`${baseUrl}/logs`),
+        },
+      ],
+      navObservability: [
+        {
+          title: t("performance"),
+          url: `${baseUrl}/performance`,
+          icon: Gauge,
+          isActive: pathname.startsWith(`${baseUrl}/performance`),
+          children: [
+            { title: t("overview"), url: `${baseUrl}/performance`, isActive: pathname === `${baseUrl}/performance` },
+            { title: t("requests"), url: `${baseUrl}/performance/requests`, isActive: pathname.startsWith(`${baseUrl}/performance/requests`) },
+            { title: t("database"), url: `${baseUrl}/performance/database`, isActive: pathname === `${baseUrl}/performance/database` },
+            { title: t("cache"), url: `${baseUrl}/performance/cache`, isActive: pathname === `${baseUrl}/performance/cache` },
+            { title: t("http"), url: `${baseUrl}/performance/http`, isActive: pathname === `${baseUrl}/performance/http` },
+            { title: t("queues"), url: `${baseUrl}/performance/queues`, isActive: pathname === `${baseUrl}/performance/queues` },
+            { title: t("webVitals"), url: `${baseUrl}/performance/web-vitals`, isActive: pathname === `${baseUrl}/performance/web-vitals` },
+          ],
+        },
+        {
+          title: t("replays"),
+          url: `${baseUrl}/replays`,
+          icon: Film,
+          isActive: pathname.startsWith(`${baseUrl}/replays`),
+        },
+        {
+          title: t("stats"),
+          url: `${baseUrl}/stats`,
+          icon: BarChart3,
+          isActive: pathname.startsWith(`${baseUrl}/stats`),
+        },
+        {
+          title: t("crons"),
+          url: `${baseUrl}/crons`,
+          icon: Clock,
+          isActive: pathname.startsWith(`${baseUrl}/crons`),
+        },
+        {
+          title: t("infrastructure"),
+          url: `${baseUrl}/infrastructure`,
+          icon: Server,
+          isActive: pathname.startsWith(`${baseUrl}/infrastructure`),
+        },
+      ],
+    };
   }, [currentOrgSlug, baseUrl, pathname, t]);
 
   const isDev = process.env.NODE_ENV !== "production";
@@ -194,9 +205,7 @@ export function ErrorWatchSidebar({
               className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-transparent active:bg-transparent"
             >
               <Link href="/dashboard">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 shadow-lg shadow-violet-600/25">
-                  <Zap className="h-4 w-4 text-white" />
-                </div>
+                <img src="/brand/errorwatch-logo-192.png" alt="" className="h-7 w-7 shrink-0" />
                 <div className="flex flex-col">
                   <span className="text-sm font-bold tracking-tight">
                     ErrorWatch
@@ -229,9 +238,10 @@ export function ErrorWatchSidebar({
 
         <SidebarSeparator />
 
-        <NavMain items={navMain} />
+        <NavMain items={navMonitoring} label={t("groups.monitoring")} />
+        <NavMain items={navObservability} label={t("groups.observability")} />
 
-        <NavSecondary items={navSecondary} className="mt-auto" />
+        <NavSecondary items={navSecondary} label={t("groups.project")} className="mt-auto" />
       </SidebarContent>
 
       <SidebarFooter>

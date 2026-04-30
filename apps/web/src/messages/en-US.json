@@ -65,7 +65,12 @@
     "commandGoToDashboard": "Go to Dashboard",
     "commandCreateNewProject": "Create New Project",
     "crons": "Crons",
-    "infrastructure": "Infrastructure"
+    "infrastructure": "Infrastructure",
+    "groups": {
+      "monitoring": "Monitoring",
+      "observability": "Observability",
+      "project": "Project"
+    }
   },
   "organization": {
     "select": "Select Organization",
@@ -277,6 +282,10 @@
         "title": "Web Vitals",
         "description": "Core Web Vitals (LCP, CLS, INP) at p75 with rating thresholds."
       }
+    },
+    "requests": {
+      "tabEndpoints": "Endpoints",
+      "backToRequests": "Back to Requests"
     },
     "transactions": {
       "title": "Transactions",
@@ -1017,7 +1026,9 @@
       "levelError": "Error",
       "levelWarning": "Warning",
       "levelInfo": "Info",
-      "levelDebug": "Debug"
+      "levelDebug": "Debug",
+      "httpStatus": "Code",
+      "httpStatusLabel": "HTTP code"
     },
     "page": {
       "selected": "{count} selected",
@@ -1498,25 +1509,82 @@
       "last30d": "Last 30 days",
       "last90d": "Last 90 days"
     },
-    "dashboard": { "title": "Overview", "description": "Monitor your application health at a glance" },
-    "issues": { "title": "Issues", "description": "Incoming signals requiring attention" },
-    "logs": { "title": "Logs", "description": "Live stream of structured application logs" },
-    "stats": { "title": "Statistics", "description": "Historical error trends and insights" },
-    "replays": { "title": "Replays", "description": "Watch user sessions that encountered errors" },
-    "infrastructure": { "title": "Infrastructure", "description": "Host metrics collected by the ErrorWatch agent" },
-    "crons": { "title": "Crons", "description": "Scheduled job executions and heartbeats" },
-    "settings": { "title": "Settings", "description": "Project configuration, members and API keys" },
-    "admin": { "title": "Admin", "description": "Platform administration and maintenance" },
-    "help": { "title": "Help", "description": "Guides, integrations and troubleshooting" },
-    "performance": { "title": "Performance", "description": "Throughput, latency and Apdex for this project" },
-    "performanceRequests": { "title": "Requests", "description": "Endpoints ranked by volume, latency and errors" },
-    "performanceRequestDetail": { "title": "Endpoint detail", "description": "Latency, throughput and top queries for this endpoint" },
-    "performanceTransactions": { "title": "Transactions", "description": "Endpoint-level performance breakdown" },
-    "performanceDatabase": { "title": "Database", "description": "Slowest queries, N+1 detection and frequent patterns" },
-    "performanceCache": { "title": "Cache", "description": "Cache operations grouped by op with hit rate" },
-    "performanceHttp": { "title": "HTTP Calls", "description": "Outbound HTTP calls grouped by host and method" },
-    "performanceQueues": { "title": "Queues", "description": "Background jobs and message bus consumers" },
-    "performanceWebVitals": { "title": "Web Vitals", "description": "Core Web Vitals at p75 with rating" }
+    "dashboard": {
+      "title": "Overview",
+      "description": "Monitor your application health at a glance"
+    },
+    "issues": {
+      "title": "Issues",
+      "description": "Incoming signals requiring attention"
+    },
+    "logs": {
+      "title": "Logs",
+      "description": "Live stream of structured application logs"
+    },
+    "stats": {
+      "title": "Statistics",
+      "description": "Historical error trends and insights"
+    },
+    "replays": {
+      "title": "Replays",
+      "description": "Watch user sessions that encountered errors"
+    },
+    "infrastructure": {
+      "title": "Infrastructure",
+      "description": "Host metrics collected by the ErrorWatch agent"
+    },
+    "crons": {
+      "title": "Crons",
+      "description": "Scheduled job executions and heartbeats"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Project configuration, members and API keys"
+    },
+    "admin": {
+      "title": "Admin",
+      "description": "Platform administration and maintenance"
+    },
+    "help": {
+      "title": "Help",
+      "description": "Guides, integrations and troubleshooting"
+    },
+    "performance": {
+      "title": "Performance",
+      "description": "Throughput, latency and Apdex for this project"
+    },
+    "performanceRequests": {
+      "title": "Requests",
+      "description": "Endpoints ranked by volume, latency and errors"
+    },
+    "performanceRequestDetail": {
+      "title": "Endpoint detail",
+      "description": "Latency, throughput and top queries for this endpoint"
+    },
+    "performanceTransactions": {
+      "title": "Transactions",
+      "description": "Endpoint-level performance breakdown"
+    },
+    "performanceDatabase": {
+      "title": "Database",
+      "description": "Slowest queries, N+1 detection and frequent patterns"
+    },
+    "performanceCache": {
+      "title": "Cache",
+      "description": "Cache operations grouped by op with hit rate"
+    },
+    "performanceHttp": {
+      "title": "HTTP Calls",
+      "description": "Outbound HTTP calls grouped by host and method"
+    },
+    "performanceQueues": {
+      "title": "Queues",
+      "description": "Background jobs and message bus consumers"
+    },
+    "performanceWebVitals": {
+      "title": "Web Vitals",
+      "description": "Core Web Vitals at p75 with rating"
+    }
   },
   "metadata": {
     "dashboard": "Dashboard",

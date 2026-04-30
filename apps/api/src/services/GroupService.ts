@@ -1,10 +1,13 @@
 import { GroupRepository } from "../repositories/GroupRepository";
 import { EventRepository } from "../repositories/EventRepository";
+import { db } from "../db/connection";
+import { errorEvents, applicationLogs, transactions } from "../db/schema";
+import { eq, and, isNotNull, desc, inArray, sql } from "drizzle-orm";
 import logger from "../logger";
 
 
 export const GroupService = {
-  getAll: async (filters?: { dateRange?: string; env?: string; search?: string; level?: string; levels?: string[]; sort?: string; page?: number; limit?: number }, projectId?: string) => {
+  getAll: async (filters?: { dateRange?: string; env?: string; search?: string; level?: string; levels?: string[]; httpStatus?: number; sort?: string; page?: number; limit?: number }, projectId?: string) => {
     logger.debug("Fetching error groups", { filters, projectId });
     return await GroupRepository.findAll(filters, projectId);
   },
@@ -92,5 +95,74 @@ export const GroupService = {
     logger.debug("Fetching release distribution for group", { fingerprint });
     return await GroupRepository.getReleaseDistribution(fingerprint);
   },
-};
 
+  /**
+   * Cross-signal correlation for the Issues list / detail row strip.
+   * Collects distinct trace IDs from the group's most recent events (capped to keep cost bounded)
+   * and counts correlated application_logs and transactions sharing those trace IDs.
+   */
+  getCorrelatedSignals: async (fingerprint: string) => {
+    logger.debug("Fetching correlated signals", { fingerprint });
+
+    const traceRows = await db
+      .select({
+        traceId: errorEvents.traceId,
+        latestCreatedAt: sql<Date>`max(${errorEvents.createdAt})`,
+      })
+      .from(errorEvents)
+      .where(and(eq(errorEvents.fingerprint, fingerprint), isNotNull(errorEvents.traceId)))
+      .groupBy(errorEvents.traceId)
+      .orderBy(desc(sql`max(${errorEvents.createdAt})`))
+      .limit(100);
+
+    const traceIds = traceRows
+      .map((r) => r.traceId)
+      .filter((t): t is string => typeof t === "string" && t.length > 0);
+
+    if (traceIds.length === 0) {
+      return { logsCount: 0, transactionsCount: 0, traceIds: [] as string[], logs: [] };
+    }
+
+    const [logsRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(applicationLogs)
+      .where(inArray(applicationLogs.traceId, traceIds));
+
+    const [txRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(transactions)
+      .where(inArray(transactions.traceId, traceIds));
+
+    const logs = await db
+      .select({
+        id: applicationLogs.id,
+        projectId: applicationLogs.projectId,
+        createdAt: applicationLogs.createdAt,
+        level: applicationLogs.level,
+        channel: applicationLogs.channel,
+        message: applicationLogs.message,
+        context: applicationLogs.context,
+        extra: applicationLogs.extra,
+        env: applicationLogs.env,
+        release: applicationLogs.release,
+        source: applicationLogs.source,
+        url: applicationLogs.url,
+        requestId: applicationLogs.requestId,
+        userId: applicationLogs.userId,
+        traceId: applicationLogs.traceId,
+        spanId: applicationLogs.spanId,
+        ingestedAt: applicationLogs.ingestedAt,
+      })
+      .from(applicationLogs)
+      .where(inArray(applicationLogs.traceId, traceIds))
+      .orderBy(desc(applicationLogs.createdAt))
+      .limit(20);
+
+    return {
+      logsCount: logsRow?.count ?? 0,
+      transactionsCount: txRow?.count ?? 0,
+      traceIds,
+      logs,
+    };
+  },
+};

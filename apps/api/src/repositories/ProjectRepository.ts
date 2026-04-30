@@ -29,6 +29,13 @@ export const ProjectRepository = {
   findById: (id: string) =>
     db.select().from(projects).where(eq(projects.id, id)).then(rows => rows[0]),
 
+  findByOrgAndSlug: (organizationId: string, slug: string) =>
+    db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.organizationId, organizationId), eq(projects.slug, slug)))
+      .then(rows => rows[0]),
+
   findByIdWithOrg: (id: string) =>
     db
       .select({

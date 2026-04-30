@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { trpc } from "@/lib/trpc/client";
@@ -10,6 +10,8 @@ import { ThroughputChart } from "@/components/performance/ThroughputChart";
 import { DurationChart } from "@/components/performance/DurationChart";
 import { MetricRibbon } from "@/components/performance/MetricRibbon";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { TransactionDetail } from "@/components/performance";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -39,29 +41,40 @@ function durationCls(ms: number): string {
 
 export default function RequestDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const orgSlug = params.orgSlug as string;
   const projectSlug = params.projectSlug as string;
-  const routeParam = decodeURIComponent(params.route as string);
+  const rawId = params.id as string;
   const baseUrl = `/dashboard/${orgSlug}/${projectSlug}`;
+  const type = searchParams.get("type") === "transaction" ? "transaction" : "endpoint";
 
+  if (type === "transaction") {
+    return <TransactionView baseUrl={baseUrl} transactionId={rawId} />;
+  }
+
+  return <EndpointView baseUrl={baseUrl} routeName={decodeURIComponent(rawId)} />;
+}
+
+function EndpointView({ baseUrl, routeName }: { baseUrl: string; routeName: string }) {
+  const tReq = useTranslations("performance.requests");
   const { currentProjectId, isLoading: projectLoading } = useCurrentProject();
   const [dateRange, setDateRange] = useState<PerformanceDateRange>("24h");
 
   const { data: detail, isLoading: detailLoading } =
     trpc.performance.getEndpointDetail.useQuery(
-      { projectId: currentProjectId!, name: routeParam, dateRange },
+      { projectId: currentProjectId!, name: routeName, dateRange },
       { enabled: !!currentProjectId }
     );
 
   const { data: throughputData, isLoading: throughputLoading } =
     trpc.performance.getThroughputTimeline.useQuery(
-      { projectId: currentProjectId!, dateRange, name: routeParam },
+      { projectId: currentProjectId!, dateRange, name: routeName },
       { enabled: !!currentProjectId }
     );
 
   const { data: durationData, isLoading: durationLoading } =
     trpc.performance.getDurationTimeline.useQuery(
-      { projectId: currentProjectId!, dateRange, name: routeParam },
+      { projectId: currentProjectId!, dateRange, name: routeName },
       { enabled: !!currentProjectId }
     );
 
@@ -90,11 +103,11 @@ export default function RequestDetailPage() {
         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to Requests
+        {tReq("backToRequests")}
       </Link>
 
       <PageHeader
-        title={routeParam}
+        title={routeName}
         description={endpoint ? `${endpoint.op}` : ""}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
@@ -115,7 +128,6 @@ export default function RequestDetailPage() {
         />
       </div>
 
-      {/* Top queries */}
       <div className="overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface/30">
         <div className="border-b border-dashboard-border px-4 py-3">
           <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
@@ -171,7 +183,6 @@ export default function RequestDetailPage() {
         </Table>
       </div>
 
-      {/* Recent transactions */}
       <div className="overflow-hidden rounded-xl border border-dashboard-border bg-dashboard-surface/30">
         <div className="border-b border-dashboard-border px-4 py-3">
           <h2 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
@@ -201,7 +212,7 @@ export default function RequestDetailPage() {
                 <TableRow key={t.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     <Link
-                      href={`${baseUrl}/performance/transactions/${t.id}`}
+                      href={`${baseUrl}/performance/requests/${t.id}?type=transaction`}
                       className="hover:text-violet-400 hover:underline"
                     >
                       {new Date(t.startTimestamp).toLocaleString()}
@@ -235,6 +246,59 @@ export default function RequestDetailPage() {
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+}
+
+function TransactionView({
+  baseUrl,
+  transactionId,
+}: {
+  baseUrl: string;
+  transactionId: string;
+}) {
+  const t = useTranslations("performance");
+  const tReq = useTranslations("performance.requests");
+  const router = useRouter();
+
+  const { data: transaction, isLoading } =
+    trpc.performance.getTransaction.useQuery(
+      { transactionId },
+      { enabled: !!transactionId }
+    );
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+        <div className="h-8 w-32 animate-pulse rounded-lg bg-dashboard-surface/50" />
+        <div className="h-48 animate-pulse rounded-xl bg-dashboard-surface/50" />
+        <div className="h-64 animate-pulse rounded-xl bg-dashboard-surface/50" />
+      </div>
+    );
+  }
+
+  if (!transaction) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <p className="text-muted-foreground">{t("transactions.notFound")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push(`${baseUrl}/performance/requests`)}
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          {tReq("backToRequests")}
+        </Button>
+      </div>
+
+      <TransactionDetail transaction={transaction} />
     </div>
   );
 }

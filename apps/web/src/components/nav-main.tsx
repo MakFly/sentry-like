@@ -12,6 +12,7 @@ import {
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,9 +33,11 @@ interface NavItem {
   }[]
 }
 
-export function NavMain({ items }: { items: NavItem[] }) {
+export function NavMain({ items, label }: { items: NavItem[]; label?: string }) {
+  if (items.length === 0) return null
   return (
     <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           {items.map((item) =>

@@ -12,6 +12,7 @@ router.get("/:fingerprint", asHandler(GroupController.getById));
 router.get("/:fingerprint/events", asHandler(GroupController.getEvents));
 router.get("/:fingerprint/timeline", asHandler(GroupController.getTimeline));
 router.get("/:fingerprint/releases", asHandler(GroupController.getReleases));
+router.get("/:fingerprint/correlated", asHandler(GroupController.getCorrelatedSignals));
 router.patch("/:fingerprint/assign", asHandler(GroupController.updateAssignment));
 router.post("/:fingerprint/merge", asHandler(GroupController.merge));
 router.post("/:fingerprint/unmerge", asHandler(GroupController.unmerge));

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Zap, LayoutDashboard, LogOut, Globe } from "lucide-react";
+import { LayoutDashboard, LogOut, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -97,13 +97,13 @@ function Navbar() {
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
-          <motion.div
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 shadow-lg shadow-violet-600/25"
+          <motion.img
+            src="/brand/errorwatch-logo-192.png"
+            alt=""
+            className="h-9 w-9"
             whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
-          >
-            <Zap className="h-5 w-5 text-white" />
-          </motion.div>
+          />
           <motion.span
             className="text-lg font-bold tracking-tight"
             initial={{ opacity: 0, x: -10 }}
@@ -263,12 +263,12 @@ function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-3 group">
-              <motion.div
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-700"
+              <motion.img
+                src="/brand/errorwatch-logo-192.png"
+                alt=""
+                className="h-9 w-9"
                 whileHover={{ scale: 1.05, rotate: -5 }}
-              >
-                <Zap className="h-5 w-5 text-white" />
-              </motion.div>
+              />
               <span className="text-lg font-bold">ErrorWatch</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">

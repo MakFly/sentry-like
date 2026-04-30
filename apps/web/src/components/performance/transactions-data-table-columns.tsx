@@ -24,6 +24,7 @@ export interface GroupedTransaction {
   maxDuration: number
   latestTimestamp: Date | string
   statuses: Record<string, number>
+  httpStatuses: Record<number, number>
   transactions: Transaction[]
 }
 
@@ -43,17 +44,55 @@ function formatDateSafe(date: Date | string | null | undefined): string {
   }
 }
 
-function parsePerformanceIssues(tags: string | null): string[] {
-  if (!tags) return []
+function parseTags(tags: string | null): Record<string, unknown> | null {
+  if (!tags) return null
+  if (typeof tags === "object") return tags as Record<string, unknown>
   try {
-    const parsed = JSON.parse(tags) as Record<string, unknown>
-    const issues = parsed["performance.issues"]
-    if (typeof issues === "string") return issues.split(",").map((s) => s.trim())
-    if (Array.isArray(issues)) return issues as string[]
+    return JSON.parse(tags) as Record<string, unknown>
   } catch {
-    // ignore
+    return null
   }
+}
+
+function parsePerformanceIssues(tags: string | null): string[] {
+  const parsed = parseTags(tags)
+  if (!parsed) return []
+  const issues = parsed["performance.issues"]
+  if (typeof issues === "string") return issues.split(",").map((s) => s.trim())
+  if (Array.isArray(issues)) return issues as string[]
   return []
+}
+
+export function extractHttpStatus(tags: string | null): number | null {
+  const parsed = parseTags(tags)
+  if (!parsed) return null
+  const candidates = ["http.status_code", "http_status_code", "status_code", "http.status"]
+  for (const key of candidates) {
+    const raw = parsed[key]
+    if (raw == null) continue
+    const n = typeof raw === "number" ? raw : parseInt(String(raw), 10)
+    if (Number.isFinite(n) && n >= 100 && n < 600) return n
+  }
+  return null
+}
+
+function httpStatusCls(code: number): string {
+  if (code >= 500) return "bg-red-500/15 text-red-400 border-red-500/30"
+  if (code >= 400) return "bg-amber-500/15 text-amber-500 border-amber-500/30"
+  if (code >= 300) return "bg-blue-500/15 text-blue-400 border-blue-500/30"
+  if (code >= 200) return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+  return "bg-muted text-muted-foreground"
+}
+
+function HttpStatusBadge({ code }: { code: number | null }) {
+  if (code == null) {
+    return <span className="text-xs text-muted-foreground">—</span>
+  }
+  return (
+    <Badge variant="outline" className={`${httpStatusCls(code)} font-mono text-[11px]`}>
+      {code}
+    </Badge>
+  )
 }
 
 const statusColors: Record<string, string> = {
@@ -85,8 +124,13 @@ export function groupTransactions(transactions: Transaction[]): GroupedTransacti
       }
       const status = t.status || "ok"
       existing.statuses[status] = (existing.statuses[status] || 0) + 1
+      const code = extractHttpStatus(t.tags)
+      if (code != null) {
+        existing.httpStatuses[code] = (existing.httpStatuses[code] || 0) + 1
+      }
       existing.transactions.push(t)
     } else {
+      const code = extractHttpStatus(t.tags)
       groups.set(key, {
         name: t.name,
         op: t.op,
@@ -96,6 +140,7 @@ export function groupTransactions(transactions: Transaction[]): GroupedTransacti
         maxDuration: t.duration,
         latestTimestamp: t.startTimestamp,
         statuses: { [t.status || "ok"]: 1 },
+        httpStatuses: code != null ? { [code]: 1 } : {},
         transactions: [t],
       })
     }
@@ -170,6 +215,13 @@ export function createTransactionsColumns(): ColumnDef<Transaction>[] {
           {row.original.op}
         </span>
       ),
+    },
+    {
+      id: "httpStatus",
+      header: "HTTP",
+      accessorFn: (row) => extractHttpStatus(row.tags) ?? -1,
+      cell: ({ row }) => <HttpStatusBadge code={extractHttpStatus(row.original.tags)} />,
+      sortingFn: (a, b, id) => (a.getValue<number>(id) ?? -1) - (b.getValue<number>(id) ?? -1),
     },
     {
       accessorKey: "status",
@@ -315,6 +367,30 @@ export function createGroupedTransactionsColumns(): ColumnDef<GroupedTransaction
           {row.original.op}
         </span>
       ),
+    },
+    {
+      id: "httpStatus",
+      header: "HTTP",
+      accessorFn: (row) => {
+        const entries = Object.entries(row.httpStatuses)
+        if (entries.length === 0) return -1
+        return Number(entries.sort((a, b) => b[1] - a[1])[0][0])
+      },
+      cell: ({ row }) => {
+        const entries = Object.entries(row.original.httpStatuses).sort((a, b) => b[1] - a[1])
+        if (entries.length === 0) return <span className="text-xs text-muted-foreground">—</span>
+        const dominant = Number(entries[0][0])
+        const tooltip = entries.map(([code, n]) => `${code}: ${n}`).join(" · ")
+        return (
+          <div title={tooltip} className="flex items-center gap-1">
+            <HttpStatusBadge code={dominant} />
+            {entries.length > 1 && (
+              <span className="text-[10px] text-muted-foreground">+{entries.length - 1}</span>
+            )}
+          </div>
+        )
+      },
+      sortingFn: (a, b, id) => (a.getValue<number>(id) ?? -1) - (b.getValue<number>(id) ?? -1),
     },
     {
       accessorKey: "count",

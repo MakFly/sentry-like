@@ -1,5 +1,5 @@
 import { fetchAPI } from './client';
-import type { ErrorGroup, EventsResponse, IssueStatus, ReleaseDistribution, GroupsFilter } from './types';
+import type { ApplicationLog, ErrorGroup, EventsResponse, IssueStatus, ReleaseDistribution, GroupsFilter } from './types';
 
 export type GroupsResponse = {
   groups: ErrorGroup[];
@@ -16,6 +16,7 @@ export const getAll = async (filters?: GroupsFilter): Promise<GroupsResponse> =>
   if (filters?.search) params.set("search", filters.search);
   if (filters?.level) params.set("level", filters.level);
   if (filters?.levels && filters.levels.length > 0) params.set("levels", filters.levels.join(","));
+  if (filters?.httpStatus) params.set("httpStatus", String(filters.httpStatus));
   if (filters?.sort) params.set("sort", filters.sort);
   if (filters?.page) params.set("page", String(filters.page));
   if (filters?.limit) params.set("limit", String(filters.limit));
@@ -54,6 +55,17 @@ export const updateAssignment = async (fingerprint: string, assignedTo: string |
 
 export const getReleases = async (fingerprint: string): Promise<ReleaseDistribution> => {
   return fetchAPI<ReleaseDistribution>(`/groups/${fingerprint}/releases`);
+};
+
+export type CorrelatedSignals = {
+  logsCount: number;
+  transactionsCount: number;
+  traceIds: string[];
+  logs: ApplicationLog[];
+};
+
+export const getCorrelatedSignals = async (fingerprint: string): Promise<CorrelatedSignals> => {
+  return fetchAPI<CorrelatedSignals>(`/groups/${fingerprint}/correlated`);
 };
 
 export const batchUpdateStatus = async (fingerprints: string[], status: IssueStatus): Promise<{ updated: number }> => {

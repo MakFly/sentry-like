@@ -4,37 +4,40 @@ import * as React from "react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import {
-  ArrowRightIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   FileCode2Icon,
-  UsersIcon,
 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 import type { ErrorLevel } from "@/server/api"
+import { cn } from "@/lib/utils"
+import { SignalsStrip } from "./SignalsStrip"
 
 export interface IssueGroup {
   fingerprint: string
   message: string
+  /** Sentry-style display title computed at ingest time. Empty for legacy rows; UI falls back to message. */
+  title?: string
   file: string
   line: number
   url?: string | null
+  httpMethod?: string | null
+  statusCode?: number | null
   level: ErrorLevel
   count: number
   usersAffected?: number
   firstSeen: Date
   lastSeen: Date
   hasReplay?: boolean
+  latestReplaySessionId?: string | null
+  latestEventId?: string | null
+  latestTraceId?: string | null
+  latestTopFrame?: { filename: string; function?: string | null } | null
+  latestBreadcrumbsCount?: number
 }
 
 interface IssuesDataTableColumnsProps {
@@ -110,53 +113,156 @@ export function createIssuesColumns({
         </Button>
       ),
       cell: ({ row }) => {
-        const { message, file, line, fingerprint } = row.original
+        const {
+          message,
+          title,
+          file,
+          line,
+          fingerprint,
+          latestEventId,
+          latestTraceId,
+          latestTopFrame,
+          latestBreadcrumbsCount,
+          hasReplay,
+          latestReplaySessionId,
+        } = row.original
         const maxLength = 80
-        const truncatedMessage =
-          message.length > maxLength
-            ? message.slice(0, maxLength).trim() + "..."
-            : message
 
-        // Extract exception type prefix if present (e.g. "TypeError: ...")
-        const colonIdx = message.indexOf(": ")
-        const hasType = colonIdx > 0 && colonIdx < 40
-        const exceptionType = hasType ? message.slice(0, colonIdx) : null
-        const exceptionMsg = hasType ? message.slice(colonIdx + 2) : message
-        const truncatedExceptionMsg =
-          exceptionMsg.length > maxLength
-            ? exceptionMsg.slice(0, maxLength).trim() + "..."
-            : exceptionMsg
+        const displayTitle = title && title.length > 0 ? title : message
+        const colonIdx = displayTitle.indexOf(": ")
+        const hasType = colonIdx > 0 && colonIdx < 60
+        const exceptionType = hasType ? displayTitle.slice(0, colonIdx) : null
+        const restOfTitle = hasType ? displayTitle.slice(colonIdx + 2) : displayTitle
+        const truncatedRest =
+          restOfTitle.length > maxLength
+            ? restOfTitle.slice(0, maxLength).trim() + "..."
+            : restOfTitle
 
         const displayFile = file ? file.split("/").slice(-2).join("/") : null
 
+        // "Where it threw" suffix from the deepest in_app frame.
+        let topFrameLabel: string | null = null
+        if (latestTopFrame?.filename) {
+          const base = latestTopFrame.filename.split("/").slice(-1)[0]
+          const fn = latestTopFrame.function
+          topFrameLabel = fn ? `${base}::${fn}` : base
+        }
+
+        const issueHref = `/dashboard/${orgSlug}/${projectSlug}/issues/${fingerprint}`
+
         return (
-          <Link
-            href={`/dashboard/${orgSlug}/${projectSlug}/issues/${fingerprint}`}
-            className="block min-w-0 max-w-[300px] lg:max-w-[500px] hover:text-foreground"
-          >
-            <span className="block truncate text-sm font-medium" title={message}>
-              {exceptionType ? (
-                <>
-                  <span className="font-bold">{exceptionType}: </span>
-                  {truncatedExceptionMsg}
-                </>
-              ) : (
-                truncatedMessage
-              )}
-            </span>
-            {displayFile && (
-              <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                <FileCode2Icon className="size-3 shrink-0" />
-                <span className="truncate font-mono">
-                  {displayFile}:{line}
-                </span>
+          <div className="block min-w-0 max-w-[300px] lg:max-w-[500px]">
+            <Link href={issueHref} className="block hover:text-foreground">
+              <span className="block truncate text-sm font-medium" title={displayTitle}>
+                {exceptionType ? (
+                  <>
+                    <span className="font-bold">{exceptionType}: </span>
+                    {truncatedRest}
+                  </>
+                ) : (
+                  truncatedRest
+                )}
               </span>
-            )}
-          </Link>
+              {(topFrameLabel || displayFile) && (
+                <span className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                  <FileCode2Icon className="size-3 shrink-0" />
+                  <span className="truncate font-mono">
+                    {topFrameLabel ?? `${displayFile}:${line}`}
+                  </span>
+                </span>
+              )}
+            </Link>
+            <SignalsStrip
+              fingerprint={fingerprint}
+              orgSlug={orgSlug}
+              projectSlug={projectSlug}
+              latestEventId={latestEventId}
+              latestTraceId={latestTraceId}
+              breadcrumbsCount={latestBreadcrumbsCount ?? 0}
+              hasReplay={hasReplay ?? false}
+              latestReplaySessionId={latestReplaySessionId}
+            />
+          </div>
         )
       },
       size: 400,
       maxSize: 500,
+    },
+    {
+      id: "http",
+      accessorKey: "url",
+      header: () => (
+        <div className="hidden md:block">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">HTTP</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const { url, httpMethod, statusCode, level } = row.original
+
+        const isHttpUrl = !!url && /^https?:\/\//i.test(url)
+        if (!isHttpUrl) {
+          return <div className="hidden md:block text-[11px] text-muted-foreground/40">—</div>
+        }
+
+        let urlPath = url ?? ""
+        let urlHost: string | null = null
+        try {
+          const u = new URL(url!)
+          urlHost = u.host
+          urlPath = `${u.pathname}${u.search}` || "/"
+        } catch {
+          urlPath = url ?? ""
+        }
+
+        // Infer 500 for fatal/error HTTP events when the SDK didn't send status_code (legacy v1 payloads).
+        const inferredStatus =
+          statusCode == null && (level === "fatal" || level === "error") ? 500 : null
+        const effectiveStatus = statusCode ?? inferredStatus
+        const statusInferred = statusCode == null && inferredStatus != null
+
+        const statusBg =
+          effectiveStatus == null
+            ? "bg-muted/50 text-muted-foreground"
+            : effectiveStatus >= 500
+              ? "bg-red-500/10 text-red-500"
+              : effectiveStatus >= 400
+                ? "bg-amber-500/10 text-amber-500"
+                : "bg-emerald-500/10 text-emerald-500"
+
+        return (
+          <div className="hidden min-w-0 max-w-[280px] flex-col gap-0.5 md:flex">
+            <div className="flex items-center gap-1.5 font-mono text-[11px]">
+              {effectiveStatus != null ? (
+                <span
+                  className={cn(
+                    "rounded-sm px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                    statusBg,
+                    statusInferred && "italic opacity-80"
+                  )}
+                  title={statusInferred ? "Inferred from level (SDK did not send status_code)" : undefined}
+                >
+                  {statusInferred ? `~${effectiveStatus}` : effectiveStatus}
+                </span>
+              ) : (
+                <span className="rounded-sm bg-muted/50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                  HTTP
+                </span>
+              )}
+              {httpMethod ? (
+                <span className="font-bold uppercase text-foreground">{httpMethod}</span>
+              ) : (
+                <span className="text-muted-foreground/60">?</span>
+              )}
+            </div>
+            <div className="min-w-0 truncate font-mono text-[11px] text-muted-foreground" title={url ?? undefined}>
+              {urlHost && <span className="opacity-60">{urlHost}</span>}
+              <span>{urlPath}</span>
+            </div>
+          </div>
+        )
+      },
+      size: 280,
+      enableSorting: false,
     },
     {
       accessorKey: "count",
@@ -183,36 +289,6 @@ export function createIssuesColumns({
           <span className="text-[10px] text-muted-foreground">events</span>
         </div>
       ),
-    },
-    {
-      accessorKey: "usersAffected",
-      header: ({ column }) => (
-        <div className="hidden text-right lg:block">
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-8 px-0"
-          >
-            Users
-            {column.getIsSorted() === "asc" && (
-              <ChevronUpIcon className="ml-2 size-4" />
-            )}
-            {column.getIsSorted() === "desc" && (
-              <ChevronDownIcon className="ml-2 size-4" />
-            )}
-          </Button>
-        </div>
-      ),
-      cell: ({ row }) => {
-        const users = row.original.usersAffected ?? 0
-        if (users === 0) return <div className="hidden lg:block" />
-        return (
-          <div className="hidden items-center justify-end gap-1.5 lg:flex">
-            <UsersIcon className="size-3 text-muted-foreground" />
-            <span className="text-sm font-medium">{users}</span>
-          </div>
-        )
-      },
     },
     {
       accessorKey: "lastSeen",
@@ -244,51 +320,5 @@ export function createIssuesColumns({
         )
       },
     },
-    {
-      id: "actions",
-      header: () => <div className="w-8" />,
-      cell: ({ row }) => (
-        <IssueActionsDropdown
-          issue={row.original}
-          orgSlug={orgSlug}
-          projectSlug={projectSlug}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
   ]
-}
-
-function IssueActionsDropdown({
-  issue,
-  orgSlug,
-  projectSlug,
-}: {
-  issue: IssueGroup
-  orgSlug: string
-  projectSlug: string
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex size-8 text-muted-foreground data-[state=open]:bg-muted"
-          size="icon"
-        >
-          <ChevronDownIcon />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem asChild>
-          <Link href={`/dashboard/${orgSlug}/${projectSlug}/issues/${issue.fingerprint}`}>
-            <ArrowRightIcon className="mr-2 size-4" />
-            View Details
-          </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
 }

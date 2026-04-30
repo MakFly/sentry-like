@@ -65,7 +65,12 @@
     "commandGoToDashboard": "Aller au tableau de bord",
     "commandCreateNewProject": "Créer un nouveau projet",
     "crons": "Crons",
-    "infrastructure": "Infrastructure"
+    "infrastructure": "Infrastructure",
+    "groups": {
+      "monitoring": "Surveillance",
+      "observability": "Observabilité",
+      "project": "Projet"
+    }
   },
   "organization": {
     "select": "Sélectionner une organisation",
@@ -277,6 +282,10 @@
         "title": "Web Vitals",
         "description": "Core Web Vitals (LCP, CLS, INP) au p75 avec seuils d'évaluation."
       }
+    },
+    "requests": {
+      "tabEndpoints": "Endpoints",
+      "backToRequests": "Retour aux requêtes"
     },
     "transactions": {
       "title": "Transactions",
@@ -1199,7 +1208,9 @@
       "levelError": "Erreur",
       "levelWarning": "Avertissement",
       "levelInfo": "Info",
-      "levelDebug": "Debug"
+      "levelDebug": "Debug",
+      "httpStatus": "Code",
+      "httpStatusLabel": "Code HTTP"
     },
     "page": {
       "selected": "{count} sélectionné(s)",
@@ -1498,25 +1509,82 @@
       "last30d": "30 derniers jours",
       "last90d": "90 derniers jours"
     },
-    "dashboard": { "title": "Vue d'ensemble", "description": "Surveillez la santé de votre application d'un coup d'œil" },
-    "issues": { "title": "Problèmes", "description": "Signaux entrants nécessitant votre attention" },
-    "logs": { "title": "Journaux", "description": "Flux en direct des logs applicatifs structurés" },
-    "stats": { "title": "Statistiques", "description": "Tendances et analyses historiques des erreurs" },
-    "replays": { "title": "Rejeux", "description": "Visionnez les sessions utilisateur ayant rencontré des erreurs" },
-    "infrastructure": { "title": "Infrastructure", "description": "Métriques d'hôtes collectées par l'agent ErrorWatch" },
-    "crons": { "title": "Crons", "description": "Exécutions planifiées et battements de cœur" },
-    "settings": { "title": "Paramètres", "description": "Configuration du projet, membres et clés API" },
-    "admin": { "title": "Admin", "description": "Administration et maintenance de la plateforme" },
-    "help": { "title": "Aide", "description": "Guides, intégrations et dépannage" },
-    "performance": { "title": "Performance", "description": "Débit, latence et Apdex de ce projet" },
-    "performanceRequests": { "title": "Requêtes HTTP", "description": "Endpoints classés par volume, latence et erreurs" },
-    "performanceRequestDetail": { "title": "Détail endpoint", "description": "Latence, débit et top requêtes pour cet endpoint" },
-    "performanceTransactions": { "title": "Transactions", "description": "Analyse des performances par endpoint" },
-    "performanceDatabase": { "title": "Base de données", "description": "Requêtes lentes, détection N+1 et motifs fréquents" },
-    "performanceCache": { "title": "Cache", "description": "Opérations de cache groupées par op avec taux de hit" },
-    "performanceHttp": { "title": "Appels HTTP", "description": "Appels HTTP sortants groupés par hôte et méthode" },
-    "performanceQueues": { "title": "Files d'attente", "description": "Jobs en arrière-plan et consommateurs de bus de messages" },
-    "performanceWebVitals": { "title": "Web Vitals", "description": "Core Web Vitals au p75 avec évaluation" }
+    "dashboard": {
+      "title": "Vue d'ensemble",
+      "description": "Surveillez la santé de votre application d'un coup d'œil"
+    },
+    "issues": {
+      "title": "Problèmes",
+      "description": "Signaux entrants nécessitant votre attention"
+    },
+    "logs": {
+      "title": "Journaux",
+      "description": "Flux en direct des logs applicatifs structurés"
+    },
+    "stats": {
+      "title": "Statistiques",
+      "description": "Tendances et analyses historiques des erreurs"
+    },
+    "replays": {
+      "title": "Rejeux",
+      "description": "Visionnez les sessions utilisateur ayant rencontré des erreurs"
+    },
+    "infrastructure": {
+      "title": "Infrastructure",
+      "description": "Métriques d'hôtes collectées par l'agent ErrorWatch"
+    },
+    "crons": {
+      "title": "Crons",
+      "description": "Exécutions planifiées et battements de cœur"
+    },
+    "settings": {
+      "title": "Paramètres",
+      "description": "Configuration du projet, membres et clés API"
+    },
+    "admin": {
+      "title": "Admin",
+      "description": "Administration et maintenance de la plateforme"
+    },
+    "help": {
+      "title": "Aide",
+      "description": "Guides, intégrations et dépannage"
+    },
+    "performance": {
+      "title": "Performance",
+      "description": "Débit, latence et Apdex de ce projet"
+    },
+    "performanceRequests": {
+      "title": "Requêtes HTTP",
+      "description": "Endpoints classés par volume, latence et erreurs"
+    },
+    "performanceRequestDetail": {
+      "title": "Détail endpoint",
+      "description": "Latence, débit et top requêtes pour cet endpoint"
+    },
+    "performanceTransactions": {
+      "title": "Transactions",
+      "description": "Analyse des performances par endpoint"
+    },
+    "performanceDatabase": {
+      "title": "Base de données",
+      "description": "Requêtes lentes, détection N+1 et motifs fréquents"
+    },
+    "performanceCache": {
+      "title": "Cache",
+      "description": "Opérations de cache groupées par op avec taux de hit"
+    },
+    "performanceHttp": {
+      "title": "Appels HTTP",
+      "description": "Appels HTTP sortants groupés par hôte et méthode"
+    },
+    "performanceQueues": {
+      "title": "Files d'attente",
+      "description": "Jobs en arrière-plan et consommateurs de bus de messages"
+    },
+    "performanceWebVitals": {
+      "title": "Web Vitals",
+      "description": "Core Web Vitals au p75 avec évaluation"
+    }
   },
   "metadata": {
     "dashboard": "Tableau de bord",

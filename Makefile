@@ -28,7 +28,7 @@ help: ## Show this help
 			/^(install|build|clean|dev|start|stop|status)/ {dev=dev"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
 			/^infra-|^db-|^redis-/ {infra=infra"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
 			/^prod-/ {prod=prod"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
-			/^example-/ {ex=ex"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
+			/^example/ {ex=ex"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
 			/^sdk-/ {sdk=sdk"\n  $(CYAN)" $$1 "$(RESET)\t" $$2} \
 			END {print "\n$(YELLOW)DEVELOPMENT:$(RESET)" dev "\n\n$(YELLOW)INFRASTRUCTURE:$(RESET)" infra "\n\n$(YELLOW)SDKs (worktree layout):$(RESET)" sdk "\n\n$(YELLOW)EXAMPLES:$(RESET)" ex "\n\n$(YELLOW)PRODUCTION:$(RESET)" prod}'
 
@@ -217,6 +217,24 @@ sdk-php-stan: ## Run PHPStan inside the SDK
 # =============================================================================
 # EXAMPLES
 # =============================================================================
+
+# -------- Unified entrypoint (NAME=symfony|laravel) --------
+example: ## One-shot bootstrap: install deps, seed workspace, start server, generate sample data (NAME=symfony|laravel [KEY=ew_live_…])
+	@test -n "$(NAME)" || { echo "$(RED)Usage: make example NAME=symfony|laravel [KEY=ew_live_…]$(RESET)"; exit 2; }
+	@chmod +x scripts/example-bootstrap.sh
+	@EXAMPLE_API_KEY="$(KEY)" ./scripts/example-bootstrap.sh "$(NAME)" up
+
+example-down: ## Stop the example server (NAME=symfony|laravel)
+	@test -n "$(NAME)" || { echo "$(RED)Usage: make example-down NAME=symfony|laravel$(RESET)"; exit 2; }
+	@./scripts/example-bootstrap.sh "$(NAME)" down
+
+example-status: ## Show whether the example server is running (NAME=symfony|laravel)
+	@test -n "$(NAME)" || { echo "$(RED)Usage: make example-status NAME=symfony|laravel$(RESET)"; exit 2; }
+	@./scripts/example-bootstrap.sh "$(NAME)" status
+
+example-reset: ## Wipe vendor/.env/lockfile and stop server (NAME=symfony|laravel)
+	@test -n "$(NAME)" || { echo "$(RED)Usage: make example-reset NAME=symfony|laravel$(RESET)"; exit 2; }
+	@./scripts/example-bootstrap.sh "$(NAME)" reset
 
 # -------- Laravel --------
 example-laravel-setup: ## Setup Laravel example (auth + API key + deps)

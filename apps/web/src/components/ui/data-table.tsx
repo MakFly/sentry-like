@@ -149,6 +149,16 @@ function SkeletonRow({ columnCount }: { columnCount: number }) {
   )
 }
 
+function isInteractiveRowTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+
+  return Boolean(
+    target.closest(
+      "a,button,input,textarea,select,[role='button'],[role='checkbox'],[data-row-click-ignore='true']"
+    )
+  )
+}
+
 export function DataTable<TData, TValue>({
   data: initialData,
   columns: baseColumns,
@@ -418,7 +428,14 @@ export function DataTable<TData, TValue>({
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                       className={onRowClick ? "cursor-pointer hover:bg-muted/50" : undefined}
-                      onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                      onClick={
+                        onRowClick
+                          ? (event) => {
+                              if (isInteractiveRowTarget(event.target)) return
+                              onRowClick(row.original)
+                            }
+                          : undefined
+                      }
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>

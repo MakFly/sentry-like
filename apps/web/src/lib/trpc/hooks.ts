@@ -13,6 +13,7 @@ interface GroupsFilter {
   search?: string;
   level?: "fatal" | "error" | "warning" | "info" | "debug";
   levels?: string[];
+  httpStatus?: number;
   sort?: "lastSeen" | "firstSeen" | "count";
   page?: number;
   limit?: number;

@@ -1,30 +1,69 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { trpc } from "@/lib/trpc/client";
 import { EndpointImpact } from "@/components/performance/EndpointImpact";
+import { TransactionsDataTable, SlowestTable } from "@/components/performance/TransactionsDataTable";
 import { ThroughputChart } from "@/components/performance/ThroughputChart";
 import { DurationChart } from "@/components/performance/DurationChart";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PerformanceDateRange } from "@/server/api/types";
 
+type TabValue = "endpoints" | "transactions" | "slowest";
+
 export default function RequestsPage() {
+  const t = useTranslations("performance");
   const tHeader = useTranslations("pageHeader.performanceRequests");
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const orgSlug = params.orgSlug as string;
   const projectSlug = params.projectSlug as string;
   const baseUrl = `/dashboard/${orgSlug}/${projectSlug}`;
 
+  const tabParam = searchParams.get("tab") as TabValue | null;
+  const initialTab: TabValue =
+    tabParam === "transactions" || tabParam === "slowest" || tabParam === "endpoints"
+      ? tabParam
+      : "endpoints";
+
   const { currentProjectId, isLoading: projectLoading } = useCurrentProject();
   const [dateRange, setDateRange] = useState<PerformanceDateRange>("24h");
+  const [tab, setTab] = useState<TabValue>(initialTab);
+
+  const handleTabChange = (next: string) => {
+    const value = next as TabValue;
+    setTab(value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "endpoints") {
+      params.delete("tab");
+    } else {
+      params.set("tab", value);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  };
 
   const { data: topEndpoints, isLoading: topEndpointsLoading } =
     trpc.performance.getTopEndpoints.useQuery(
       { projectId: currentProjectId!, dateRange },
       { enabled: !!currentProjectId }
+    );
+
+  const { data: transactionsData, isLoading: transactionsLoading } =
+    trpc.performance.getTransactions.useQuery(
+      { projectId: currentProjectId!, dateRange },
+      { enabled: !!currentProjectId && (tab === "transactions" || !!searchParams.get("traceId")) }
+    );
+
+  const { data: slowest, isLoading: slowestLoading } =
+    trpc.performance.getSlowest.useQuery(
+      { projectId: currentProjectId!, dateRange },
+      { enabled: !!currentProjectId && tab === "slowest" }
     );
 
   const { data: throughputData, isLoading: throughputLoading } =
@@ -65,11 +104,37 @@ export default function RequestsPage() {
         />
       </div>
 
-      <EndpointImpact
-        data={topEndpoints}
-        isLoading={topEndpointsLoading}
-        baseUrl={baseUrl}
-      />
+      <Tabs value={tab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="endpoints">{t("requests.tabEndpoints")}</TabsTrigger>
+          <TabsTrigger value="transactions">{t("transactions.tabAll")}</TabsTrigger>
+          <TabsTrigger value="slowest">{t("transactions.tabSlowest")}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="endpoints" className="mt-4">
+          <EndpointImpact
+            data={topEndpoints}
+            isLoading={topEndpointsLoading}
+            baseUrl={baseUrl}
+          />
+        </TabsContent>
+
+        <TabsContent value="transactions" className="mt-4">
+          <TransactionsDataTable
+            transactions={transactionsData?.transactions || []}
+            pagination={transactionsData?.pagination}
+            baseUrl={baseUrl}
+            isLoading={transactionsLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="slowest" className="mt-4">
+          <SlowestTable
+            transactions={slowest || []}
+            isLoading={slowestLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

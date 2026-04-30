@@ -144,12 +144,12 @@ describe("resolveDashboardBreadcrumbs", () => {
     ).toEqual([{ label: "Settings" }]);
   });
 
-  test("returns Performance > Transactions breadcrumbs for transactions sub-page", () => {
+  test("returns Performance > Requests breadcrumbs for requests sub-page", () => {
     const crumbs = resolveDashboardBreadcrumbs(
-      "/dashboard/acme/my-project/performance/transactions"
+      "/dashboard/acme/my-project/performance/requests"
     );
     expect(crumbs).toHaveLength(2);
     expect(crumbs[0].label).toBe("Performance");
-    expect(crumbs[1].label).toBe("Transactions");
+    expect(crumbs[1].label).toBe("Requests");
   });
 });

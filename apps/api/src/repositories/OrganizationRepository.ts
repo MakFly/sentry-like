@@ -30,6 +30,9 @@ export const OrganizationRepository = {
   findById: (id: string) =>
     db.select().from(organizations).where(eq(organizations.id, id)).then(rows => rows[0]),
 
+  findBySlug: (slug: string) =>
+    db.select().from(organizations).where(eq(organizations.slug, slug)).then(rows => rows[0]),
+
   create: (data: {
     id: string;
     name: string;

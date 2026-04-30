@@ -67,7 +67,7 @@ export function EndpointImpact({ data, isLoading, baseUrl }: EndpointImpactProps
                       </span>
                       {baseUrl ? (
                         <Link
-                          href={`${baseUrl}/performance/requests/${encodeURIComponent(endpoint.name)}`}
+                          href={`${baseUrl}/performance/requests/${encodeURIComponent(endpoint.name)}?type=endpoint`}
                           className="font-mono text-xs truncate max-w-[300px] hover:text-violet-400 hover:underline"
                           title={endpoint.name}
                         >

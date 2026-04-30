@@ -60,18 +60,18 @@ function buildProjectCrumbs(
       return [{ label: "Performance" }];
     }
 
-    if (subSection === "transactions") {
+    if (subSection === "requests") {
       if (detail) {
         return [
           { label: "Performance", href: `${basePath}/performance` },
-          { label: "Transactions", href: `${basePath}/performance/transactions` },
+          { label: "Requests", href: `${basePath}/performance/requests` },
           { label: truncateId(detail) },
         ];
       }
 
       return [
         { label: "Performance", href: `${basePath}/performance` },
-        { label: "Transactions" },
+        { label: "Requests" },
       ];
     }
 

@@ -73,6 +73,7 @@ export const api = {
     updateStatus: groupsApi.updateStatus,
     updateAssignment: groupsApi.updateAssignment,
     getReleases: groupsApi.getReleases,
+    getCorrelatedSignals: groupsApi.getCorrelatedSignals,
     batchUpdateStatus: groupsApi.batchUpdateStatus,
     merge: groupsApi.merge,
     unmerge: groupsApi.unmerge,

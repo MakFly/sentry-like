@@ -87,8 +87,11 @@ type Frame = z.infer<typeof frameSchema>;
 
 function pickFrame(frames: Frame[] | undefined): Frame | undefined {
   if (!frames || frames.length === 0) return undefined;
-  // Prefer the first in-app frame for file/line attribution
-  return frames.find((f) => f.in_app !== false) ?? frames[0];
+  // Sentry-style frames are oldest -> newest; the last in-app frame is the throw site.
+  for (let i = frames.length - 1; i >= 0; i -= 1) {
+    if (frames[i].in_app !== false) return frames[i];
+  }
+  return frames[frames.length - 1];
 }
 
 function extractFrames(input: z.infer<typeof envelopeSchema>): Frame[] | undefined {
@@ -110,7 +113,7 @@ function reconstructStackString(frames: Frame[] | undefined, message: string): s
 
 function toMilliseconds(ts: number | string | undefined): number {
   if (ts === undefined) return Date.now();
-  const n = typeof ts === "string" ? parseFloat(ts) : ts;
+  const n = typeof ts === "string" ? Date.parse(ts) : ts;
   if (!Number.isFinite(n)) return Date.now();
   // Heuristic: <1e12 → seconds, else already ms
   return n < 1e12 ? Math.round(n * 1000) : Math.round(n);

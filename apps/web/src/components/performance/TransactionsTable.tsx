@@ -188,7 +188,7 @@ export function TransactionsTable({
                   <TableRow
                     key={`${g.name}-${g.op}`}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`${baseUrl}/performance/transactions/${g.transactions[0].id}`)}
+                    onClick={() => router.push(`${baseUrl}/performance/requests/${g.transactions[0].id}?type=transaction`)}
                   >
                     <TableCell className="max-w-[250px] truncate font-medium">
                       <span className="hover:underline">{g.name}</span>
@@ -253,7 +253,7 @@ export function TransactionsTable({
                 <TableRow
                   key={txn.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`${baseUrl}/performance/transactions/${txn.id}`)}
+                  onClick={() => router.push(`${baseUrl}/performance/requests/${txn.id}?type=transaction`)}
                 >
                   <TableCell className="max-w-[250px] truncate font-medium">
                     <span className="hover:underline">{txn.name}</span>

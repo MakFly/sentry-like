@@ -43,7 +43,7 @@ export const GroupRepository = {
    * Optimized findAll using single query with LEFT JOIN for replay data
    * Replaces 3 separate queries (groups + replayCounts + latestReplays) with 1
    */
-  findAll: async (filters?: { dateRange?: string; env?: string; search?: string; level?: string; levels?: string[]; sort?: string; page?: number; limit?: number }, projectId?: string) => {
+  findAll: async (filters?: { dateRange?: string; env?: string; search?: string; level?: string; levels?: string[]; httpStatus?: number; sort?: string; page?: number; limit?: number }, projectId?: string) => {
     const startDate = parseDateRange(filters?.dateRange);
     const page = filters?.page || 1;
     const limit = filters?.limit || 50;
@@ -74,6 +74,23 @@ export const GroupRepository = {
       conditions.push(eq(errorGroups.level, filters.level));
     }
 
+    if (typeof filters?.httpStatus === "number") {
+      if (filters.httpStatus === 500) {
+        conditions.push(
+          or(
+            eq(errorGroups.statusCode, filters.httpStatus),
+            and(
+              sql`${errorGroups.statusCode} IS NULL`,
+              inArray(errorGroups.level, ["fatal", "error"]),
+              sql`${errorGroups.url} ~* '^https?://'`
+            )
+          )
+        );
+      } else {
+        conditions.push(eq(errorGroups.statusCode, filters.httpStatus));
+      }
+    }
+
     // Environment filter - use subquery with EXISTS instead of IN for better performance
     if (filters?.env && filters.env !== "all") {
       const envSubquery = db
@@ -102,15 +119,19 @@ export const GroupRepository = {
     // Optimized: Single query with replay data using window functions
     // This replaces 3 separate queries (lines 102-169 in original)
     const groupsWithReplay = await db.execute(sql`
-      SELECT 
+      SELECT
         error_groups.*,
         replay_data.has_replay,
         replay_data.latest_session_id,
         replay_data.latest_event_id,
-        replay_data.latest_created_at
+        replay_data.latest_created_at,
+        latest_evt.evt_id,
+        latest_evt.evt_trace_id,
+        latest_evt.evt_top_frame,
+        latest_evt.evt_breadcrumbs_count
       FROM error_groups
       LEFT JOIN LATERAL (
-        SELECT 
+        SELECT
           COUNT(e.id) > 0 as has_replay,
           MAX(e.session_id) FILTER (WHERE e.session_id IS NOT NULL) as latest_session_id,
           MAX(e.id) FILTER (WHERE e.session_id IS NOT NULL) as latest_event_id,
@@ -118,6 +139,32 @@ export const GroupRepository = {
         FROM error_events e
         WHERE e.fingerprint = error_groups.fingerprint AND e.session_id IS NOT NULL
       ) replay_data ON true
+      LEFT JOIN LATERAL (
+        SELECT
+          le.id          AS evt_id,
+          le.trace_id    AS evt_trace_id,
+          -- Pick the deepest in_app frame as the "where it threw" anchor.
+          -- Sentry convention: frames are oldest→newest, so the last in_app frame is the throw site.
+          CASE
+            WHEN le.frames IS NULL OR jsonb_typeof(le.frames) <> 'array' THEN NULL
+            ELSE (
+              SELECT f.value
+              FROM jsonb_array_elements(le.frames) WITH ORDINALITY AS f(value, idx)
+              WHERE COALESCE((f.value->>'in_app')::boolean, true) = true
+              ORDER BY f.idx DESC
+              LIMIT 1
+            )
+          END AS evt_top_frame,
+          CASE
+            WHEN le.breadcrumbs IS NULL THEN 0
+            WHEN jsonb_typeof(le.breadcrumbs) = 'array' THEN jsonb_array_length(le.breadcrumbs)
+            ELSE 0
+          END AS evt_breadcrumbs_count
+        FROM error_events le
+        WHERE le.fingerprint = error_groups.fingerprint
+        ORDER BY le.created_at DESC
+        LIMIT 1
+      ) latest_evt ON true
       WHERE ${whereClause}
       ORDER BY ${sortColumn} DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -138,8 +185,11 @@ export const GroupRepository = {
       fingerprint: row.fingerprint,
       projectId: row.project_id,
       message: row.message,
+      title: row.title || "",
       file: row.file,
       line: row.line,
+      url: row.url,
+      httpMethod: row.http_method,
       statusCode: row.status_code,
       level: row.level,
       count: row.count,
@@ -154,6 +204,16 @@ export const GroupRepository = {
       latestReplaySessionId: row.latest_session_id,
       latestReplayEventId: row.latest_event_id,
       latestReplayCreatedAt: row.latest_created_at,
+      latestEventId: row.evt_id ?? null,
+      latestTraceId: row.evt_trace_id ?? null,
+      latestTopFrame: row.evt_top_frame
+        ? {
+            filename: typeof row.evt_top_frame.filename === "string" ? row.evt_top_frame.filename : "",
+            function:
+              typeof row.evt_top_frame.function === "string" ? row.evt_top_frame.function : null,
+          }
+        : null,
+      latestBreadcrumbsCount: typeof row.evt_breadcrumbs_count === "number" ? row.evt_breadcrumbs_count : 0,
     }));
 
     return { groups, total, page, totalPages };
@@ -229,15 +289,19 @@ export const GroupRepository = {
 
     // Single optimized query with replay data
     const groupsWithReplay = await db.execute(sql`
-      SELECT 
+      SELECT
         error_groups.*,
         replay_data.has_replay,
         replay_data.latest_session_id,
         replay_data.latest_event_id,
-        replay_data.latest_created_at
+        replay_data.latest_created_at,
+        latest_evt.evt_id,
+        latest_evt.evt_trace_id,
+        latest_evt.evt_top_frame,
+        latest_evt.evt_breadcrumbs_count
       FROM error_groups
       LEFT JOIN LATERAL (
-        SELECT 
+        SELECT
           COUNT(e.id) > 0 as has_replay,
           MAX(e.session_id) FILTER (WHERE e.session_id IS NOT NULL) as latest_session_id,
           MAX(e.id) FILTER (WHERE e.session_id IS NOT NULL) as latest_event_id,
@@ -245,6 +309,32 @@ export const GroupRepository = {
         FROM error_events e
         WHERE e.fingerprint = error_groups.fingerprint AND e.session_id IS NOT NULL
       ) replay_data ON true
+      LEFT JOIN LATERAL (
+        SELECT
+          le.id          AS evt_id,
+          le.trace_id    AS evt_trace_id,
+          -- Pick the deepest in_app frame as the "where it threw" anchor.
+          -- Sentry convention: frames are oldest→newest, so the last in_app frame is the throw site.
+          CASE
+            WHEN le.frames IS NULL OR jsonb_typeof(le.frames) <> 'array' THEN NULL
+            ELSE (
+              SELECT f.value
+              FROM jsonb_array_elements(le.frames) WITH ORDINALITY AS f(value, idx)
+              WHERE COALESCE((f.value->>'in_app')::boolean, true) = true
+              ORDER BY f.idx DESC
+              LIMIT 1
+            )
+          END AS evt_top_frame,
+          CASE
+            WHEN le.breadcrumbs IS NULL THEN 0
+            WHEN jsonb_typeof(le.breadcrumbs) = 'array' THEN jsonb_array_length(le.breadcrumbs)
+            ELSE 0
+          END AS evt_breadcrumbs_count
+        FROM error_events le
+        WHERE le.fingerprint = error_groups.fingerprint
+        ORDER BY le.created_at DESC
+        LIMIT 1
+      ) latest_evt ON true
       WHERE ${whereClause}
       ORDER BY ${sortColumn} DESC, error_groups.fingerprint DESC
       LIMIT ${limit}
@@ -258,8 +348,11 @@ export const GroupRepository = {
       fingerprint: row.fingerprint,
       projectId: row.project_id,
       message: row.message,
+      title: row.title || "",
       file: row.file,
       line: row.line,
+      url: row.url,
+      httpMethod: row.http_method,
       statusCode: row.status_code,
       level: row.level,
       count: row.count,
@@ -274,6 +367,16 @@ export const GroupRepository = {
       latestReplaySessionId: row.latest_session_id,
       latestReplayEventId: row.latest_event_id,
       latestReplayCreatedAt: row.latest_created_at,
+      latestEventId: row.evt_id ?? null,
+      latestTraceId: row.evt_trace_id ?? null,
+      latestTopFrame: row.evt_top_frame
+        ? {
+            filename: typeof row.evt_top_frame.filename === "string" ? row.evt_top_frame.filename : "",
+            function:
+              typeof row.evt_top_frame.function === "string" ? row.evt_top_frame.function : null,
+          }
+        : null,
+      latestBreadcrumbsCount: typeof row.evt_breadcrumbs_count === "number" ? row.evt_breadcrumbs_count : 0,
     }));
 
     // Generate next cursor

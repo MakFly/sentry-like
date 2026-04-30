@@ -7,16 +7,31 @@ propagation.
 
 ## Quick start
 
+Prerequisite: ErrorWatch infra + API + Web running locally (`make dev` from the repo root).
+
 ```bash
-# From the repository root:
-make example-symfony-setup    # composer install + .env + sdk-symfony worktree
-#  ↳ edit examples/example-symfony/.env and paste your ERRORWATCH_API_KEY
-make example-symfony-start    # php -S on :8088 (foreground)
-# in another terminal:
-make example-symfony-trigger  # curls every /trigger/* route
+# From the repository root — single command, idempotent:
+make example NAME=symfony
 ```
 
-Then open the dashboard — you should see the events land within a few seconds.
+This installs deps, provisions an org+project+API key in ErrorWatch via the dev
+seed endpoint, writes the key into `examples/example-symfony/.env`, starts the
+Symfony server on `:8088` in background, and fires every `/trigger/*` route so
+the dashboard fills up immediately. The terminal prints the dashboard URL.
+
+Re-running `make example NAME=symfony` is safe: existing org/project are
+reused, a fresh API key is issued and stored in `.env`.
+
+```bash
+make example-status NAME=symfony   # PID + port
+make example-down   NAME=symfony   # stop the server
+make example-reset  NAME=symfony   # wipe vendor/var/.env (destructive)
+```
+
+### Lower-level targets
+
+The granular `example-symfony-*` targets (`-setup`, `-start`, `-trigger`,
+`-cron`, `-logs`, `-stop`, `-reset`) still exist for manual workflows.
 
 ## Routes
 

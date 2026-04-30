@@ -66,6 +66,27 @@ function extractErrorType(message: string): string {
   return match ? match[1] : "Error";
 }
 
+const TITLE_VALUE_MAX = 200;
+
+/**
+ * Compute a Sentry-style display title from a normalized event:
+ *   "{ExceptionType}: {value truncated}"
+ * Falls back to the raw message when no exception structure is present.
+ */
+function computeIssueTitle(data: {
+  exceptionType?: string | null;
+  exceptionValue?: string | null;
+  message?: string | null;
+}): string {
+  const type = (data.exceptionType ?? "").trim();
+  const value = (data.exceptionValue ?? data.message ?? "").trim();
+  const truncated =
+    value.length > TITLE_VALUE_MAX ? `${value.slice(0, TITLE_VALUE_MAX)}…` : value;
+  if (type && truncated) return `${type}: ${truncated}`;
+  if (type) return type;
+  return truncated || "Error";
+}
+
 /**
  * Parse stack trace and extract meaningful frames
  */
@@ -249,6 +270,9 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
   // Convert to ISO strings for SQL template compatibility
   const eventCreatedAtISO = eventCreatedAt.toISOString();
 
+  const title = computeIssueTitle({ exceptionType, exceptionValue, message: scrubbedMessage });
+  const httpMethod = request?.method ?? null;
+
   // Upsert error group (atomic operation) - PostgreSQL syntax
   const result = await db
     .insert(errorGroups)
@@ -256,9 +280,11 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
       fingerprint,
       projectId,
       message: scrubbedMessage,
+      title,
       file,
       line,
       url,
+      httpMethod,
       statusCode,
       level,
       count: 1,
@@ -277,6 +303,9 @@ async function processEvent(job: Job<EventJobData>): Promise<{ fingerprint: stri
         // Only backfill exceptionType/exceptionValue if not yet set
         exceptionType: sql`COALESCE(${errorGroups.exceptionType}, ${exceptionType || null})`,
         exceptionValue: sql`COALESCE(${errorGroups.exceptionValue}, ${exceptionValue || null})`,
+        // Title: backfill if currently empty (legacy rows or first event lacked exception struct).
+        title: sql`CASE WHEN ${errorGroups.title} = '' THEN ${title} ELSE ${errorGroups.title} END`,
+        httpMethod: sql`COALESCE(${errorGroups.httpMethod}, ${httpMethod})`,
       },
     })
     .returning({ count: errorGroups.count });

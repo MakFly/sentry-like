@@ -13,6 +13,12 @@ export const getAll = async (c: AuthContext) => {
   const level = c.req.query("level") as "fatal" | "error" | "warning" | "info" | "debug" | undefined;
   const levelsRaw = c.req.query("levels");
   const levels = levelsRaw ? levelsRaw.split(",").map((l) => l.trim()).filter(Boolean) : undefined;
+  const httpStatusRaw = c.req.query("httpStatus");
+  const parsedHttpStatus = httpStatusRaw && /^\d{3}$/.test(httpStatusRaw) ? Number(httpStatusRaw) : undefined;
+  const httpStatus =
+    parsedHttpStatus && parsedHttpStatus >= 100 && parsedHttpStatus <= 599
+      ? parsedHttpStatus
+      : undefined;
   const sort = c.req.query("sort") as "lastSeen" | "firstSeen" | "count" | undefined || "lastSeen";
   const page = parseInt(c.req.query("page") || "1", 10);
   const limit = Math.min(parseInt(c.req.query("limit") || "50", 10), 100);
@@ -25,8 +31,8 @@ export const getAll = async (c: AuthContext) => {
     }
   }
 
-  logger.debug("GET /api/v1/groups", { env, dateRange, projectId, search, level, levels, sort, page, limit });
-  const result = await GroupService.getAll({ env, dateRange, search, level, levels, sort, page, limit }, projectId);
+  logger.debug("GET /api/v1/groups", { env, dateRange, projectId, search, level, levels, httpStatus, sort, page, limit });
+  const result = await GroupService.getAll({ env, dateRange, search, level, levels, httpStatus, sort, page, limit }, projectId);
   return c.json(result);
 };
 
@@ -143,6 +149,27 @@ export const updateAssignment = async (c: AuthContext) => {
   return c.json(result);
 };
 
+export const getCorrelatedSignals = async (c: AuthContext) => {
+  const userId = c.get("userId");
+  const fingerprint = c.req.param("fingerprint");
+
+  const group = await GroupService.getById(fingerprint);
+  if (!group) {
+    return c.json({ error: "Group not found" }, 404);
+  }
+
+  if (group.projectId) {
+    const hasAccess = await verifyProjectAccess(group.projectId, userId);
+    if (!hasAccess) {
+      return c.json({ error: "Forbidden: You don't have access to this project" }, 403);
+    }
+  }
+
+  logger.debug("GET /api/v1/groups/:fingerprint/correlated", { fingerprint });
+  const correlated = await GroupService.getCorrelatedSignals(fingerprint);
+  return c.json(correlated);
+};
+
 export const getReleases = async (c: AuthContext) => {
   const userId = c.get("userId");
   const fingerprint = c.req.param("fingerprint");
@@ -245,5 +272,3 @@ export const unmerge = async (c: AuthContext) => {
   await GroupRepository.unmerge(fingerprint);
   return c.json({ success: true });
 };
-
-

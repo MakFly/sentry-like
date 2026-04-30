@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Radio } from "lucide-react";
+import { Hash, X, Radio } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type DateRange = "24h" | "7d" | "30d" | "90d" | "all";
@@ -22,6 +22,8 @@ interface FiltersRowProps {
   onDateRangeChange: (value: DateRange) => void;
   level?: string;
   onLevelChange?: (value: string) => void;
+  httpStatus?: string;
+  onHttpStatusChange?: (value: string) => void;
   onClear: () => void;
   hasActiveFilters: boolean;
   className?: string;
@@ -36,6 +38,8 @@ export function FiltersRow({
   onDateRangeChange,
   level,
   onLevelChange,
+  httpStatus,
+  onHttpStatusChange,
   onClear,
   hasActiveFilters,
   className,
@@ -45,7 +49,7 @@ export function FiltersRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-center",
+        "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center",
         className
       )}
     >
@@ -132,6 +136,32 @@ export function FiltersRow({
             <SelectItem value="debug">{t("levelDebug")}</SelectItem>
           </SelectContent>
         </Select>
+      )}
+
+      {/* HTTP Status */}
+      {onHttpStatusChange && (
+        <div className="relative w-full sm:w-[118px]">
+          <Hash className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-pulse-muted" />
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={3}
+            placeholder={t("httpStatus")}
+            value={httpStatus || ""}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, "").slice(0, 3);
+              onHttpStatusChange(value);
+            }}
+            className={cn(
+              "h-10 w-full rounded-lg border border-issues-border bg-issues-surface/50 py-2 pl-9 pr-3 font-mono text-sm tabular-nums",
+              "placeholder:font-sans placeholder:text-muted-foreground/50",
+              "focus:border-pulse-primary/50 focus:outline-none focus:ring-2 focus:ring-pulse-primary/20",
+              "transition-all"
+            )}
+            aria-label={t("httpStatusLabel")}
+          />
+        </div>
       )}
 
       {/* Clear filters */}
