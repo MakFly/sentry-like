@@ -201,7 +201,21 @@ export function createIssuesColumns({
 
         const isHttpUrl = !!url && /^https?:\/\//i.test(url)
         if (!isHttpUrl) {
-          return <div className="hidden md:block text-[11px] text-muted-foreground/40">—</div>
+          const isDeprecation = !!url && /^deprecation:\/\//i.test(url)
+          const sourceLabel = isDeprecation ? "Deprec." : "Process"
+          const sourceTitle = isDeprecation
+            ? "PHP deprecation captured outside of an HTTP request"
+            : "Captured outside an HTTP request (CLI / worker / boot)"
+          return (
+            <div className="hidden md:block">
+              <span
+                className="rounded-sm bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+                title={sourceTitle}
+              >
+                {sourceLabel}
+              </span>
+            </div>
+          )
         }
 
         let urlPath = url ?? ""

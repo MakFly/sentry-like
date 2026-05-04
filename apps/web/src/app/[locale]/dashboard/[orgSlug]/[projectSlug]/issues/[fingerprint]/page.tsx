@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { ErrorLevel } from "@/server/api";
 
 import { DebugProfilePanel } from "@/components/issue-detail/DebugProfilePanel";
+import { EventSourcePanel } from "@/components/issue-detail/EventSourcePanel";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -246,6 +247,8 @@ export default function IssueDetailPage() {
       <div className="min-h-0 flex-1 bg-background">
         {selectedEvent?.debug ? (
           <DebugProfilePanel profile={selectedEvent.debug} />
+        ) : selectedEvent ? (
+          <EventSourcePanel event={selectedEvent} />
         ) : (
           <div className="flex flex-col items-center justify-center bg-background px-6 py-16 text-center md:px-8">
             <p className="font-mono text-sm font-medium text-muted-foreground">

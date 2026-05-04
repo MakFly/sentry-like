@@ -80,6 +80,7 @@ const envelopeSchema = z.object({
   span_id: z.string().max(32).optional().nullable(),
   fingerprint: z.string().max(128).optional().nullable(),
   session_id: z.string().max(100).optional(),
+  status_code: z.number().int().min(100).max(599).optional().nullable(),
   extra: z.record(z.string(), z.unknown()).optional(),
   // Full request profile (laravel-web-profiler parity). Loose-typed on the
   // wire; the SDK enforces shape. Persisted as-is in error_events.debug.
@@ -216,7 +217,11 @@ export const submitEnvelope = async (c: Context<AppEnv>) => {
       env: input.environment ?? "unknown",
       url: input.request?.url ?? null,
       level: input.level,
-      statusCode: null,
+      statusCode:
+        input.status_code ??
+        (typeof (input.extra as { status_code?: unknown } | undefined)?.status_code === "number"
+          ? ((input.extra as { status_code: number }).status_code)
+          : null),
       breadcrumbs: input.breadcrumbs ? JSON.stringify(input.breadcrumbs) : null,
       sessionId: shouldLinkReplay ? (input.session_id ?? null) : null,
       createdAt: new Date(createdAtMs).toISOString(),
