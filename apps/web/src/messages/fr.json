@@ -1285,7 +1285,7 @@
       "last30days": "30 derniers jours"
     },
     "noProfilerTitle": "Aucune donnée de profiler capturée pour cet événement.",
-    "noProfilerHint": "Active <code>ERRORWATCH_PROFILER=1</code> dans l'environnement du SDK puis déclenche une nouvelle exception pour enregistrer un profil complet.",
+    "noProfilerHint": "Le profiler est activé par défaut. Vérifie qu'il n'est pas désactivé via <code>ERRORWATCH_PROFILER=0</code>, puis déclenche une nouvelle exception.",
     "debug": {
       "empty": "Aucune donnée de profiler n'a été capturée pour cet événement.",
       "tabs": {

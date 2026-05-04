@@ -1103,7 +1103,7 @@
       "last30days": "Last 30 days"
     },
     "noProfilerTitle": "No profiler data was captured for this event.",
-    "noProfilerHint": "Enable <code>ERRORWATCH_PROFILER=1</code> in the SDK environment and trigger a fresh exception to record a full request profile.",
+    "noProfilerHint": "The profiler is enabled by default. Check it's not disabled via <code>ERRORWATCH_PROFILER=0</code>, then trigger a fresh exception.",
     "debug": {
       "empty": "No profiler data was captured for this event.",
       "tabs": {

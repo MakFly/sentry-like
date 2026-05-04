@@ -6,12 +6,7 @@ import Link from "next/link";
 import { useCurrentOrganization } from "@/contexts/OrganizationContext";
 import { useCurrentProject } from "@/contexts/ProjectContext";
 import { useGroup, useGroupEvents, useGroupTimeline } from "@/lib/trpc/hooks";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Check,
-  Copy,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ChevronRight, Copy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { ErrorLevel } from "@/server/api";
@@ -20,20 +15,20 @@ import { DebugProfilePanel } from "@/components/issue-detail/DebugProfilePanel";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-const levelColor: Record<ErrorLevel, string> = {
-  fatal: "text-signal-fatal",
-  error: "text-signal-error",
-  warning: "text-signal-warning",
-  info: "text-signal-info",
-  debug: "text-signal-debug",
+const levelAccent: Record<ErrorLevel, string> = {
+  fatal: "bg-signal-fatal",
+  error: "bg-signal-error",
+  warning: "bg-signal-warning",
+  info: "bg-signal-info",
+  debug: "bg-signal-debug",
 };
 
-const levelBg: Record<ErrorLevel, string> = {
-  fatal: "bg-signal-fatal/10 text-signal-fatal border-signal-fatal/30",
-  error: "bg-signal-error/10 text-signal-error border-signal-error/30",
-  warning: "bg-signal-warning/10 text-signal-warning border-signal-warning/30",
-  info: "bg-signal-info/10 text-signal-info border-signal-info/30",
-  debug: "bg-signal-debug/10 text-signal-debug border-signal-debug/30",
+const levelChip: Record<ErrorLevel, string> = {
+  fatal: "bg-signal-fatal text-white",
+  error: "bg-signal-error text-white",
+  warning: "bg-signal-warning text-black",
+  info: "bg-signal-info text-white",
+  debug: "bg-signal-debug text-white",
 };
 
 function parseExceptionType(message: string): { type: string | null; cleanMessage: string } {
@@ -61,10 +56,10 @@ function CopyInline({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
+      className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       aria-label="copy"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-signal-ok" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 }
@@ -72,8 +67,8 @@ function CopyInline({ text }: { text: string }) {
 function Sparkline({ data }: { data: number[] }) {
   if (data.length === 0) return null;
   const max = Math.max(...data, 1);
-  const w = 200;
-  const h = 36;
+  const w = 220;
+  const h = 32;
   const pad = 2;
   const pts = data
     .map((v, i) => {
@@ -84,10 +79,10 @@ function Sparkline({ data }: { data: number[] }) {
     .join(" ");
   const fill = `${pad},${h - pad} ${pts} ${w - pad},${h - pad}`;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-9 w-full text-signal-error" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-8 w-full text-signal-error" preserveAspectRatio="none">
       <defs>
         <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.45" />
           <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -96,7 +91,6 @@ function Sparkline({ data }: { data: number[] }) {
     </svg>
   );
 }
-
 
 // ─── Error state ─────────────────────────────────────────────────────────────
 
@@ -107,13 +101,13 @@ function ErrorState() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="border-b border-dashboard-border px-6 py-3 md:px-8">
+      <div className="border-b border-dashboard-border bg-zinc-100 px-6 py-2.5 md:px-8 dark:bg-zinc-900">
         <Link
           href={`/dashboard/${currentOrgSlug}/${currentProjectSlug}/issues`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground dark:text-zinc-400 dark:hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="font-mono">{t("back")}</span>
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>{t("back")}</span>
         </Link>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center py-24">
@@ -145,7 +139,6 @@ export default function IssueDetailPage() {
 
   const { data: group, isLoading, error } = useGroup(fingerprint);
   const { data: eventsData } = useGroupEvents(fingerprint, 1, 50);
-  // Initial selection comes from `?event=<id>` (deep-link from the Issues list signals strip).
   const initialEventId = searchParams?.get("event") ?? null;
   const [selectedEventId] = useState<string | null>(initialEventId);
   const { data: timeline } = useGroupTimeline(fingerprint);
@@ -167,58 +160,89 @@ export default function IssueDetailPage() {
 
   const titleSource = group.title && group.title.length > 0 ? group.title : group.message;
   const { type: exceptionType, cleanMessage } = parseExceptionType(titleSource);
-  const lvlColor = levelColor[group.level as ErrorLevel];
-  const lvlBg = levelBg[group.level as ErrorLevel];
+  const lvlAccent = levelAccent[group.level as ErrorLevel];
+  const lvlChip = levelChip[group.level as ErrorLevel];
+  const method = selectedEvent?.request?.method ?? selectedEvent?.debug?.method ?? null;
+  const url = selectedEvent?.request?.url ?? selectedEvent?.debug?.request?.url ?? null;
 
   return (
-    <div className="flex flex-1 flex-col">
-      {/* Back link */}
-      <div className="border-b border-dashboard-border px-6 py-2.5 md:px-8">
+    <div className="flex flex-1 flex-col bg-dashboard-bg">
+      {/* ── Profiler Bar (Symfony toolbar style, but at top) ─────────────────── */}
+      <div className="flex items-stretch gap-px border-b border-dashboard-border bg-zinc-100 text-zinc-700 dark:border-black/40 dark:bg-zinc-950 dark:text-zinc-200">
         <Link
           href={`/dashboard/${currentOrgSlug}/${currentProjectSlug}/issues`}
-          className="inline-flex items-center gap-1.5 font-mono text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="flex items-center gap-1.5 border-r border-dashboard-border px-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground dark:border-white/10 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>{tHeader("issues")}</span>
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {tHeader("issues")}
         </Link>
+
+        <ToolbarTile
+          accent={lvlAccent}
+          label={tSeverity(group.level)}
+          value={group.statusCode ? String(group.statusCode) : group.level.toUpperCase()}
+        />
+        {method && <ToolbarTile label="Method" value={method} mono />}
+        <ToolbarTile label="Occurrences" value={group.count.toLocaleString()} mono />
+        <ToolbarTile label="Last seen" value={formatRel(group.lastSeen)} />
+
+        <div className="ml-auto flex items-center gap-3 border-l border-dashboard-border px-4 dark:border-white/10">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            30d
+          </span>
+          <div className="w-40">
+            <Sparkline data={timelineData.map((p) => p.count)} />
+          </div>
+        </div>
       </div>
 
-      {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-dashboard-border bg-background/95 px-6 py-5 backdrop-blur md:px-8 md:py-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
+      {/* ── Exception masthead ───────────────────────────────────────────────── */}
+      <header className="relative border-b border-dashboard-border bg-dashboard-surface">
+        <div className={cn("absolute left-0 top-0 h-full w-1", lvlAccent)} aria-hidden />
+        <div className="px-6 py-6 md:px-10 md:py-8">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+            <span>Exception</span>
+            <ChevronRight className="h-3 w-3" />
+            <span className="font-mono normal-case tracking-normal text-foreground/70">
+              {fingerprint.slice(0, 12)}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-baseline gap-3">
+            {group.statusCode != null && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-md border px-2.5 py-0.5 font-mono text-xs font-bold uppercase tracking-wider",
-                  lvlBg
+                  "inline-flex h-7 items-center rounded-sm px-2 font-mono text-[12px] font-bold tabular-nums shadow-sm",
+                  lvlChip,
                 )}
               >
-                {group.statusCode ? `${group.statusCode} ${tSeverity(group.level)}` : tSeverity(group.level)}
+                {group.statusCode}
               </span>
-              {exceptionType && (
-                <span className={cn("font-mono text-xs font-bold uppercase tracking-wider", lvlColor)}>
-                  {exceptionType}
-                </span>
-              )}
-            </div>
-
-            <h1 className="font-mono text-xl font-medium leading-snug text-foreground md:text-2xl">
-              {cleanMessage}
-            </h1>
+            )}
+            {exceptionType && (
+              <span className="font-mono text-sm font-semibold uppercase tracking-wider text-signal-error">
+                {exceptionType}
+              </span>
+            )}
           </div>
+
+          <h1 className="mt-2 max-w-5xl break-words font-mono text-[22px] font-semibold leading-snug text-foreground md:text-[26px]">
+            {cleanMessage}
+          </h1>
+
+          {url && (
+            <div className="mt-4 inline-flex max-w-full items-center gap-2 rounded-sm border border-dashboard-border bg-muted px-3 py-1.5">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {method ?? "GET"}
+              </span>
+              <span className="truncate font-mono text-xs text-foreground">{url}</span>
+              <CopyInline text={url} />
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Group summary strip (count / method / last seen / sparkline) */}
-      <GroupSummaryStrip
-        count={group.count}
-        method={selectedEvent?.request?.method ?? selectedEvent?.debug?.method ?? null}
-        lastSeen={group.lastSeen}
-        timelineData={timelineData}
-      />
-
-      {/* Main content: Full Debug only — full width, full height */}
+      {/* ── Profile body ─────────────────────────────────────────────────────── */}
       <div className="min-h-0 flex-1 bg-background">
         {selectedEvent?.debug ? (
           <DebugProfilePanel profile={selectedEvent.debug} />
@@ -239,40 +263,28 @@ export default function IssueDetailPage() {
   );
 }
 
-function GroupSummaryStrip({
-  count,
-  method,
-  lastSeen,
-  timelineData,
-}: {
-  count: number;
-  method: string | null;
-  lastSeen: string | Date;
-  timelineData: { date: string; count: number }[];
-}) {
-  const tStrip = useTranslations("issueDetail.summaryStrip");
-  return (
-    <div className="grid grid-cols-2 gap-px border-b border-dashboard-border bg-dashboard-border md:grid-cols-4">
-      <SummaryStat label={tStrip("occurrences")} value={count.toLocaleString()} mono />
-      <SummaryStat label={tStrip("method")} value={method ?? "—"} mono />
-      <SummaryStat label={tStrip("lastSeen")} value={formatRel(lastSeen)} />
-      <div className="bg-background px-5 py-3">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {tStrip("last30days")}
-        </div>
-        <div className="mt-1.5">
-          <Sparkline data={timelineData.map((p) => p.count)} />
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Profiler bar tile ───────────────────────────────────────────────────────
 
-function SummaryStat({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function ToolbarTile({
+  label,
+  value,
+  accent,
+  mono,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+  mono?: boolean;
+}) {
   return (
-    <div className="bg-background px-5 py-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={cn("mt-0.5 text-base text-foreground", mono ? "font-mono tabular-nums" : "")}>{value}</div>
+    <div className="relative flex min-w-0 items-center gap-3 border-r border-dashboard-border px-4 py-2 dark:border-white/10">
+      {accent && <span className={cn("absolute left-0 top-0 h-full w-[3px]", accent)} aria-hidden />}
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </span>
+      <span className={cn("text-sm font-semibold text-foreground", mono && "font-mono tabular-nums")}>
+        {value}
+      </span>
     </div>
   );
 }
